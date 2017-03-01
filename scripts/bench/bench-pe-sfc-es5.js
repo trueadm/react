@@ -4194,5 +4194,8 @@
     }
   };
 
-  this.functionComponentBenchmark = Benchmark;
+  // to be used via command line
+  this.Benchmark = Benchmark;
+  // to be used with the web version
+  this.functionBenchmark = Benchmark;
 })(this);

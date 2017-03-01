@@ -6,7 +6,7 @@
 
   document.getElementById('functional').onclick = function() {
     var start = performance.now();
-    ReactDOM.render(React.createElement(window.functionComponentBenchmark, null), app);
+    ReactDOM.render(React.createElement(window.functionBenchmark, null), app);
     var render = performance.now() - start;
     setTimeout(function() {
       var total = performance.now() - start;
@@ -17,7 +17,7 @@
   };
   document.getElementById('functional-fiber').onclick = function() {
     var start = performance.now();
-    ReactDOMFiber.render(React.createElement(window.functionComponentBenchmark, null), app);
+    ReactDOMFiber.render(React.createElement(window.functionBenchmark, null), app);
     var render = performance.now() - start;
     setTimeout(function() {
       var total = performance.now() - start;
