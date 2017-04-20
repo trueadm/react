@@ -112,7 +112,8 @@
     "modulePathIgnorePatterns": [
       "/.module-cache/",
       "<rootDir>/build/",
-      "<rootDir>/scripts/rollup/shims/"
+      "<rootDir>/scripts/rollup/shims/",
+      "<rootDir>/scripts/bench/"
     ],
     "rootDir": "",
     "transform": {
