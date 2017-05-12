@@ -55,6 +55,8 @@ var SUPPRESS_CONTENT_EDITABLE_WARNING = 'suppressContentEditableWarning';
 var CHILDREN = 'children';
 var STYLE = 'style';
 var HTML = '__html';
+var CLASS = 'class';
+var CLASS_NAME = 'className';
 
 var {
   html: HTML_NAMESPACE,
@@ -279,6 +281,7 @@ function setInitialDOMProperties(
 ): void {
   for (var propKey in nextProps) {
     var nextProp = nextProps[propKey];
+    
     if (!nextProps.hasOwnProperty(propKey)) {
       continue;
     }
@@ -297,6 +300,10 @@ function setInitialDOMProperties(
       var nextHtml = nextProp ? nextProp[HTML] : undefined;
       if (nextHtml != null) {
         setInnerHTML(domElement, nextHtml);
+      }
+    } else if (propKey === CLASS_NAME || propKey === CLASS) {
+      if (nextProp != null) {
+        domElement.className = nextProp;
       }
     } else if (propKey === CHILDREN) {
       if (typeof nextProp === 'string') {
@@ -340,7 +347,13 @@ function updateDOMProperties(
   for (var i = 0; i < updatePayload.length; i += 2) {
     var propKey = updatePayload[i];
     var propValue = updatePayload[i + 1];
-    if (propKey === STYLE) {
+    if (propKey === CLASS || propKey === CLASS_NAME) {
+      if (propValue == null) {
+        domElement.removeAttribute('class');
+      } else {
+        domElement.className = propValue;
+      }
+    } else if (propKey === STYLE) {
       // TODO: call ReactInstrumentation.debugTool.onHostOperation in DEV.
       CSSPropertyOperations.setValueForStyles(domElement, propValue);
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {

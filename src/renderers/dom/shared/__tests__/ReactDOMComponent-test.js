@@ -1545,24 +1545,6 @@ describe('ReactDOMComponent', () => {
       expectDev(console.error.calls.argsFor(1)[0]).toContain('onKeyDown');
     });
 
-    it('should warn about class', () => {
-      spyOn(console, 'error');
-      ReactTestUtils.renderIntoDocument(
-        React.createElement('div', {class: 'muffins'}),
-      );
-      expectDev(console.error.calls.count()).toBe(1);
-      expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
-    });
-
-    it('should warn about class (ssr)', () => {
-      spyOn(console, 'error');
-      ReactDOMServer.renderToString(
-        React.createElement('div', {class: 'muffins'}),
-      );
-      expectDev(console.error.calls.count()).toBe(1);
-      expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
-    });
-
     it('should warn about props that are no longer supported', () => {
       spyOn(console, 'error');
       ReactTestUtils.renderIntoDocument(<div />);
@@ -1587,54 +1569,113 @@ describe('ReactDOMComponent', () => {
       expectDev(console.error.calls.count()).toBe(2);
     });
 
-    it('gives source code refs for unknown prop warning', () => {
-      spyOn(console, 'error');
-      ReactTestUtils.renderIntoDocument(<div class="paladin" />);
-      ReactTestUtils.renderIntoDocument(<input type="text" onclick="1" />);
-      expectDev(console.error.calls.count()).toBe(2);
-      expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
-        'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
-      );
-      expect(normalizeCodeLocInfo(console.error.calls.argsFor(1)[0])).toBe(
-        'Warning: Unknown event handler property onclick. Did you mean ' +
-          '`onClick`?\n    in input (at **)',
-      );
-    });
+    // Fiber will support class
+    if (ReactDOMFeatureFlags.useFiber) {
 
-    it('gives source code refs for unknown prop warning (ssr)', () => {
-      spyOn(console, 'error');
-      ReactDOMServer.renderToString(<div class="paladin" />);
-      ReactDOMServer.renderToString(<input type="text" onclick="1" />);
-      expectDev(console.error.calls.count()).toBe(2);
-      expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
-        'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
-      );
-      expect(normalizeCodeLocInfo(console.error.calls.argsFor(1)[0])).toBe(
-        'Warning: Unknown event handler property onclick. Did you mean ' +
-          '`onClick`?\n    in input (at **)',
-      );
-    });
+      it('gives source code refs for unknown prop warning', () => {
+        spyOn(console, 'error');
+        ReactTestUtils.renderIntoDocument(<div class="paladin" />);
+        ReactTestUtils.renderIntoDocument(<input type="text" onclick="1" />);
+        expectDev(console.error.calls.count()).toBe(1);
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
+          'Warning: Unknown event handler property onclick. Did you mean ' +
+            '`onClick`?\n    in input (at **)',
+        );
+      });
 
-    it('gives source code refs for unknown prop warning for update render', () => {
-      spyOn(console, 'error');
-      var container = document.createElement('div');
+      it('gives source code refs for unknown prop warning (ssr)', () => {
+        spyOn(console, 'error');
+        ReactDOMServer.renderToString(<div class="paladin" />);
+        ReactDOMServer.renderToString(<input type="text" onclick="1" />);
+        expectDev(console.error.calls.count()).toBe(1);
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
+          'Warning: Unknown event handler property onclick. Did you mean ' +
+            '`onClick`?\n    in input (at **)',
+        );
+      });
 
-      ReactTestUtils.renderIntoDocument(<div className="paladin" />, container);
-      expectDev(console.error.calls.count()).toBe(0);
+      it('gives source code refs for unknown prop warning for update render', () => {
+        spyOn(console, 'error');
+        var container = document.createElement('div');
 
-      ReactTestUtils.renderIntoDocument(<div class="paladin" />, container);
-      expectDev(console.error.calls.count()).toBe(1);
-      expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
-        'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
-      );
-    });
+        ReactTestUtils.renderIntoDocument(<div className="paladin" />, container);
+        expectDev(console.error.calls.count()).toBe(0);
+
+        ReactTestUtils.renderIntoDocument(<div class="paladin" />, container);
+        expectDev(console.error.calls.count()).toBe(0);
+      });
+
+    } else {
+
+      it('should warn about class', () => {
+        spyOn(console, 'error');
+        ReactTestUtils.renderIntoDocument(
+          React.createElement('div', {class: 'muffins'}),
+        );
+        expectDev(console.error.calls.count()).toBe(1);
+        expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
+      });
+
+      it('should warn about class (ssr)', () => {
+        spyOn(console, 'error');
+        ReactDOMServer.renderToString(
+          React.createElement('div', {class: 'muffins'}),
+        );
+        expectDev(console.error.calls.count()).toBe(1);
+        expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
+      });
+
+      it('gives source code refs for unknown prop warning', () => {
+        spyOn(console, 'error');
+        ReactTestUtils.renderIntoDocument(<div class="paladin" />);
+        ReactTestUtils.renderIntoDocument(<input type="text" onclick="1" />);
+        expectDev(console.error.calls.count()).toBe(2);
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
+          'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
+        );
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(1)[0])).toBe(
+          'Warning: Unknown event handler property onclick. Did you mean ' +
+            '`onClick`?\n    in input (at **)',
+        );
+      });
+
+      it('gives source code refs for unknown prop warning (ssr)', () => {
+        spyOn(console, 'error');
+        ReactDOMServer.renderToString(<div class="paladin" />);
+        ReactDOMServer.renderToString(<input type="text" onclick="1" />);
+        expectDev(console.error.calls.count()).toBe(2);
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
+          'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
+        );
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(1)[0])).toBe(
+          'Warning: Unknown event handler property onclick. Did you mean ' +
+            '`onClick`?\n    in input (at **)',
+        );
+      });
+
+      it('gives source code refs for unknown prop warning for update render', () => {
+        spyOn(console, 'error');
+        var container = document.createElement('div');
+
+        ReactTestUtils.renderIntoDocument(<div className="paladin" />, container);
+        expectDev(console.error.calls.count()).toBe(0);
+
+        ReactTestUtils.renderIntoDocument(<div class="paladin" />, container);
+        expectDev(console.error.calls.count()).toBe(1);
+        expect(normalizeCodeLocInfo(console.error.calls.argsFor(0)[0])).toBe(
+          'Warning: Unknown DOM property class. Did you mean className?\n    in div (at **)',
+        );
+      });
+
+    }
+
 
     it('gives source code refs for unknown prop warning for exact elements', () => {
       spyOn(console, 'error');
 
       ReactTestUtils.renderIntoDocument(
         <div className="foo1">
-          <div class="foo2" />
+          <div onclick="foo2" />
           <div onClick="foo3" />
           <div onclick="foo4" />
           <div className="foo5" />
@@ -1644,7 +1685,7 @@ describe('ReactDOMComponent', () => {
 
       expectDev(console.error.calls.count()).toBe(2);
 
-      expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
+      expectDev(console.error.calls.argsFor(0)[0]).toContain('onClick');
       var matches = console.error.calls.argsFor(0)[0].match(/.*\(.*:(\d+)\).*/);
       var previousLine = matches[1];
 
@@ -1662,7 +1703,7 @@ describe('ReactDOMComponent', () => {
 
       ReactDOMServer.renderToString(
         <div className="foo1">
-          <div class="foo2" />
+          <div onclick="foo2" />
           <div onClick="foo3" />
           <div onclick="foo4" />
           <div className="foo5" />
@@ -1672,7 +1713,7 @@ describe('ReactDOMComponent', () => {
 
       expectDev(console.error.calls.count()).toBe(2);
 
-      expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
+      expectDev(console.error.calls.argsFor(0)[0]).toContain('onClick');
       var matches = console.error.calls.argsFor(0)[0].match(/.*\(.*:(\d+)\).*/);
       var previousLine = matches[1];
 
@@ -1697,7 +1738,7 @@ describe('ReactDOMComponent', () => {
 
       class Child1 extends React.Component {
         render() {
-          return <div class="paladin">Child1</div>;
+          return <div onclick="paladin">Child1</div>;
         }
       }
 
@@ -1723,7 +1764,7 @@ describe('ReactDOMComponent', () => {
 
       expectDev(console.error.calls.count()).toBe(2);
 
-      expectDev(console.error.calls.argsFor(0)[0]).toContain('className');
+      expectDev(console.error.calls.argsFor(0)[0]).toContain('onClick');
       var matches = console.error.calls.argsFor(0)[0].match(/.*\(.*:(\d+)\).*/);
       var previousLine = matches[1];
 
@@ -1736,7 +1777,7 @@ describe('ReactDOMComponent', () => {
       expect(parseInt(previousLine, 10) + 12).toBe(parseInt(currentLine, 10));
     });
 
-    it('gives source code refs for unknown prop warning for exact elements in composition (ssr)', () => {
+    it.only('gives source code refs for unknown prop warning for exact elements in composition (ssr)', () => {
       spyOn(console, 'error');
       var container = document.createElement('div');
 

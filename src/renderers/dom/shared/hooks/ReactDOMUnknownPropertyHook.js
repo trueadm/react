@@ -46,6 +46,12 @@ if (__DEV__) {
   var warnedProperties = {};
 
   var validateProperty = function(tagName, name, debugID) {
+    // support "class" when the element supports it
+    // shame we can't check for SVG here, but we don't
+    // have access to parent nodes or parent namespace URI
+    if (name === 'class') {
+      name = 'className';
+    }
     if (
       DOMProperty.properties.hasOwnProperty(name) ||
       DOMProperty.isCustomAttribute(name)

@@ -287,10 +287,6 @@ src/isomorphic/classic/types/__tests__/ReactPropTypes-test.js
 * should have received the validator's return value
 * should not warn if the validator returned null
 
-src/isomorphic/modern/class/__tests__/ReactClassEquivalence-test.js
-* tests the same thing for es6 classes and CoffeeScript
-* tests the same thing for es6 classes and TypeScript
-
 src/isomorphic/modern/class/__tests__/ReactCoffeeScriptClass-test.coffee
 * preserves the name of the class for use in error messages
 * throws if no render function is defined
@@ -756,6 +752,8 @@ src/renderers/dom/fiber/__tests__/ReactDOMFiber-test.js
 * throws if non-element passed to top-level render
 * throws if something other than false, null, or an element is returned from render
 * treats mocked render functions as if they return null
+* should handle initial class and className on DOM nodes
+* should handle updates to class and className on DOM nodes
 
 src/renderers/dom/fiber/__tests__/ReactDOMFiberAsync-test.js
 * renders synchronously by default
@@ -931,13 +929,10 @@ src/renderers/dom/shared/__tests__/ReactDOMComponent-test.js
 * gives useful context in warnings
 * should warn about incorrect casing on properties
 * should warn about incorrect casing on event handlers
-* should warn about class
 * should warn about props that are no longer supported
 * should warn about props that are no longer supported (ssr)
 * gives source code refs for unknown prop warning
 * gives source code refs for unknown prop warning for update render
-* gives source code refs for unknown prop warning for exact elements
-* gives source code refs for unknown prop warning for exact elements in composition
 * should suggest property name if available
 * renders innerHTML and preserves whitespace
 * render and then updates innerHTML and preserves whitespace

@@ -1061,4 +1061,60 @@ describe('disableNewFiberFeatures', () => {
     ReactDOM.render(<Mocked />, container);
     expect(container.textContent).toEqual('');
   });
+
+  if (ReactDOMFeatureFlags.useFiber) {
+    it('should handle initial class and className on DOM nodes', () => {
+      container = document.createElement('div');
+
+      ReactDOM.render(
+        <div>
+          <div className="dog" />
+          <div class="bird" />
+        </div>,
+        container
+      );
+      const dog = container.firstChild.firstChild;
+      const bird = container.firstChild.lastChild;
+
+      expect(dog.className).toBe('dog');
+      expect(bird.className).toBe('bird');
+    });
+    it('should handle updates to class and className on DOM nodes', () => {
+      container = document.createElement('div');
+
+      ReactDOM.render(
+        <div>
+          <div className="dog" />
+          <div class="bird" />
+        </div>,
+        container
+      );
+
+      ReactDOM.render(
+        <div>
+          <div className="dog2" />
+          <div class="bird2" />
+        </div>,
+        container
+      );
+      let dog = container.firstChild.firstChild;
+      let bird = container.firstChild.lastChild;
+
+      expect(dog.className).toBe('dog2');
+      expect(bird.className).toBe('bird2');
+
+      ReactDOM.render(
+        <div>
+          <div />
+          <div />
+        </div>,
+        container
+      );
+      dog = container.firstChild.firstChild;
+      bird = container.firstChild.lastChild;
+
+      expect(dog.className).toBe('');
+      expect(bird.className).toBe('');
+    });
+  }
 });
