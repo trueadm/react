@@ -120,6 +120,9 @@ let rootInstanceStackCursor: StackCursor<C | NoContextT> = createCursor(
   NO_CONTEXT,
 );
 
+const randomKey = Math.random().toString(36).slice(2);
+const internalInstanceKey = '__reactInternalInstance$' + randomKey;
+
 // START DOM Lite Renderer
 function createContainer(container) {
 
@@ -147,6 +150,79 @@ function resetTextContent() {
 
 function resetAfterCommit() {
 
+}
+
+function commitUpdate(
+  domElement: Instance,
+  updatePayload: Array<mixed>,
+  type: string,
+  oldProps: Props,
+  newProps: Props,
+  internalInstanceHandle: Object,
+): void {
+  // Update the props handle so that we know which props are the ones with
+  // with current event handlers.
+  // updateFiberProps(domElement, newProps);
+  // Apply the diff to the DOM node.
+  // updateProperties(domElement, updatePayload, type, oldProps, newProps);
+}
+
+function precacheFiberNode(hostInst, node) {
+  node[internalInstanceKey] = hostInst;
+}
+
+function createTextInstance(
+  text: string,
+  rootContainerInstance: Container,
+  hostContext: HostContext,
+  internalInstanceHandle: Object,
+): TextInstance {
+  var textNode: TextInstance = document.createTextNode(text);
+  precacheFiberNode(internalInstanceHandle, textNode);
+  return textNode;
+}
+
+function commitTextUpdate(
+  textInstance: TextInstance,
+  oldText: string,
+  newText: string,
+): void {
+  textInstance.nodeValue = newText;
+}
+
+function appendChild(
+  parentInstance: Instance | Container,
+  child: Instance | TextInstance,
+): void {
+  parentInstance.appendChild(child);
+}
+
+function insertBefore(
+  parentInstance: Instance | Container,
+  child: Instance | TextInstance,
+  beforeChild: Instance | TextInstance,
+): void {
+  parentInstance.insertBefore(child, beforeChild);
+}
+
+function removeChild(
+  parentInstance: Instance | Container,
+  child: Instance | TextInstance,
+): void {
+  parentInstance.removeChild(child);
+}
+
+function getPublicInstance(instance) {
+  return instance;
+}
+
+function requiredContext<Value>(c: Value | NoContextT): Value {
+  return (c: any);
+}
+
+function getRootHostContainer(): C {
+  const rootInstance = requiredContext(rootInstanceStackCursor.current);
+  return rootInstance;
 }
 // END DOM Lite Renderer
 
@@ -430,7 +506,7 @@ function insertUpdateIntoQueue(
   queue: UpdateQueue,
   update: Update,
   insertAfter: Update | null,
-  insertBefore: Update | null,
+  _insertBefore: Update | null,
 ) {
   if (insertAfter !== null) {
     insertAfter.next = update;
@@ -440,8 +516,8 @@ function insertUpdateIntoQueue(
     queue.first = update;
   }
 
-  if (insertBefore !== null) {
-    update.next = insertBefore;
+  if (_insertBefore !== null) {
+    update.next = _insertBefore;
   } else {
     // This is the last item in the queue.
     queue.last = update;
@@ -453,7 +529,7 @@ function insertUpdateIntoQueue(
 function findInsertionPosition(queue, update): Update | null {
   const priorityLevel = update.priorityLevel;
   let insertAfter = null;
-  let insertBefore = null;
+  let _insertBefore = null;
   if (
     queue.last !== null &&
     comparePriority(queue.last.priorityLevel, priorityLevel) <= 0
@@ -462,13 +538,13 @@ function findInsertionPosition(queue, update): Update | null {
     // the end of the queue.
     insertAfter = queue.last;
   } else {
-    insertBefore = queue.first;
+    _insertBefore = queue.first;
     while (
       insertBefore !== null &&
-      comparePriority(insertBefore.priorityLevel, priorityLevel) <= 0
+      comparePriority(_insertBefore.priorityLevel, priorityLevel) <= 0
     ) {
-      insertAfter = insertBefore;
-      insertBefore = insertBefore.next;
+      insertAfter = _insertBefore;
+      _insertBefore = _insertBefore.next;
     }
   }
   return insertAfter;
@@ -603,6 +679,12 @@ function popHostContext(fiber: Fiber): void {
   pop(contextFiberStackCursor, fiber);
 }
 
+function popHostContainer(fiber: Fiber) {
+  pop(contextStackCursor, fiber);
+  pop(contextFiberStackCursor, fiber);
+  pop(rootInstanceStackCursor, fiber);
+}
+
 function unwindContexts(from: Fiber, to: Fiber) {
   let node = from;
   while (node !== null && node !== to && node.alternate !== to) {
@@ -639,6 +721,322 @@ function scheduleRoot(root: FiberRoot, priorityLevel: PriorityLevel) {
       nextScheduledRoot = root;
       lastScheduledRoot = root;
     }
+  }
+}
+
+function commitAttachRef(finishedWork: Fiber) {
+  const ref = finishedWork.ref;
+  if (ref !== null) {
+    const instance = getPublicInstance(finishedWork.stateNode);
+    ref(instance);
+  }
+}
+
+function commitDetachRef(current: Fiber) {
+  const currentRef = current.ref;
+  if (currentRef !== null) {
+    currentRef(null);
+  }
+}
+
+function getHostParentFiber(fiber: Fiber): Fiber {
+  let parent = fiber.return;
+  while (parent !== null) {
+    if (isHostParent(parent)) {
+      return parent;
+    }
+    parent = parent.return;
+  }
+}
+
+function isHostParent(fiber: Fiber): boolean {
+  return (
+    fiber.tag === HostComponent ||
+    fiber.tag === HostRoot ||
+    fiber.tag === HostPortal
+  );
+}
+
+function getHostSibling(fiber: Fiber): ?I {
+  // We're going to search forward into the tree until we find a sibling host
+  // node. Unfortunately, if multiple insertions are done in a row we have to
+  // search past them. This leads to exponential search for the next sibling.
+  // TODO: Find a more efficient way to do this.
+  let node: Fiber = fiber;
+  siblings: while (true) {
+    // If we didn't find anything, let's try the next sibling.
+    while (node.sibling === null) {
+      if (node.return === null || isHostParent(node.return)) {
+        // If we pop out of the root or hit the parent the fiber we are the
+        // last sibling.
+        return null;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+    while (node.tag !== HostComponent && node.tag !== HostText) {
+      // If it is not host node and, we might have a host node inside it.
+      // Try to search down until we find one.
+      if (node.effectTag & Placement) {
+        // If we don't have a child, try the siblings instead.
+        continue siblings;
+      }
+      // If we don't have a child, try the siblings instead.
+      // We also skip portals because they are not part of this host tree.
+      if (node.child === null || node.tag === HostPortal) {
+        continue siblings;
+      } else {
+        node.child.return = node;
+        node = node.child;
+      }
+    }
+    // Check if this host node is stable or about to be placed.
+    if (!(node.effectTag & Placement)) {
+      // Found it!
+      return node.stateNode;
+    }
+  }
+}
+
+function commitPlacement(finishedWork: Fiber): void {
+  // Recursively insert all host nodes into the parent.
+  const parentFiber = getHostParentFiber(finishedWork);
+  let parent;
+  switch (parentFiber.tag) {
+    case HostComponent:
+      parent = parentFiber.stateNode;
+      break;
+    case HostRoot:
+      parent = parentFiber.stateNode.containerInfo;
+      break;
+    case HostPortal:
+      parent = parentFiber.stateNode.containerInfo;
+      break;
+  }
+  if (parentFiber.effectTag & ContentReset) {
+    // Reset the text content of the parent before doing any insertions
+    resetTextContent(parent);
+    // Clear ContentReset from the effect tag
+    parentFiber.effectTag &= ~ContentReset;
+  }
+
+  const before = getHostSibling(finishedWork);
+  // We only have the top Fiber that was inserted but we need recurse down its
+  // children to find all the terminal nodes.
+  let node: Fiber = finishedWork;
+  while (true) {
+    if (node.tag === HostComponent || node.tag === HostText) {
+      if (before) {
+        insertBefore(parent, node.stateNode, before);
+      } else {
+        appendChild(parent, node.stateNode);
+      }
+    } else if (node.tag === HostPortal) {
+      // If the insertion itself is a portal, then we don't want to traverse
+      // down its children. Instead, we'll get insertions from each child in
+      // the portal directly.
+    } else if (node.child !== null) {
+      node.child.return = node;
+      node = node.child;
+      continue;
+    }
+    if (node === finishedWork) {
+      return;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === finishedWork) {
+        return;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+  }
+}
+
+function commitWork(current: Fiber | null, finishedWork: Fiber): void {
+  switch (finishedWork.tag) {
+    case ClassComponent: {
+      return;
+    }
+    case HostComponent: {
+      const instance: I = finishedWork.stateNode;
+      if (instance != null && current !== null) {
+        // Commit the work prepared earlier.
+        const newProps = finishedWork.memoizedProps;
+        const oldProps = current.memoizedProps;
+        const type = finishedWork.type;
+        // TODO: Type the updateQueue to be specific to host components.
+        const updatePayload: null | PL = (finishedWork.updateQueue: any);
+        finishedWork.updateQueue = null;
+        if (updatePayload !== null) {
+          commitUpdate(
+            instance,
+            updatePayload,
+            type,
+            oldProps,
+            newProps,
+            finishedWork,
+          );
+        }
+      }
+      return;
+    }
+    case HostText: {
+      const textInstance: TI = finishedWork.stateNode;
+      const newText: string = finishedWork.memoizedProps;
+      const oldText: string = current.memoizedProps;
+      commitTextUpdate(textInstance, oldText, newText);
+      return;
+    }
+    case HostRoot: {
+      return;
+    }
+    case HostPortal: {
+      return;
+    }
+    default: {
+    }
+  }
+}
+
+function reset(): void {
+  while (index > -1) {
+    valueStack[index] = null;
+    index--;
+  }
+}
+
+function resetContext(): void {
+  previousContext = emptyObject;
+  contextStackCursor.current = emptyObject;
+  didPerformWorkStackCursor.current = false;
+}
+
+function resetHostContainer() {
+  contextStackCursor.current = NO_CONTEXT;
+  rootInstanceStackCursor.current = NO_CONTEXT;
+}
+
+function resetContextStack() {
+  // Reset the stack
+  reset();
+  // Reset the cursors
+  resetContext();
+  resetHostContainer();
+}
+
+function getHostParent(fiber: Fiber): I | C {
+  let parent = fiber.return;
+  while (parent !== null) {
+    switch (parent.tag) {
+      case HostComponent:
+        return parent.stateNode;
+      case HostRoot:
+        return parent.stateNode.containerInfo;
+      case HostPortal:
+        return parent.stateNode.containerInfo;
+    }
+    parent = parent.return;
+  }
+}
+
+function commitNestedUnmounts(root: Fiber): void {
+  // While we're inside a removed host node we don't want to call
+  // removeChild on the inner nodes because they're removed by the top
+  // call anyway. We also want to call componentWillUnmount on all
+  // composites before this host node is removed from the tree. Therefore
+  // we do an inner loop while we're still inside the host node.
+  let node: Fiber = root;
+  while (true) {
+    commitUnmount(node);
+    // Visit children because they may contain more composite or host nodes.
+    // Skip portals because commitUnmount() currently visits them recursively.
+    if (node.child !== null && node.tag !== HostPortal) {
+      node.child.return = node;
+      node = node.child;
+      continue;
+    }
+    if (node === root) {
+      return;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === root) {
+        return;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+  }
+}
+
+function unmountHostComponents(parent, current): void {
+  // We only have the top Fiber that was inserted but we need recurse down its
+  // children to find all the terminal nodes.
+  let node: Fiber = current;
+  while (true) {
+    if (node.tag === HostComponent || node.tag === HostText) {
+      commitNestedUnmounts(node);
+      // After all the children have unmounted, it is now safe to remove the
+      // node from the tree.
+      removeChild(parent, node.stateNode);
+      // Don't visit children because we already visited them.
+    } else if (node.tag === HostPortal) {
+      // When we go into a portal, it becomes the parent to remove from.
+      // We will reassign it back when we pop the portal on the way up.
+      parent = node.stateNode.containerInfo;
+      // Visit children because portals might contain host components.
+      if (node.child !== null) {
+        node.child.return = node;
+        node = node.child;
+        continue;
+      }
+    } else {
+      commitUnmount(node);
+      // Visit children because we may find more host components below.
+      if (node.child !== null) {
+        node.child.return = node;
+        node = node.child;
+        continue;
+      }
+    }
+    if (node === current) {
+      return;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === current) {
+        return;
+      }
+      node = node.return;
+      if (node.tag === HostPortal) {
+        // When we go out of the portal, we need to restore the parent.
+        // Since we don't keep a stack of them, we will search for it.
+        parent = getHostParent(node);
+      }
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+  }
+}
+
+function commitDeletion(current: Fiber): void {
+  // Recursively delete all host nodes from the parent.
+  const parent = getHostParent(current);
+  // Detach refs and call componentWillUnmount() on the whole subtree.
+  unmountHostComponents(parent, current);
+
+  // Cut off the return pointers to disconnect it from the tree. Ideally, we
+  // should clear the child pointer of the parent alternate to let this
+  // get GC:ed but we don't know which for sure which parent is the current
+  // one so we'll settle for GC:ing the subtree of this child. This child
+  // itself will be GC:ed when the parent updates the next time.
+  current.return = null;
+  current.child = null;
+  if (current.alternate) {
+    current.alternate.child = null;
+    current.alternate.return = null;
   }
 }
 
@@ -697,6 +1095,57 @@ function commitAllHostEffects() {
       }
     }
     nextEffect = nextEffect.nextEffect;
+  }
+}
+
+function logCapturedError() {
+
+}
+
+function commitErrorHandling(effectfulFiber: Fiber) {
+  let capturedError;
+  if (capturedErrors !== null) {
+    capturedError = capturedErrors.get(effectfulFiber);
+    capturedErrors.delete(effectfulFiber);
+    if (capturedError == null) {
+      if (effectfulFiber.alternate !== null) {
+        effectfulFiber = effectfulFiber.alternate;
+        capturedError = capturedErrors.get(effectfulFiber);
+        capturedErrors.delete(effectfulFiber);
+      }
+    }
+  }
+
+  const error = capturedError.error;
+  try {
+    logCapturedError(capturedError);
+  } catch (e) {
+    // Prevent cycle if logCapturedError() throws.
+    // A cycle may still occur if logCapturedError renders a component that throws.
+    console.error(e);
+  }
+
+  switch (effectfulFiber.tag) {
+    case ClassComponent:
+      const instance = effectfulFiber.stateNode;
+
+      const info: HandleErrorInfo = {
+        componentStack: capturedError.componentStack,
+      };
+
+      // Allow the boundary to handle the error, usually by scheduling
+      // an update to itself
+      instance.unstable_handleError(error, info);
+      return;
+    case HostRoot:
+      if (firstUncaughtError === null) {
+        // If this is the host container, we treat it as a no-op error
+        // boundary. We'll throw the first uncaught error once it's safe to
+        // do so, at the end of the batch.
+        firstUncaughtError = error;
+      }
+      return;
+    default:
   }
 }
 
@@ -812,9 +1261,6 @@ function commitAllWork(finishedWork: Fiber) {
   }
 
   isCommitting = false;
-  if (typeof onCommitRoot === 'function') {
-    onCommitRoot(finishedWork.stateNode);
-  }
   // If we caught any errors during this commit, schedule their boundaries
   // to update.
   if (commitPhaseBoundaries) {
@@ -1004,6 +1450,21 @@ function beginWork(
   }
 }
 
+function markUpdate(workInProgress: Fiber) {
+  // Tag the fiber with an update effect. This turns a Placement into
+  // an UpdateAndPlacement.
+  workInProgress.effectTag |= Update;
+}
+
+function markRef(workInProgress: Fiber) {
+  workInProgress.effectTag |= Ref;
+}
+
+function getHostContext(): CX {
+  const context = requiredContext(contextStackCursor.current);
+  return context;
+}
+
 function completeWork(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -1148,6 +1609,45 @@ function completeWork(
     case IndeterminateComponent:
       break;
   }
+}
+
+function getPendingPriority(queue: UpdateQueue): PriorityLevel {
+  return queue.first !== null ? queue.first.priorityLevel : NoWork;
+}
+
+function resetWorkPriority(workInProgress: Fiber) {
+  let newPriority = NoWork;
+
+  // Check for pending update priority. This is usually null so it shouldn't
+  // be a perf issue.
+  const queue = workInProgress.updateQueue;
+  const tag = workInProgress.tag;
+  if (
+    queue !== null &&
+    // TODO: Revisit once updateQueue is typed properly to distinguish between
+    // update payloads for host components and update queues for composites
+    (tag === ClassComponent || tag === HostRoot)
+  ) {
+    newPriority = getPendingPriority(queue);
+  }
+
+  // TODO: Coroutines need to visit stateNode
+
+  // progressedChild is going to be the child set with the highest priority.
+  // Either it is the same as child, or it just bailed out because it choose
+  // not to do the work.
+  let child = workInProgress.progressedChild;
+  while (child !== null) {
+    // Ensure that remaining work priority bubbles up.
+    if (
+      child.pendingWorkPriority !== NoWork &&
+      (newPriority === NoWork || newPriority > child.pendingWorkPriority)
+    ) {
+      newPriority = child.pendingWorkPriority;
+    }
+    child = child.sibling;
+  }
+  workInProgress.pendingWorkPriority = newPriority;
 }
 
 function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
