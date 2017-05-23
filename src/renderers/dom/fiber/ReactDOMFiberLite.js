@@ -540,6 +540,27 @@ function addTopLevelUpdate(
   }
 }
 
+function unwindContexts(from: Fiber, to: Fiber) {
+  let node = from;
+  while (node !== null && node !== to && node.alternate !== to) {
+    switch (node.tag) {
+      case ClassComponent:
+        popContextProvider(node);
+        break;
+      case HostComponent:
+        popHostContext(node);
+        break;
+      case HostRoot:
+        popHostContainer(node);
+        break;
+      case HostPortal:
+        popHostContainer(node);
+        break;
+    }
+    node = node.return;
+  }
+}
+
 function scheduleRoot(root: FiberRoot, priorityLevel: PriorityLevel) {
   if (priorityLevel === NoWork) {
     return;
@@ -829,6 +850,40 @@ function clearErrors() {
   }
 }
 
+function beginFailedWork(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+) {
+  // Add an error effect so we can handle the error during the commit phase
+  workInProgress.effectTag |= Err;
+
+  if (
+    workInProgress.pendingWorkPriority === NoWork ||
+    workInProgress.pendingWorkPriority > priorityLevel
+  ) {
+    return bailoutOnLowPriority(current, workInProgress);
+  }
+
+  // If we don't bail out, we're going be recomputing our children so we need
+  // to drop our effect list.
+  workInProgress.firstEffect = null;
+  workInProgress.lastEffect = null;
+
+  // Unmount the current children as if the component rendered null
+  const nextChildren = null;
+  reconcileChildren(current, workInProgress, nextChildren);
+
+  if (workInProgress.tag === ClassComponent) {
+    const instance = workInProgress.stateNode;
+    workInProgress.memoizedProps = instance.props;
+    workInProgress.memoizedState = instance.state;
+    workInProgress.pendingProps = null;
+  }
+
+  return workInProgress.child;
+}
+
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -943,11 +998,6 @@ function completeWork(
         }
       } else {
         if (!newProps) {
-          invariant(
-            workInProgress.stateNode !== null,
-            'We must have new props for new mounts. This error is likely ' +
-              'caused by a bug in React. Please file an issue.',
-          );
           // This can happen when we abort work.
           return null;
         }
@@ -1000,11 +1050,6 @@ function completeWork(
         }
       } else {
         if (typeof newText !== 'string') {
-          invariant(
-            workInProgress.stateNode !== null,
-            'We must have new props for new mounts. This error is likely ' +
-              'caused by a bug in React. Please file an issue.',
-          );
           // This can happen when we abort work.
           return null;
         }
