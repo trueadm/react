@@ -122,6 +122,32 @@ const bundles = [
   },
   {
     babelOpts: babelOptsReact,
+    bundleTypes: [UMD_DEV, UMD_PROD, NODE_DEV, NODE_PROD],
+    config: {
+      destDir: 'build/',
+      globals: {
+        react: 'React',
+      },
+      moduleName: 'ReactDOM',
+      sourceMap: false,
+    },
+    entry: 'src/renderers/dom/fiber/ReactDOMFiberLite.js',
+    externals: [],
+    hasteName: 'ReactDOMFiberLite',
+    isRenderer: true,
+    label: 'dom-fiber-lite',
+    manglePropertiesOnProd: false,
+    name: 'react-dom-lite',
+    paths: [
+      'src/renderers/dom/**/*.js',
+      'src/renderers/shared/**/*.js',
+
+      'src/ReactVersion.js',
+      'src/shared/**/*.js',
+    ],
+  },  
+  {
+    babelOpts: babelOptsReact,
     bundleTypes: [FB_DEV, NODE_DEV],
     config: {
       destDir: 'build/',
