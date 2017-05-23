@@ -92,6 +92,34 @@ let fatalError: Error | null = null;
 let isCommitting: boolean = false;
 let isUnmounting: boolean = false;
 
+// A cursor to the current merged context object on the stack.
+let contextStackCursor: StackCursor<Object> = createCursor(emptyObject);
+// A cursor to a boolean indicating whether the context has changed.
+let didPerformWorkStackCursor: StackCursor<boolean> = createCursor(false);
+// Keep track of the previous context object that was on the stack.
+// We use this to get access to the parent context after we have already
+// pushed the next context provider, and now need to merge their contexts.
+let previousContext: Object = emptyObject;
+
+declare class NoContextT {}
+const NO_CONTEXT: NoContextT = ({}: any);
+
+type StackCursor<T> = {
+  current: T,
+};
+const valueStack: Array<any> = [];
+let index = -1;
+
+let contextStackCursor: StackCursor<CX | NoContextT> = createCursor(
+  NO_CONTEXT,
+);
+let contextFiberStackCursor: StackCursor<Fiber | NoContextT> = createCursor(
+  NO_CONTEXT,
+);
+let rootInstanceStackCursor: StackCursor<C | NoContextT> = createCursor(
+  NO_CONTEXT,
+);
+
 // START DOM Lite Renderer
 function createContainer(container) {
 
@@ -121,6 +149,12 @@ function resetAfterCommit() {
 
 }
 // END DOM Lite Renderer
+
+ function createCursor<T>(defaultValue: T): StackCursor<T> {
+  return {
+    current: defaultValue,
+  };
+}
 
 function isFailedBoundary(fiber: Fiber): boolean {
   // TODO: failedBoundaries should store the boundary instance, to avoid
@@ -538,6 +572,35 @@ function addTopLevelUpdate(
       queue2.last = update;
     }
   }
+}
+
+function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
+  if (index < 0) {
+    return;
+  }
+  cursor.current = valueStack[index];
+  valueStack[index] = null;
+  index--;
+};
+
+function popContextProvider(fiber: Fiber): void {
+  if (!isContextProvider(fiber)) {
+    return;
+  }
+
+  pop(didPerformWorkStackCursor, fiber);
+  pop(contextStackCursor, fiber);
+}
+
+function popHostContext(fiber: Fiber): void {
+  // Do not pop unless this Fiber provided the current context.
+  // pushHostContext() only pushes Fibers that provide unique contexts.
+  if (contextFiberStackCursor.current !== fiber) {
+    return;
+  }
+
+  pop(contextStackCursor, fiber);
+  pop(contextFiberStackCursor, fiber);
 }
 
 function unwindContexts(from: Fiber, to: Fiber) {
