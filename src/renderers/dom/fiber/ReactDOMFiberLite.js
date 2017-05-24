@@ -1,4 +1,4 @@
-const shallowEqual = require('fbjs/lib/shallowEqual');
+import shallowEqual from 'fbjs/lib/shallowEqual';
 
 const emptyObject = {};
 const ReactInstanceMap = new Map();
@@ -18,7 +18,7 @@ const CoroutineHandlerPhase = 8;
 const YieldComponent = 9;
 const Fragment = 10;
 
-// const NoContext = 0;
+const NoContext = 0;
 const AsyncUpdates = 1;
 
 const NoWork = 0; // No work is pending.
@@ -127,7 +127,7 @@ let isCommitting: boolean = false;
 let isUnmounting: boolean = false;
 
 // A cursor to the current merged context object on the stack.
-let contextStackCursor: StackCursor<Object> = createCursor(emptyObject);
+// let contextStackCursor: StackCursor<Object> = createCursor(emptyObject);
 // A cursor to a boolean indicating whether the context has changed.
 let didPerformWorkStackCursor: StackCursor<boolean> = createCursor(false);
 // Keep track of the previous context object that was on the stack.
@@ -285,8 +285,104 @@ function shouldSetTextContent(props: Props): boolean {
   );
 }
 
-function createElement() {
+function createElement(type, props, rootContainer, parentNamespace) {
+  return document.createElement(type);
+}
 
+const isUnitlessNumber = new Set();
+isUnitlessNumber.add('animationIterationCount');
+isUnitlessNumber.add('borderImageOutset');
+isUnitlessNumber.add('borderImageSlice');
+isUnitlessNumber.add('borderImageWidth');
+isUnitlessNumber.add('boxFlex');
+isUnitlessNumber.add('boxFlexGroup');
+isUnitlessNumber.add('boxOrdinalGroup');
+isUnitlessNumber.add('columnCount');
+isUnitlessNumber.add('flex');
+isUnitlessNumber.add('flexGrow');
+isUnitlessNumber.add('flexPositive');
+isUnitlessNumber.add('flexShrink');
+isUnitlessNumber.add('flexNegative');
+isUnitlessNumber.add('flexOrder');
+isUnitlessNumber.add('gridRow');
+isUnitlessNumber.add('gridColumn');
+isUnitlessNumber.add('fontWeight');
+isUnitlessNumber.add('lineClamp');
+isUnitlessNumber.add('lineHeight');
+isUnitlessNumber.add('opacity');
+isUnitlessNumber.add('order');
+isUnitlessNumber.add('orphans');
+isUnitlessNumber.add('tabSize');
+isUnitlessNumber.add('widows');
+isUnitlessNumber.add('zIndex');
+isUnitlessNumber.add('zoom');
+isUnitlessNumber.add('fillOpacity');
+isUnitlessNumber.add('floodOpacity');
+isUnitlessNumber.add('stopOpacity');
+isUnitlessNumber.add('strokeDasharray');
+isUnitlessNumber.add('strokeDashoffset');
+isUnitlessNumber.add('strokeMiterlimit');
+isUnitlessNumber.add('strokeOpacity');
+isUnitlessNumber.add('strokeWidth');
+
+function setStyle(lastValue, nextValue, domElement) {
+	const domStyle = domElement.style;
+
+	if (typeof nextValue === 'string') {
+		domStyle.cssText = nextValue;
+		return;
+	}
+
+	for (const style in nextValue) {
+		// do not add a hasOwnProperty check here, it affects performance
+		const value = nextValue[style];
+
+		if (typeof value !== 'number' || isUnitlessNumber.has(style)) {
+			domStyle[style] = value;
+		} else {
+			domStyle[style] = value + 'px';
+		}
+	}
+
+	if (lastValue != null) {
+		for (const style in lastValue) {
+			if (nextValue[style] == null) {
+				domStyle[style] = '';
+			}
+		}
+	}
+}
+
+function setProps(
+  domElement: Element,
+  tag: string,
+  lastProps: Object,
+  nextProps: Object,
+  rootContainerElement: Element,  
+) {
+  const nextPropNames = Object.keys(nextProps);
+  const nextPropsLength = nextPropNames.length;
+
+  for (let i = 0; i < nextPropsLength; i++) {
+    const propName = nextPropNames[i];
+    const propValue = nextProps[propName];
+
+    switch (propName) {
+      case 'className':
+        domElement.className = propValue;
+        break;
+      case 'children':
+        if (typeof propValue === 'string' || typeof propValue === 'number') {
+          domElement.textContent = propValue;
+        }
+        break;
+      case 'style':
+        setStyle(null, propValue, domElement);
+        break;
+      default:
+        domElement.setAttribute(propName, propValue);
+    }
+  }
 }
 
 function createInstance(
@@ -304,7 +400,6 @@ function createInstance(
     parentNamespace,
   );
   precacheFiberNode(internalInstanceHandle, domElement);
-  // updateFiberProps(domElement, props);
   return domElement;
 }
 
@@ -329,16 +424,8 @@ function finalizeInitialChildren(
   props: Props,
   rootContainerInstance: Container,
 ): boolean {
-  // setInitialProperties(domElement, type, props, rootContainerInstance);
+  setProps(domElement, type, null, props, rootContainerInstance);
   return shouldAutoFocusHostComponent(type, props);
-}
-
-function createContainer(container) {
-
-}
-
-function unbatchedUpdates() {
-
 }
 
 function hostScheduleAnimationCallback() {
@@ -353,8 +440,8 @@ function prepareForCommit() {
 
 }
 
-function resetTextContent() {
-
+function resetTextContent(domElement: Instance): void {
+  domElement.textContent = '';
 }
 
 function resetAfterCommit() {
@@ -1952,7 +2039,7 @@ function insertUpdateIntoQueue(
 // the queue, or null if it should be inserted at beginning.
 function findInsertionPosition(queue, update): Update | null {
   const priorityLevel = update.priorityLevel;
-  let insertAfter = null;
+  let _insertAfter = null;
   let _insertBefore = null;
   if (
     queue.last !== null &&
@@ -1960,18 +2047,18 @@ function findInsertionPosition(queue, update): Update | null {
   ) {
     // Fast path for the common case where the update should be inserted at
     // the end of the queue.
-    insertAfter = queue.last;
+    _insertAfter = queue.last;
   } else {
     _insertBefore = queue.first;
     while (
-      insertBefore !== null &&
+      _insertBefore !== null &&
       comparePriority(_insertBefore.priorityLevel, priorityLevel) <= 0
     ) {
-      insertAfter = _insertBefore;
+      _insertAfter = _insertBefore;
       _insertBefore = _insertBefore.next;
     }
   }
-  return insertAfter;
+  return _insertAfter;
 }
 
 function cloneUpdate(update: Update): Update {
@@ -3570,7 +3657,7 @@ function finishClassComponent(
   hasContext: boolean,
 ) {
   // Refs should update even if shouldComponentUpdate returns false
-  markRef(current, workInProgress);
+  finishMarkRef(current, workInProgress);
 
   if (!shouldUpdate) {
     return bailoutOnAlreadyFinishedWork(current, workInProgress);
@@ -4117,7 +4204,7 @@ function updateHostComponent(current, workInProgress) {
     workInProgress.effectTag |= ContentReset;
   }
 
-  markRef(current, workInProgress);
+  beginMarkRef(current, workInProgress);
 
   if (
     !useSyncScheduling &&
@@ -4363,7 +4450,15 @@ function markUpdate(workInProgress: Fiber) {
   workInProgress.effectTag |= Update;
 }
 
-function markRef(workInProgress: Fiber) {
+function beginMarkRef(current: Fiber | null, workInProgress: Fiber) {
+  const ref = workInProgress.ref;
+  if (ref !== null && (!current || current.ref !== ref)) {
+    // Schedule a Ref effect
+    workInProgress.effectTag |= Ref;
+  }
+}
+
+function finishMarkRef(workInProgress: Fiber) {
   workInProgress.effectTag |= Ref;
 }
 
@@ -4531,7 +4626,7 @@ function completeWork(
           markUpdate(workInProgress);
         }
         if (current.ref !== workInProgress.ref) {
-          markRef(workInProgress);
+          finishMarkRef(workInProgress);
         }
       } else {
         if (!newProps) {
@@ -4571,7 +4666,7 @@ function completeWork(
         workInProgress.stateNode = instance;
         if (workInProgress.ref !== null) {
           // If there is a ref on a host node we need to schedule a callback
-          markRef(workInProgress);
+          finishMarkRef(workInProgress);
         }
       }
       return null;
@@ -5211,12 +5306,57 @@ function scheduleTopLevelUpdate(
   scheduleUpdate(current, priorityLevel);
 }
 
+function getPublicRootInstance(
+  container: OpaqueRoot
+): ReactComponent<any, any, any> | I | TI | null {
+  const containerFiber = container.current;
+  if (!containerFiber.child) {
+    return null;
+  }
+  return containerFiber.child.stateNode;
+}
+
+function unbatchedUpdates<A>(fn: () => A): A {
+  const previousIsBatchingUpdates = isBatchingUpdates;
+  isBatchingUpdates = false;
+  try {
+    return fn();
+  } finally {
+    isBatchingUpdates = previousIsBatchingUpdates;
+  }
+}
+
+function createHostRootFiber(): Fiber {
+  const fiber = createFiber(HostRoot, null, NoContext);
+  return fiber;
+}
+
+function createFiberRoot(containerInfo: any): FiberRoot {
+  // Cyclic construction. This cheats the type system right now because
+  // stateNode is any.
+  const uninitializedFiber = createHostRootFiber();
+  const root = {
+    current: uninitializedFiber,
+    containerInfo: containerInfo,
+    isScheduled: false,
+    nextScheduledRoot: null,
+    context: null,
+    pendingContext: null,
+  };
+  uninitializedFiber.stateNode = root;
+  return root;
+}
+
+function createContainer(containerInfo: C): OpaqueRoot {
+  return createFiberRoot(containerInfo);
+}
+
 function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
   parentComponent: ?ReactComponent<any, any, any>,
   callback: ?Function,
-) {
+): void {
   // TODO: If this is a nested container, this won't be the root.
   const current = container.current;
   const context = getContextForSubtree(parentComponent);
@@ -5227,16 +5367,6 @@ function updateContainer(
   }
 
   scheduleTopLevelUpdate(current, element, callback);
-}
-
-function getPublicRootInstance(
-  container: OpaqueRoot
-): ReactComponent<any, any, any> | I | TI | null {
-  const containerFiber = container.current;
-  if (!containerFiber.child) {
-    return null;
-  }
-  return containerFiber.child.stateNode;
 }
 
 function renderSubtreeIntoContainer(

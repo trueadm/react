@@ -91,9 +91,9 @@ function updateBabelConfig(babelOpts, bundleType) {
       newOpts = Object.assign({}, babelOpts);
       // we add the objectAssign transform for these bundles
       newOpts.plugins = newOpts.plugins.slice();
-      newOpts.plugins.push(
-        resolve('./scripts/babel/transform-object-assign-require')
-      );
+      // newOpts.plugins.push(
+      //   resolve('./scripts/babel/transform-object-assign-require')
+      // );
       return newOpts;
     case FB_DEV:
     case FB_PROD:

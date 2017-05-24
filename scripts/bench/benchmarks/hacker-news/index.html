@@ -25,7 +25,9 @@
     <script src="benchmark.js"></script>
     <script>
       performance.mark('Inital Render');
+      console.time('Render');
       render();
+      console.timeEnd('Render');
       performance.measure('Inital Render', 'Inital Render');
       requestAnimationFrame(() => {
         performance.mark('Update Render');
