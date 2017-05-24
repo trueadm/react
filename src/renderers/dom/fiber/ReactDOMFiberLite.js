@@ -274,7 +274,6 @@ function prepareUpdate(
   );
 }
 
-
 function shouldSetTextContent(props: Props): boolean {
   return (
     typeof props.children === 'string' ||
@@ -289,41 +288,42 @@ function createElement(type, props, rootContainer, parentNamespace) {
   return document.createElement(type);
 }
 
-const isUnitlessNumber = new Set();
-isUnitlessNumber.add('animationIterationCount');
-isUnitlessNumber.add('borderImageOutset');
-isUnitlessNumber.add('borderImageSlice');
-isUnitlessNumber.add('borderImageWidth');
-isUnitlessNumber.add('boxFlex');
-isUnitlessNumber.add('boxFlexGroup');
-isUnitlessNumber.add('boxOrdinalGroup');
-isUnitlessNumber.add('columnCount');
-isUnitlessNumber.add('flex');
-isUnitlessNumber.add('flexGrow');
-isUnitlessNumber.add('flexPositive');
-isUnitlessNumber.add('flexShrink');
-isUnitlessNumber.add('flexNegative');
-isUnitlessNumber.add('flexOrder');
-isUnitlessNumber.add('gridRow');
-isUnitlessNumber.add('gridColumn');
-isUnitlessNumber.add('fontWeight');
-isUnitlessNumber.add('lineClamp');
-isUnitlessNumber.add('lineHeight');
-isUnitlessNumber.add('opacity');
-isUnitlessNumber.add('order');
-isUnitlessNumber.add('orphans');
-isUnitlessNumber.add('tabSize');
-isUnitlessNumber.add('widows');
-isUnitlessNumber.add('zIndex');
-isUnitlessNumber.add('zoom');
-isUnitlessNumber.add('fillOpacity');
-isUnitlessNumber.add('floodOpacity');
-isUnitlessNumber.add('stopOpacity');
-isUnitlessNumber.add('strokeDasharray');
-isUnitlessNumber.add('strokeDashoffset');
-isUnitlessNumber.add('strokeMiterlimit');
-isUnitlessNumber.add('strokeOpacity');
-isUnitlessNumber.add('strokeWidth');
+const isUnitlessNumber = {
+  animationIterationCount: 1,
+  borderImageOutset: 1,
+  borderImageSlice: 1,
+  borderImageWidth: 1,
+  boxFlex: 1,
+  boxFlexGroup: 1,
+  boxOrdinalGroup: 1,
+  columnCount: 1,
+  flex: 1,
+  flexGrow: 1,
+  flexPositive: 1,
+  flexShrink: 1,
+  flexNegative: 1,
+  flexOrder: 1,
+  gridRow: 1,
+  gridColumn: 1,
+  fontWeight: 1,
+  lineClamp: 1,
+  lineHeight: 1,
+  opacity: 1,
+  order: 1,
+  orphans: 1,
+  tabSize: 1,
+  widows: 1,
+  zIndex: 1,
+  zoom: 1,
+  fillOpacity: 1,
+  floodOpacity: 1,
+  stopOpacity: 1,
+  strokeDasharray: 1,
+  strokeDashoffset: 1,
+  strokeMiterlimit: 1,
+  strokeOpacity: 1,
+  strokeWidth: 1,
+};
 
 function setStyle(lastValue, nextValue, domElement) {
 	const domStyle = domElement.style;

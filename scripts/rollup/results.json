@@ -9,20 +9,20 @@
       "gzip": 5824
     },
     "react-dom.development.js (UMD_DEV)": {
-      "size": 593408,
-      "gzip": 136701
+      "size": 591438,
+      "gzip": 135996
     },
     "react-dom.production.min.js (UMD_PROD)": {
-      "size": 122214,
-      "gzip": 38682
+      "size": 121449,
+      "gzip": 38363
     },
     "react-dom-server.development.js (UMD_DEV)": {
-      "size": 525896,
-      "gzip": 126687
+      "size": 524046,
+      "gzip": 126001
     },
     "react-dom-server.production.min.js (UMD_PROD)": {
-      "size": 111581,
-      "gzip": 34959
+      "size": 110980,
+      "gzip": 34621
     },
     "react-art.development.js (UMD_DEV)": {
       "size": 349177,
@@ -57,12 +57,12 @@
       "gzip": 84773
     },
     "react-dom.development.js (NODE_DEV)": {
-      "size": 550984,
-      "gzip": 126642
+      "size": 551040,
+      "gzip": 126630
     },
     "react-dom.production.min.js (NODE_PROD)": {
-      "size": 118427,
-      "gzip": 37300
+      "size": 118553,
+      "gzip": 37322
     },
     "ReactDOMFiber-dev.js (FB_DEV)": {
       "size": 551962,
@@ -73,11 +73,11 @@
       "gzip": 94084
     },
     "react-dom-server.development.js (NODE_DEV)": {
-      "size": 474459,
-      "gzip": 114087
+      "size": 474605,
+      "gzip": 114088
     },
     "react-dom-server.production.min.js (NODE_PROD)": {
-      "size": 105956,
+      "size": 106247,
       "gzip": 32782
     },
     "ReactDOMServerStack-dev.js (FB_DEV)": {
@@ -157,20 +157,20 @@
       "gzip": 2229
     },
     "react-dom-lite.development.js (UMD_DEV)": {
-      "size": 161968,
-      "gzip": 35911
+      "size": 161315,
+      "gzip": 35878
     },
     "react-dom-lite.production.min.js (UMD_PROD)": {
-      "size": 35765,
-      "gzip": 10509
+      "size": 35483,
+      "gzip": 10491
     },
     "react-dom-lite.development.js (NODE_DEV)": {
-      "size": 159987,
-      "gzip": 35097
+      "size": 159334,
+      "gzip": 35065
     },
     "react-dom-lite.production.min.js (NODE_PROD)": {
-      "size": 35214,
-      "gzip": 10299
+      "size": 34932,
+      "gzip": 10282
     },
     "ReactDOMServerStream-dev.js (FB_DEV)": {
       "size": 472917,
