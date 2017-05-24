@@ -1,8 +1,10 @@
+const shallowEqual = require('fbjs/lib/shallowEqual');
+
 const emptyObject = {};
 const ReactInstanceMap = new Map();
 const enableAsyncSubtreeAPI = false;
 const useSyncScheduling = true;
-const logTopLevelRenders = true;
+// const logTopLevelRenders = true;
 
 const IndeterminateComponent = 0; // Before we know whether it is functional or class
 const FunctionalComponent = 1;
@@ -16,7 +18,7 @@ const CoroutineHandlerPhase = 8;
 const YieldComponent = 9;
 const Fragment = 10;
 
-const NoContext = 0;
+// const NoContext = 0;
 const AsyncUpdates = 1;
 
 const NoWork = 0; // No work is pending.
@@ -37,8 +39,40 @@ const Callback = 16; //          0b0010000
 const Err = 32; //               0b0100000
 const Ref = 64; //               0b1000000
 
+const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+const MATH_NAMESPACE = 'http://www.w3.org/1998/Math/MathML';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+/* global Symbol */
+const ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
+const FAUX_ITERATOR_SYMBOL = '@@iterator'; // Before Symbol spec.
+const REACT_ELEMENT_TYPE =
+  (typeof Symbol === 'function' && Symbol.for && Symbol.for('react.element')) ||
+  0xeac7;
+const REACT_PORTAL_TYPE =
+  (typeof Symbol === 'function' && Symbol.for && Symbol.for('react.portal')) ||
+  0xeaca;
+
+const MOUNTING = 1;
+const MOUNTED = 2;
+const UNMOUNTED = 3;
+
+const isArray = Array.isArray;
+
 let currentOwner;
 const timeHeuristicForUnitOfWork = 1;
+
+// The Symbol used to tag the special React types. If there is no native Symbol
+// nor polyfill, then a plain number is used for performance.
+let REACT_COROUTINE_TYPE;
+let REACT_YIELD_TYPE;
+if (typeof Symbol === 'function' && Symbol.for) {
+  REACT_COROUTINE_TYPE = Symbol.for('react.coroutine');
+  REACT_YIELD_TYPE = Symbol.for('react.yield');
+} else {
+  REACT_COROUTINE_TYPE = 0xeac8;
+  REACT_YIELD_TYPE = 0xeac9;
+}
 
 // The priority level to use when scheduling an update. We use NoWork to
 // represent the default priority.
@@ -123,7 +157,182 @@ let rootInstanceStackCursor: StackCursor<C | NoContextT> = createCursor(
 const randomKey = Math.random().toString(36).slice(2);
 const internalInstanceKey = '__reactInternalInstance$' + randomKey;
 
+function addUpdate(
+  fiber: Fiber,
+  partialState: PartialState<any, any> | null,
+  callback: mixed,
+  priorityLevel: PriorityLevel,
+): void {
+  const update = {
+    priorityLevel,
+    partialState,
+    callback,
+    isReplace: false,
+    isForced: false,
+    isTopLevelUnmount: false,
+    next: null,
+  };
+  insertUpdate(fiber, update);
+}
+
+function addReplaceUpdate(
+  fiber: Fiber,
+  state: any | null,
+  callback: Callback | null,
+  priorityLevel: PriorityLevel,
+): void {
+  const update = {
+    priorityLevel,
+    partialState: state,
+    callback,
+    isReplace: true,
+    isForced: false,
+    isTopLevelUnmount: false,
+    next: null,
+  };
+  insertUpdate(fiber, update);
+}
+
+function addForceUpdate(
+  fiber: Fiber,
+  callback: Callback | null,
+  priorityLevel: PriorityLevel,
+): void {
+  const update = {
+    priorityLevel,
+    partialState: null,
+    callback,
+    isReplace: false,
+    isForced: true,
+    isTopLevelUnmount: false,
+    next: null,
+  };
+  insertUpdate(fiber, update);
+}
+
+// Class component state updater
+const updater = {
+  isMounted,
+  enqueueSetState(instance, partialState, callback) {
+    const fiber = ReactInstanceMap.get(instance);
+    const priorityLevel = getPriorityContext(fiber, false);
+    callback = callback === undefined ? null : callback;
+    addUpdate(fiber, partialState, callback, priorityLevel);
+    scheduleUpdate(fiber, priorityLevel);
+  },
+  enqueueReplaceState(instance, state, callback) {
+    const fiber = ReactInstanceMap.get(instance);
+    const priorityLevel = getPriorityContext(fiber, false);
+    callback = callback === undefined ? null : callback;
+    addReplaceUpdate(fiber, state, callback, priorityLevel);
+    scheduleUpdate(fiber, priorityLevel);
+  },
+  enqueueForceUpdate(instance, callback) {
+    const fiber = ReactInstanceMap.get(instance);
+    const priorityLevel = getPriorityContext(fiber, false);
+    callback = callback === undefined ? null : callback;
+    addForceUpdate(fiber, callback, priorityLevel);
+    scheduleUpdate(fiber, priorityLevel);
+  },
+};
+
 // START DOM Lite Renderer
+
+function appendInitialChild(
+  parentInstance: Instance,
+  child: Instance | TextInstance,
+): void {
+  parentInstance.appendChild(child);
+}
+
+function diffProperties() {
+
+}
+
+function getChildHostContext(
+  parentHostContext: HostContext,
+  type: string,
+): HostContext {
+  const parentNamespace = ((parentHostContext: any): HostContextProd);
+  return getChildNamespace(parentNamespace, type);
+}
+
+function prepareUpdate(
+  domElement: Instance,
+  type: string,
+  oldProps: Props,
+  newProps: Props,
+  rootContainerInstance: Container,
+  hostContext: HostContext,
+): null | Array<mixed> {
+  return diffProperties(
+    domElement,
+    type,
+    oldProps,
+    newProps,
+    rootContainerInstance,
+  );
+}
+
+
+function shouldSetTextContent(props: Props): boolean {
+  return (
+    typeof props.children === 'string' ||
+    typeof props.children === 'number' ||
+    (typeof props.dangerouslySetInnerHTML === 'object' &&
+      props.dangerouslySetInnerHTML !== null &&
+      typeof props.dangerouslySetInnerHTML.__html === 'string')
+  );
+}
+
+function createElement() {
+
+}
+
+function createInstance(
+  type: string,
+  props: Props,
+  rootContainerInstance: Container,
+  hostContext: HostContext,
+  internalInstanceHandle: Object,
+): Instance {
+  let parentNamespace: string = parentNamespace = ((hostContext: any): HostContextProd);
+  const domElement: Instance = createElement(
+    type,
+    props,
+    rootContainerInstance,
+    parentNamespace,
+  );
+  precacheFiberNode(internalInstanceHandle, domElement);
+  // updateFiberProps(domElement, props);
+  return domElement;
+}
+
+function shouldAutoFocusHostComponent(type: string, props: Props): boolean {
+  switch (type) {
+    case 'button':
+    case 'input':
+    case 'select':
+    case 'textarea':
+      return !!props.autoFocus;
+  }
+  return false;
+}
+
+function shouldDeprioritizeSubtree(type: string, props: Props): boolean {
+  return !!props.hidden;
+}
+
+function finalizeInitialChildren(
+  domElement: Instance,
+  type: string,
+  props: Props,
+  rootContainerInstance: Container,
+): boolean {
+  // setInitialProperties(domElement, type, props, rootContainerInstance);
+  return shouldAutoFocusHostComponent(type, props);
+}
+
 function createContainer(container) {
 
 }
@@ -152,6 +361,19 @@ function resetAfterCommit() {
 
 }
 
+function commitMount(
+  domElement: Instance,
+  type: string,
+  newProps: Props,
+  internalInstanceHandle: Object,
+): void {
+  ((domElement: any):
+    | HTMLButtonElement
+    | HTMLInputElement
+    | HTMLSelectElement
+    | HTMLTextAreaElement).focus();
+}
+
 function commitUpdate(
   domElement: Instance,
   updatePayload: Array<mixed>,
@@ -165,6 +387,38 @@ function commitUpdate(
   // updateFiberProps(domElement, newProps);
   // Apply the diff to the DOM node.
   // updateProperties(domElement, updatePayload, type, oldProps, newProps);
+}
+
+// Assumes there is no parent namespace.
+function getIntrinsicNamespace(type: string): string {
+  switch (type) {
+    case 'svg':
+      return SVG_NAMESPACE;
+    case 'math':
+      return MATH_NAMESPACE;
+    default:
+      return HTML_NAMESPACE;
+  }
+}
+
+function getChildNamespace(parentNamespace: string | null, type: string): string {
+  if (parentNamespace == null || parentNamespace === HTML_NAMESPACE) {
+    // No (or default) parent namespace: potential entry point.
+    return getIntrinsicNamespace(type);
+  }
+  if (parentNamespace === SVG_NAMESPACE && type === 'foreignObject') {
+    // We're leaving SVG.
+    return HTML_NAMESPACE;
+  }
+  // By default, pass namespace below.
+  return parentNamespace;
+}
+
+function getRootHostContext(rootContainerInstance: Container): HostContext {
+  const ownNamespace = rootContainerInstance.namespaceURI || null;
+  const type = rootContainerInstance.tagName;
+  const namespace = getChildNamespace(ownNamespace, type);
+  return namespace;
 }
 
 function precacheFiberNode(hostInst, node) {
@@ -226,7 +480,1188 @@ function getRootHostContainer(): C {
 }
 // END DOM Lite Renderer
 
- function createCursor<T>(defaultValue: T): StackCursor<T> {
+// This wrapper function exists because I expect to clone the code in each path
+// to be able to optimize each path individually by branching early. This needs
+// a compiler or we can do it manually. Helpers that don't need this branching
+// live outside of this function.
+function ChildReconciler(shouldClone, shouldTrackSideEffects) {
+  function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {
+    if (!shouldTrackSideEffects) {
+      // Noop.
+      return;
+    }
+    if (!shouldClone) {
+      // When we're reconciling in place we have a work in progress copy. We
+      // actually want the current copy. If there is no current copy, then we
+      // don't need to track deletion side-effects.
+      if (childToDelete.alternate === null) {
+        return;
+      }
+      childToDelete = childToDelete.alternate;
+    }
+    // Deletions are added in reversed order so we add it to the front.
+    const last = returnFiber.progressedLastDeletion;
+    if (last !== null) {
+      last.nextEffect = childToDelete;
+      returnFiber.progressedLastDeletion = childToDelete;
+    } else {
+      returnFiber.progressedFirstDeletion = returnFiber.progressedLastDeletion = childToDelete;
+    }
+    childToDelete.nextEffect = null;
+    childToDelete.effectTag = Deletion;
+  }
+
+  function deleteRemainingChildren(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+  ): null {
+    if (!shouldTrackSideEffects) {
+      // Noop.
+      return null;
+    }
+
+    // TODO: For the shouldClone case, this could be micro-optimized a bit by
+    // assuming that after the first child we've already added everything.
+    let childToDelete = currentFirstChild;
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, childToDelete);
+      childToDelete = childToDelete.sibling;
+    }
+    return null;
+  }
+
+  function mapRemainingChildren(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber,
+  ): Map<string | number, Fiber> {
+    // Add the remaining children to a temporary map so that we can find them by
+    // keys quickly. Implicit (null) keys get added to this set with their index
+    // instead.
+    const existingChildren: Map<string | number, Fiber> = new Map();
+
+    let existingChild = currentFirstChild;
+    while (existingChild !== null) {
+      if (existingChild.key !== null) {
+        existingChildren.set(existingChild.key, existingChild);
+      } else {
+        existingChildren.set(existingChild.index, existingChild);
+      }
+      existingChild = existingChild.sibling;
+    }
+    return existingChildren;
+  }
+
+  function useFiber(fiber: Fiber, priority: PriorityLevel): Fiber {
+    // We currently set sibling to null and index to 0 here because it is easy
+    // to forget to do before returning it. E.g. for the single child case.
+    if (shouldClone) {
+      const clone = cloneFiber(fiber, priority);
+      clone.index = 0;
+      clone.sibling = null;
+      return clone;
+    } else {
+      // We override the pending priority even if it is higher, because if
+      // we're reconciling at a lower priority that means that this was
+      // down-prioritized.
+      fiber.pendingWorkPriority = priority;
+      fiber.effectTag = NoEffect;
+      fiber.index = 0;
+      fiber.sibling = null;
+      return fiber;
+    }
+  }
+
+  function placeChild(
+    newFiber: Fiber,
+    lastPlacedIndex: number,
+    newIndex: number,
+  ): number {
+    newFiber.index = newIndex;
+    if (!shouldTrackSideEffects) {
+      // Noop.
+      return lastPlacedIndex;
+    }
+    const current = newFiber.alternate;
+    if (current !== null) {
+      const oldIndex = current.index;
+      if (oldIndex < lastPlacedIndex) {
+        // This is a move.
+        newFiber.effectTag = Placement;
+        return lastPlacedIndex;
+      } else {
+        // This item can stay in place.
+        return oldIndex;
+      }
+    } else {
+      // This is an insertion.
+      newFiber.effectTag = Placement;
+      return lastPlacedIndex;
+    }
+  }
+
+  function placeSingleChild(newFiber: Fiber): Fiber {
+    // This is simpler for the single child case. We only need to do a
+    // placement for inserting new children.
+    if (shouldTrackSideEffects && newFiber.alternate === null) {
+      newFiber.effectTag = Placement;
+    }
+    return newFiber;
+  }
+
+  function updateTextNode(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    textContent: string,
+    priority: PriorityLevel,
+  ) {
+    if (current === null || current.tag !== HostText) {
+      // Insert
+      const created = createFiberFromText(
+        textContent,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Update
+      const existing = useFiber(current, priority);
+      existing.pendingProps = textContent;
+      existing.return = returnFiber;
+      return existing;
+    }
+  }
+
+  function updateElement(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    element: ReactElement,
+    priority: PriorityLevel,
+  ): Fiber {
+    if (current === null || current.type !== element.type) {
+      // Insert
+      const created = createFiberFromElement(
+        element,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.ref = coerceRef(current, element);
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Move based on index
+      const existing = useFiber(current, priority);
+      existing.ref = coerceRef(current, element);
+      existing.pendingProps = element.props;
+      existing.return = returnFiber;
+      if (__DEV__) {
+        existing._debugSource = element._source;
+        existing._debugOwner = element._owner;
+      }
+      return existing;
+    }
+  }
+
+  function updateCoroutine(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    coroutine: ReactCoroutine,
+    priority: PriorityLevel,
+  ): Fiber {
+    // TODO: Should this also compare handler to determine whether to reuse?
+    if (current === null || current.tag !== CoroutineComponent) {
+      // Insert
+      const created = createFiberFromCoroutine(
+        coroutine,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Move based on index
+      const existing = useFiber(current, priority);
+      existing.pendingProps = coroutine;
+      existing.return = returnFiber;
+      return existing;
+    }
+  }
+
+  function updateYield(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    yieldNode: ReactYield,
+    priority: PriorityLevel,
+  ): Fiber {
+    if (current === null || current.tag !== YieldComponent) {
+      // Insert
+      const created = createFiberFromYield(
+        yieldNode,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.type = yieldNode.value;
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Move based on index
+      const existing = useFiber(current, priority);
+      existing.type = yieldNode.value;
+      existing.return = returnFiber;
+      return existing;
+    }
+  }
+
+  function updatePortal(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    portal: ReactPortal,
+    priority: PriorityLevel,
+  ): Fiber {
+    if (
+      current === null ||
+      current.tag !== HostPortal ||
+      current.stateNode.containerInfo !== portal.containerInfo ||
+      current.stateNode.implementation !== portal.implementation
+    ) {
+      // Insert
+      const created = createFiberFromPortal(
+        portal,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Update
+      const existing = useFiber(current, priority);
+      existing.pendingProps = portal.children || [];
+      existing.return = returnFiber;
+      return existing;
+    }
+  }
+
+  function updateFragment(
+    returnFiber: Fiber,
+    current: Fiber | null,
+    fragment: Iterable<*>,
+    priority: PriorityLevel,
+  ): Fiber {
+    if (current === null || current.tag !== Fragment) {
+      // Insert
+      const created = createFiberFromFragment(
+        fragment,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.return = returnFiber;
+      return created;
+    } else {
+      // Update
+      const existing = useFiber(current, priority);
+      existing.pendingProps = fragment;
+      existing.return = returnFiber;
+      return existing;
+    }
+  }
+
+  function createChild(
+    returnFiber: Fiber,
+    newChild: any,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      // Text nodes doesn't have keys. If the previous node is implicitly keyed
+      // we can continue to replace it without aborting even if it is not a text
+      // node.
+      const created = createFiberFromText(
+        '' + newChild,
+        returnFiber.internalContextTag,
+        priority,
+      );
+      created.return = returnFiber;
+      return created;
+    }
+
+    if (typeof newChild === 'object' && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          const created = createFiberFromElement(
+            newChild,
+            returnFiber.internalContextTag,
+            priority,
+          );
+          created.ref = coerceRef(null, newChild);
+          created.return = returnFiber;
+          return created;
+        }
+
+        case REACT_COROUTINE_TYPE: {
+          const created = createFiberFromCoroutine(
+            newChild,
+            returnFiber.internalContextTag,
+            priority,
+          );
+          created.return = returnFiber;
+          return created;
+        }
+
+        case REACT_YIELD_TYPE: {
+          const created = createFiberFromYield(
+            newChild,
+            returnFiber.internalContextTag,
+            priority,
+          );
+          created.type = newChild.value;
+          created.return = returnFiber;
+          return created;
+        }
+
+        case REACT_PORTAL_TYPE: {
+          const created = createFiberFromPortal(
+            newChild,
+            returnFiber.internalContextTag,
+            priority,
+          );
+          created.return = returnFiber;
+          return created;
+        }
+      }
+
+      if (isArray(newChild) || getIteratorFn(newChild)) {
+        const created = createFiberFromFragment(
+          newChild,
+          returnFiber.internalContextTag,
+          priority,
+        );
+        created.return = returnFiber;
+        return created;
+      }
+
+      throwOnInvalidObjectType(returnFiber, newChild);
+    }
+
+    return null;
+  }
+
+  function updateSlot(
+    returnFiber: Fiber,
+    oldFiber: Fiber | null,
+    newChild: any,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    // Update the fiber if the keys match, otherwise return null.
+
+    const key = oldFiber !== null ? oldFiber.key : null;
+
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      // Text nodes doesn't have keys. If the previous node is implicitly keyed
+      // we can continue to replace it without aborting even if it is not a text
+      // node.
+      if (key !== null) {
+        return null;
+      }
+      return updateTextNode(returnFiber, oldFiber, '' + newChild, priority);
+    }
+
+    if (typeof newChild === 'object' && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          if (newChild.key === key) {
+            return updateElement(returnFiber, oldFiber, newChild, priority);
+          } else {
+            return null;
+          }
+        }
+
+        case REACT_COROUTINE_TYPE: {
+          if (newChild.key === key) {
+            return updateCoroutine(returnFiber, oldFiber, newChild, priority);
+          } else {
+            return null;
+          }
+        }
+
+        case REACT_YIELD_TYPE: {
+          // Yields doesn't have keys. If the previous node is implicitly keyed
+          // we can continue to replace it without aborting even if it is not a
+          // yield.
+          if (key === null) {
+            return updateYield(returnFiber, oldFiber, newChild, priority);
+          } else {
+            return null;
+          }
+        }
+
+        case REACT_PORTAL_TYPE: {
+          if (newChild.key === key) {
+            return updatePortal(returnFiber, oldFiber, newChild, priority);
+          } else {
+            return null;
+          }
+        }
+      }
+
+      if (isArray(newChild) || getIteratorFn(newChild)) {
+        // Fragments doesn't have keys so if the previous key is implicit we can
+        // update it.
+        if (key !== null) {
+          return null;
+        }
+        return updateFragment(returnFiber, oldFiber, newChild, priority);
+      }
+
+      throwOnInvalidObjectType(returnFiber, newChild);
+    }
+
+    return null;
+  }
+
+  function updateFromMap(
+    existingChildren: Map<string | number, Fiber>,
+    returnFiber: Fiber,
+    newIdx: number,
+    newChild: any,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      // Text nodes doesn't have keys, so we neither have to check the old nor
+      // new node for the key. If both are text nodes, they match.
+      const matchedFiber = existingChildren.get(newIdx) || null;
+      return updateTextNode(returnFiber, matchedFiber, '' + newChild, priority);
+    }
+
+    if (typeof newChild === 'object' && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          const matchedFiber =
+            existingChildren.get(
+              newChild.key === null ? newIdx : newChild.key,
+            ) || null;
+          return updateElement(returnFiber, matchedFiber, newChild, priority);
+        }
+
+        case REACT_COROUTINE_TYPE: {
+          const matchedFiber =
+            existingChildren.get(
+              newChild.key === null ? newIdx : newChild.key,
+            ) || null;
+          return updateCoroutine(returnFiber, matchedFiber, newChild, priority);
+        }
+
+        case REACT_YIELD_TYPE: {
+          // Yields doesn't have keys, so we neither have to check the old nor
+          // new node for the key. If both are yields, they match.
+          const matchedFiber = existingChildren.get(newIdx) || null;
+          return updateYield(returnFiber, matchedFiber, newChild, priority);
+        }
+
+        case REACT_PORTAL_TYPE: {
+          const matchedFiber =
+            existingChildren.get(
+              newChild.key === null ? newIdx : newChild.key,
+            ) || null;
+          return updatePortal(returnFiber, matchedFiber, newChild, priority);
+        }
+      }
+
+      if (isArray(newChild) || getIteratorFn(newChild)) {
+        const matchedFiber = existingChildren.get(newIdx) || null;
+        return updateFragment(returnFiber, matchedFiber, newChild, priority);
+      }
+
+      throwOnInvalidObjectType(returnFiber, newChild);
+    }
+
+    return null;
+  }
+
+  /**
+   * Warns if there is a duplicate or missing key
+   */
+  function warnOnInvalidKey(
+    child: mixed,
+    knownKeys: Set<string> | null,
+  ): Set<string> | null {
+    return knownKeys;
+  }
+
+  function reconcileChildrenArray(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    newChildren: Array<*>,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    // This algorithm can't optimize by searching from boths ends since we
+    // don't have backpointers on fibers. I'm trying to see how far we can get
+    // with that model. If it ends up not being worth the tradeoffs, we can
+    // add it later.
+
+    // Even with a two ended optimization, we'd want to optimize for the case
+    // where there are few changes and brute force the comparison instead of
+    // going for the Map. It'd like to explore hitting that path first in
+    // forward-only mode and only go for the Map once we notice that we need
+    // lots of look ahead. This doesn't handle reversal as well as two ended
+    // search but that's unusual. Besides, for the two ended optimization to
+    // work on Iterables, we'd need to copy the whole set.
+
+    // In this first iteration, we'll just live with hitting the bad case
+    // (adding everything to a Map) in for every insert/move.
+
+    // If you change this code, also update reconcileChildrenIterator() which
+    // uses the same algorithm.
+
+    if (__DEV__) {
+      // First, validate keys.
+      let knownKeys = null;
+      for (let i = 0; i < newChildren.length; i++) {
+        const child = newChildren[i];
+        knownKeys = warnOnInvalidKey(child, knownKeys);
+      }
+    }
+
+    let resultingFirstChild: Fiber | null = null;
+    let previousNewFiber: Fiber | null = null;
+
+    let oldFiber = currentFirstChild;
+    let lastPlacedIndex = 0;
+    let newIdx = 0;
+    let nextOldFiber = null;
+    for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
+      if (oldFiber.index > newIdx) {
+        nextOldFiber = oldFiber;
+        oldFiber = null;
+      } else {
+        nextOldFiber = oldFiber.sibling;
+      }
+      const newFiber = updateSlot(
+        returnFiber,
+        oldFiber,
+        newChildren[newIdx],
+        priority,
+      );
+      if (newFiber === null) {
+        // TODO: This breaks on empty slots like null children. That's
+        // unfortunate because it triggers the slow path all the time. We need
+        // a better way to communicate whether this was a miss or null,
+        // boolean, undefined, etc.
+        if (oldFiber === null) {
+          oldFiber = nextOldFiber;
+        }
+        break;
+      }
+      if (shouldTrackSideEffects) {
+        if (oldFiber && newFiber.alternate === null) {
+          // We matched the slot, but we didn't reuse the existing fiber, so we
+          // need to delete the existing child.
+          deleteChild(returnFiber, oldFiber);
+        }
+      }
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+      if (previousNewFiber === null) {
+        // TODO: Move out of the loop. This only happens for the first run.
+        resultingFirstChild = newFiber;
+      } else {
+        // TODO: Defer siblings if we're not at the right index for this slot.
+        // I.e. if we had null values before, then we want to defer this
+        // for each null value. However, we also don't want to call updateSlot
+        // with the previous one.
+        previousNewFiber.sibling = newFiber;
+      }
+      previousNewFiber = newFiber;
+      oldFiber = nextOldFiber;
+    }
+
+    if (newIdx === newChildren.length) {
+      // We've reached the end of the new children. We can delete the rest.
+      deleteRemainingChildren(returnFiber, oldFiber);
+      return resultingFirstChild;
+    }
+
+    if (oldFiber === null) {
+      // If we don't have any more existing children we can choose a fast path
+      // since the rest will all be insertions.
+      for (; newIdx < newChildren.length; newIdx++) {
+        const newFiber = createChild(
+          returnFiber,
+          newChildren[newIdx],
+          priority,
+        );
+        if (!newFiber) {
+          continue;
+        }
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        if (previousNewFiber === null) {
+          // TODO: Move out of the loop. This only happens for the first run.
+          resultingFirstChild = newFiber;
+        } else {
+          previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+      }
+      return resultingFirstChild;
+    }
+
+    // Add all children to a key map for quick lookups.
+    const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+
+    // Keep scanning and use the map to restore deleted items as moves.
+    for (; newIdx < newChildren.length; newIdx++) {
+      const newFiber = updateFromMap(
+        existingChildren,
+        returnFiber,
+        newIdx,
+        newChildren[newIdx],
+        priority,
+      );
+      if (newFiber) {
+        if (shouldTrackSideEffects) {
+          if (newFiber.alternate !== null) {
+            // The new fiber is a work in progress, but if there exists a
+            // current, that means that we reused the fiber. We need to delete
+            // it from the child list so that we don't add it to the deletion
+            // list.
+            existingChildren.delete(
+              newFiber.key === null ? newIdx : newFiber.key,
+            );
+          }
+        }
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        if (previousNewFiber === null) {
+          resultingFirstChild = newFiber;
+        } else {
+          previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+      }
+    }
+
+    if (shouldTrackSideEffects) {
+      // Any existing children that weren't consumed above were deleted. We need
+      // to add them to the deletion list.
+      existingChildren.forEach(child => deleteChild(returnFiber, child));
+    }
+
+    return resultingFirstChild;
+  }
+
+  function reconcileChildrenIterator(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    newChildrenIterable: Iterable<*>,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    // This is the same implementation as reconcileChildrenArray(),
+    // but using the iterator instead.
+
+    const iteratorFn = getIteratorFn(newChildrenIterable);
+
+    const newChildren = iteratorFn.call(newChildrenIterable);
+
+    let resultingFirstChild: Fiber | null = null;
+    let previousNewFiber: Fiber | null = null;
+
+    let oldFiber = currentFirstChild;
+    let lastPlacedIndex = 0;
+    let newIdx = 0;
+    let nextOldFiber = null;
+
+    let step = newChildren.next();
+    for (
+      ;
+      oldFiber !== null && !step.done;
+      newIdx++, (step = newChildren.next())
+    ) {
+      if (oldFiber.index > newIdx) {
+        nextOldFiber = oldFiber;
+        oldFiber = null;
+      } else {
+        nextOldFiber = oldFiber.sibling;
+      }
+      const newFiber = updateSlot(returnFiber, oldFiber, step.value, priority);
+      if (newFiber === null) {
+        // TODO: This breaks on empty slots like null children. That's
+        // unfortunate because it triggers the slow path all the time. We need
+        // a better way to communicate whether this was a miss or null,
+        // boolean, undefined, etc.
+        if (!oldFiber) {
+          oldFiber = nextOldFiber;
+        }
+        break;
+      }
+      if (shouldTrackSideEffects) {
+        if (oldFiber && newFiber.alternate === null) {
+          // We matched the slot, but we didn't reuse the existing fiber, so we
+          // need to delete the existing child.
+          deleteChild(returnFiber, oldFiber);
+        }
+      }
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+      if (previousNewFiber === null) {
+        // TODO: Move out of the loop. This only happens for the first run.
+        resultingFirstChild = newFiber;
+      } else {
+        // TODO: Defer siblings if we're not at the right index for this slot.
+        // I.e. if we had null values before, then we want to defer this
+        // for each null value. However, we also don't want to call updateSlot
+        // with the previous one.
+        previousNewFiber.sibling = newFiber;
+      }
+      previousNewFiber = newFiber;
+      oldFiber = nextOldFiber;
+    }
+
+    if (step.done) {
+      // We've reached the end of the new children. We can delete the rest.
+      deleteRemainingChildren(returnFiber, oldFiber);
+      return resultingFirstChild;
+    }
+
+    if (oldFiber === null) {
+      // If we don't have any more existing children we can choose a fast path
+      // since the rest will all be insertions.
+      for (; !step.done; newIdx++, (step = newChildren.next())) {
+        const newFiber = createChild(returnFiber, step.value, priority);
+        if (newFiber === null) {
+          continue;
+        }
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        if (previousNewFiber === null) {
+          // TODO: Move out of the loop. This only happens for the first run.
+          resultingFirstChild = newFiber;
+        } else {
+          previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+      }
+      return resultingFirstChild;
+    }
+
+    // Add all children to a key map for quick lookups.
+    const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+
+    // Keep scanning and use the map to restore deleted items as moves.
+    for (; !step.done; newIdx++, (step = newChildren.next())) {
+      const newFiber = updateFromMap(
+        existingChildren,
+        returnFiber,
+        newIdx,
+        step.value,
+        priority,
+      );
+      if (newFiber !== null) {
+        if (shouldTrackSideEffects) {
+          if (newFiber.alternate !== null) {
+            // The new fiber is a work in progress, but if there exists a
+            // current, that means that we reused the fiber. We need to delete
+            // it from the child list so that we don't add it to the deletion
+            // list.
+            existingChildren.delete(
+              newFiber.key === null ? newIdx : newFiber.key,
+            );
+          }
+        }
+        lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        if (previousNewFiber === null) {
+          resultingFirstChild = newFiber;
+        } else {
+          previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
+      }
+    }
+
+    if (shouldTrackSideEffects) {
+      // Any existing children that weren't consumed above were deleted. We need
+      // to add them to the deletion list.
+      existingChildren.forEach(child => deleteChild(returnFiber, child));
+    }
+
+    return resultingFirstChild;
+  }
+
+  function reconcileSingleTextNode(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    textContent: string,
+    priority: PriorityLevel,
+  ): Fiber {
+    // There's no need to check for keys on text nodes since we don't have a
+    // way to define them.
+    if (currentFirstChild !== null && currentFirstChild.tag === HostText) {
+      // We already have an existing node so let's just update it and delete
+      // the rest.
+      deleteRemainingChildren(returnFiber, currentFirstChild.sibling);
+      const existing = useFiber(currentFirstChild, priority);
+      existing.pendingProps = textContent;
+      existing.return = returnFiber;
+      return existing;
+    }
+    // The existing first child is not a text node so we need to create one
+    // and delete the existing ones.
+    deleteRemainingChildren(returnFiber, currentFirstChild);
+    const created = createFiberFromText(
+      textContent,
+      returnFiber.internalContextTag,
+      priority,
+    );
+    created.return = returnFiber;
+    return created;
+  }
+
+  function reconcileSingleElement(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    element: ReactElement,
+    priority: PriorityLevel,
+  ): Fiber {
+    const key = element.key;
+    let child = currentFirstChild;
+    while (child !== null) {
+      // TODO: If key === null and child.key === null, then this only applies to
+      // the first item in the list.
+      if (child.key === key) {
+        if (child.type === element.type) {
+          deleteRemainingChildren(returnFiber, child.sibling);
+          const existing = useFiber(child, priority);
+          existing.ref = coerceRef(child, element);
+          existing.pendingProps = element.props;
+          existing.return = returnFiber;
+          if (__DEV__) {
+            existing._debugSource = element._source;
+            existing._debugOwner = element._owner;
+          }
+          return existing;
+        } else {
+          deleteRemainingChildren(returnFiber, child);
+          break;
+        }
+      } else {
+        deleteChild(returnFiber, child);
+      }
+      child = child.sibling;
+    }
+
+    const created = createFiberFromElement(
+      element,
+      returnFiber.internalContextTag,
+      priority,
+    );
+    created.ref = coerceRef(currentFirstChild, element);
+    created.return = returnFiber;
+    return created;
+  }
+
+  function reconcileSingleCoroutine(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    coroutine: ReactCoroutine,
+    priority: PriorityLevel,
+  ): Fiber {
+    const key = coroutine.key;
+    let child = currentFirstChild;
+    while (child !== null) {
+      // TODO: If key === null and child.key === null, then this only applies to
+      // the first item in the list.
+      if (child.key === key) {
+        if (child.tag === CoroutineComponent) {
+          deleteRemainingChildren(returnFiber, child.sibling);
+          const existing = useFiber(child, priority);
+          existing.pendingProps = coroutine;
+          existing.return = returnFiber;
+          return existing;
+        } else {
+          deleteRemainingChildren(returnFiber, child);
+          break;
+        }
+      } else {
+        deleteChild(returnFiber, child);
+      }
+      child = child.sibling;
+    }
+
+    const created = createFiberFromCoroutine(
+      coroutine,
+      returnFiber.internalContextTag,
+      priority,
+    );
+    created.return = returnFiber;
+    return created;
+  }
+
+  function reconcileSingleYield(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    yieldNode: ReactYield,
+    priority: PriorityLevel,
+  ): Fiber {
+    // There's no need to check for keys on yields since they're stateless.
+    let child = currentFirstChild;
+    if (child !== null) {
+      if (child.tag === YieldComponent) {
+        deleteRemainingChildren(returnFiber, child.sibling);
+        const existing = useFiber(child, priority);
+        existing.type = yieldNode.value;
+        existing.return = returnFiber;
+        return existing;
+      } else {
+        deleteRemainingChildren(returnFiber, child);
+      }
+    }
+
+    const created = createFiberFromYield(
+      yieldNode,
+      returnFiber.internalContextTag,
+      priority,
+    );
+    created.type = yieldNode.value;
+    created.return = returnFiber;
+    return created;
+  }
+
+  function reconcileSinglePortal(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    portal: ReactPortal,
+    priority: PriorityLevel,
+  ): Fiber {
+    const key = portal.key;
+    let child = currentFirstChild;
+    while (child !== null) {
+      // TODO: If key === null and child.key === null, then this only applies to
+      // the first item in the list.
+      if (child.key === key) {
+        if (
+          child.tag === HostPortal &&
+          child.stateNode.containerInfo === portal.containerInfo &&
+          child.stateNode.implementation === portal.implementation
+        ) {
+          deleteRemainingChildren(returnFiber, child.sibling);
+          const existing = useFiber(child, priority);
+          existing.pendingProps = portal.children || [];
+          existing.return = returnFiber;
+          return existing;
+        } else {
+          deleteRemainingChildren(returnFiber, child);
+          break;
+        }
+      } else {
+        deleteChild(returnFiber, child);
+      }
+      child = child.sibling;
+    }
+
+    const created = createFiberFromPortal(
+      portal,
+      returnFiber.internalContextTag,
+      priority,
+    );
+    created.return = returnFiber;
+    return created;
+  }
+
+  // This API will tag the children with the side-effect of the reconciliation
+  // itself. They will be added to the side-effect list as we pass through the
+  // children and the parent.
+  function reconcileChildFibers(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    newChild: any,
+    priority: PriorityLevel,
+  ): Fiber | null {
+    // This function is not recursive.
+    // If the top level item is an array, we treat it as a set of children,
+    // not as a fragment. Nested arrays on the other hand will be treated as
+    // fragment nodes. Recursion happens at the normal flow.
+
+    const disableNewFiberFeatures = disableNewFiberFeatures;
+
+    // Handle object types
+    const isObject = typeof newChild === 'object' && newChild !== null;
+    if (isObject) {
+      // Support only the subset of return types that Stack supports. Treat
+      // everything else as empty, but log a warning.
+      if (disableNewFiberFeatures) {
+        switch (newChild.$$typeof) {
+          case REACT_ELEMENT_TYPE:
+            return placeSingleChild(
+              reconcileSingleElement(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+
+          case REACT_PORTAL_TYPE:
+            return placeSingleChild(
+              reconcileSinglePortal(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+        }
+      } else {
+        switch (newChild.$$typeof) {
+          case REACT_ELEMENT_TYPE:
+            return placeSingleChild(
+              reconcileSingleElement(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+
+          case REACT_COROUTINE_TYPE:
+            return placeSingleChild(
+              reconcileSingleCoroutine(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+
+          case REACT_YIELD_TYPE:
+            return placeSingleChild(
+              reconcileSingleYield(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+
+          case REACT_PORTAL_TYPE:
+            return placeSingleChild(
+              reconcileSinglePortal(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                priority,
+              ),
+            );
+        }
+      }
+    }
+
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      return placeSingleChild(
+        reconcileSingleTextNode(
+          returnFiber,
+          currentFirstChild,
+          '' + newChild,
+          priority,
+        ),
+      );
+    }
+
+    if (isArray(newChild)) {
+      return reconcileChildrenArray(
+        returnFiber,
+        currentFirstChild,
+        newChild,
+        priority,
+      );
+    }
+
+    if (getIteratorFn(newChild)) {
+      return reconcileChildrenIterator(
+        returnFiber,
+        currentFirstChild,
+        newChild,
+        priority,
+      );
+    }
+
+    if (isObject) {
+      throwOnInvalidObjectType(returnFiber, newChild);
+    }
+
+    // Remaining cases are all treated as empty.
+    return deleteRemainingChildren(returnFiber, currentFirstChild);
+  }
+
+  return reconcileChildFibers;
+}
+
+const reconcileChildFibers = ChildReconciler(true, true);
+const reconcileChildFibersInPlace = ChildReconciler(false, true);
+const mountChildFibersInPlace = ChildReconciler(false, false);
+
+/**
+ * Returns the iterator method function contained on the iterable object.
+ *
+ * Be sure to invoke the function with the iterable as context:
+ *
+ *     var iteratorFn = getIteratorFn(myIterable);
+ *     if (iteratorFn) {
+ *       var iterator = iteratorFn.call(myIterable);
+ *       ...
+ *     }
+ *
+ * @param {?object} maybeIterable
+ * @return {?function}
+ */
+function getIteratorFn(maybeIterable: ?any): ?() => ?Iterator<*> {
+  var iteratorFn =
+    maybeIterable &&
+    ((ITERATOR_SYMBOL && maybeIterable[ITERATOR_SYMBOL]) ||
+      maybeIterable[FAUX_ITERATOR_SYMBOL]);
+  if (typeof iteratorFn === 'function') {
+    return iteratorFn;
+  }
+}
+
+function throwOnInvalidObjectType(returnFiber: Fiber, newChild: Object) {
+  if (returnFiber.type !== 'textarea') {
+  }
+}
+
+function isFiberMountedImpl(fiber: Fiber): number {
+  let node = fiber;
+  if (!fiber.alternate) {
+    // If there is no alternate, this might be a new tree that isn't inserted
+    // yet. If it is, then it will have a pending insertion effect on it.
+    if ((node.effectTag & Placement) !== NoEffect) {
+      return MOUNTING;
+    }
+    while (node.return) {
+      node = node.return;
+      if ((node.effectTag & Placement) !== NoEffect) {
+        return MOUNTING;
+      }
+    }
+  } else {
+    while (node.return) {
+      node = node.return;
+    }
+  }
+  if (node.tag === HostRoot) {
+    // TODO: Check if this was a nested HostRoot when used with
+    // renderContainerIntoSubtree.
+    return MOUNTED;
+  }
+  // If we didn't hit the root, that means that we're in an disconnected tree
+  // that has been unmounted.
+  return UNMOUNTED;
+}
+
+function isMounted(
+  component: ReactComponent<any, any, any>,
+): boolean {
+
+  var fiber = ReactInstanceMap.get(component);
+  if (!fiber) {
+    return false;
+  }
+  return isFiberMountedImpl(fiber) === MOUNTED;
+}
+
+function createCursor<T>(defaultValue: T): StackCursor<T> {
   return {
     current: defaultValue,
   };
@@ -461,23 +1896,12 @@ function ensureUpdateQueue(fiber: Fiber): UpdateQueue {
     return fiber.updateQueue;
   }
 
-  let queue;
-  if (__DEV__) {
-    queue = {
-      first: null,
-      last: null,
-      hasForceUpdate: false,
-      callbackList: null,
-      isProcessing: false,
-    };
-  } else {
-    queue = {
-      first: null,
-      last: null,
-      hasForceUpdate: false,
-      callbackList: null,
-    };
-  }
+  const queue = {
+    first: null,
+    last: null,
+    hasForceUpdate: false,
+    callbackList: null,
+  };
 
   fiber.updateQueue = queue;
   return queue;
@@ -942,6 +2366,58 @@ function getHostParent(fiber: Fiber): I | C {
   }
 }
 
+function safelyDetachRef(current: Fiber) {
+  const ref = current.ref;
+  if (ref !== null) {
+    try {
+      ref(null);
+    } catch (refError) {
+      captureError(current, refError);
+    }
+  }
+}
+
+// Capture errors so they don't interrupt unmounting.
+function safelyCallComponentWillUnmount(current, instance) {
+  try {
+    instance.componentWillUnmount();
+  } catch (unmountError) {
+    captureError(current, unmountError);
+  }
+}
+
+// User-originating errors (lifecycles and refs) should not interrupt
+// deletion, so don't let them throw. Host-originating errors should
+// interrupt deletion, so it's okay
+function commitUnmount(current: Fiber): void {
+  switch (current.tag) {
+    case ClassComponent: {
+      safelyDetachRef(current);
+      const instance = current.stateNode;
+      if (typeof instance.componentWillUnmount === 'function') {
+        safelyCallComponentWillUnmount(current, instance);
+      }
+      return;
+    }
+    case HostComponent: {
+      safelyDetachRef(current);
+      return;
+    }
+    case CoroutineComponent: {
+      commitNestedUnmounts(current.stateNode);
+      return;
+    }
+    case HostPortal: {
+      // TODO: this is recursive.
+      // We are also not using this parent because
+      // the portal will get pushed immediately.
+      const parent = getHostParent(current);
+      unmountHostComponents(parent, current);
+      return;
+    }
+  }
+}
+
 function commitNestedUnmounts(root: Fiber): void {
   // While we're inside a removed host node we don't want to call
   // removeChild on the inner nodes because they're removed by the top
@@ -1149,6 +2625,78 @@ function commitErrorHandling(effectfulFiber: Fiber) {
   }
 }
 
+function commitCallbacks(
+  finishedWork: Fiber,
+  queue: UpdateQueue,
+  context: mixed,
+) {
+  const callbackList = queue.callbackList;
+  if (callbackList === null) {
+    return;
+  }
+  for (let i = 0; i < callbackList.length; i++) {
+    const callback = callbackList[i];
+    callback.call(context);
+  }
+}
+
+function commitLifeCycles(current: Fiber | null, finishedWork: Fiber): void {
+  switch (finishedWork.tag) {
+    case ClassComponent: {
+      const instance = finishedWork.stateNode;
+      if (finishedWork.effectTag & Update) {
+        if (current === null) {
+          instance.componentDidMount();
+        } else {
+          const prevProps = current.memoizedProps;
+          const prevState = current.memoizedState;
+          instance.componentDidUpdate(prevProps, prevState);
+        }
+      }
+      if (
+        finishedWork.effectTag & Callback &&
+        finishedWork.updateQueue !== null
+      ) {
+        commitCallbacks(finishedWork, finishedWork.updateQueue, instance);
+      }
+      return;
+    }
+    case HostRoot: {
+      const updateQueue = finishedWork.updateQueue;
+      if (updateQueue !== null) {
+        const instance = finishedWork.child && finishedWork.child.stateNode;
+        commitCallbacks(finishedWork, updateQueue, instance);
+      }
+      return;
+    }
+    case HostComponent: {
+      const instance: I = finishedWork.stateNode;
+
+      // Renderers may schedule work to be done after host components are mounted
+      // (eg DOM renderer may schedule auto-focus for inputs and form controls).
+      // These effects should only be committed when components are first mounted,
+      // aka when there is no current/alternate.
+      if (current === null && finishedWork.effectTag & Update) {
+        const type = finishedWork.type;
+        const props = finishedWork.memoizedProps;
+        commitMount(instance, type, props, finishedWork);
+      }
+
+      return;
+    }
+    case HostText: {
+      // We have no life-cycles associated with text.
+      return;
+    }
+    case HostPortal: {
+      // We have no life-cycles associated with portals.
+      return;
+    }
+    default: {
+    }
+  }
+}
+
 function commitAllLifeCycles() {
   while (nextEffect !== null) {
     const effectTag = nextEffect.effectTag;
@@ -1177,6 +2725,159 @@ function commitAllLifeCycles() {
     // tags to reason about the current life-cycle.
     nextEffect = next;
   }
+}
+
+// This is a constructor of a POJO instead of a constructor function for a few
+// reasons:
+// 1) Nobody should add any instance methods on this. Instance methods can be
+//    more difficult to predict when they get optimized and they are almost
+//    never inlined properly in static compilers.
+// 2) Nobody should rely on `instanceof Fiber` for type testing. We should
+//    always know when it is a fiber.
+// 3) We can easily go from a createFiber call to calling a constructor if that
+//    is faster. The opposite is not true.
+// 4) We might want to experiment with using numeric keys since they are easier
+//    to optimize in a non-JIT environment.
+// 5) It should be easy to port this to a C struct and keep a C implementation
+//    compatible.
+function createFiber(
+  tag: TypeOfWork,
+  key: null | string,
+  internalContextTag: TypeOfInternalContext,
+): Fiber {
+  var fiber: Fiber = {
+    // Instance
+
+    tag: tag,
+
+    key: key,
+
+    type: null,
+
+    stateNode: null,
+
+    // Fiber
+
+    return: null,
+
+    child: null,
+    sibling: null,
+    index: 0,
+
+    ref: null,
+
+    pendingProps: null,
+    memoizedProps: null,
+    updateQueue: null,
+    memoizedState: null,
+
+    internalContextTag,
+
+    effectTag: NoEffect,
+    nextEffect: null,
+    firstEffect: null,
+    lastEffect: null,
+
+    pendingWorkPriority: NoWork,
+    progressedPriority: NoWork,
+    progressedChild: null,
+    progressedFirstDeletion: null,
+    progressedLastDeletion: null,
+
+    alternate: null,
+  };
+  return fiber;
+}
+
+// Clones an update queue from a source fiber onto its alternate.
+function cloneUpdateQueue(
+  current: Fiber,
+  workInProgress: Fiber,
+): UpdateQueue | null {
+  const currentQueue = current.updateQueue;
+  if (currentQueue === null) {
+    // The source fiber does not have an update queue.
+    workInProgress.updateQueue = null;
+    return null;
+  }
+  // If the alternate already has a queue, reuse the previous object.
+  const altQueue = workInProgress.updateQueue !== null
+    ? workInProgress.updateQueue
+    : {};
+  altQueue.first = currentQueue.first;
+  altQueue.last = currentQueue.last;
+
+  // These fields are invalid by the time we clone from current. Reset them.
+  altQueue.hasForceUpdate = false;
+  altQueue.callbackList = null;
+  altQueue.isProcessing = false;
+
+  workInProgress.updateQueue = altQueue;
+
+  return altQueue;
+}
+
+// This is used to create an alternate fiber to do work on.
+// TODO: Rename to createWorkInProgressFiber or something like that.
+function cloneFiber(
+  fiber: Fiber,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  // We clone to get a work in progress. That means that this fiber is the
+  // current. To make it safe to reuse that fiber later on as work in progress
+  // we need to reset its work in progress flag now. We don't have an
+  // opportunity to do this earlier since we don't traverse the tree when
+  // the work in progress tree becomes the current tree.
+  // fiber.progressedPriority = NoWork;
+  // fiber.progressedChild = null;
+
+  // We use a double buffering pooling technique because we know that we'll only
+  // ever need at most two versions of a tree. We pool the "other" unused node
+  // that we're free to reuse. This is lazily created to avoid allocating extra
+  // objects for things that are never updated. It also allow us to reclaim the
+  // extra memory if needed.
+  let alt = fiber.alternate;
+  if (alt !== null) {
+    // If we clone, then we do so from the "current" state. The current state
+    // can't have any side-effects that are still valid so we reset just to be
+    // sure.
+    alt.effectTag = NoEffect;
+    alt.nextEffect = null;
+    alt.firstEffect = null;
+    alt.lastEffect = null;
+  } else {
+    // This should not have an alternate already
+    alt = createFiber(fiber.tag, fiber.key, fiber.internalContextTag);
+    alt.type = fiber.type;
+
+    alt.progressedChild = fiber.progressedChild;
+    alt.progressedPriority = fiber.progressedPriority;
+
+    alt.alternate = fiber;
+    fiber.alternate = alt;
+  }
+
+  alt.stateNode = fiber.stateNode;
+  alt.child = fiber.child;
+  alt.sibling = fiber.sibling; // This should always be overridden. TODO: null
+  alt.index = fiber.index; // This should always be overridden.
+  alt.ref = fiber.ref;
+  // pendingProps is here for symmetry but is unnecessary in practice for now.
+  // TODO: Pass in the new pendingProps as an argument maybe?
+  alt.pendingProps = fiber.pendingProps;
+  cloneUpdateQueue(fiber, alt);
+  alt.pendingWorkPriority = priorityLevel;
+
+  alt.memoizedProps = fiber.memoizedProps;
+  alt.memoizedState = fiber.memoizedState;
+
+  if (__DEV__) {
+    alt._debugID = fiber._debugID;
+    alt._debugSource = fiber._debugSource;
+    alt._debugOwner = fiber._debugOwner;
+  }
+
+  return alt;
 }
 
 function commitAllWork(finishedWork: Fiber) {
@@ -1271,6 +2972,16 @@ function commitAllWork(finishedWork: Fiber) {
   priorityContext = previousPriorityContext;
 }
 
+function hasCapturedError(fiber: Fiber): boolean {
+  // TODO: capturedErrors should store the boundary instance, to avoid needing
+  // to check the alternate.
+  return (
+    capturedErrors !== null &&
+    (capturedErrors.has(fiber) ||
+      (fiber.alternate !== null && capturedErrors.has(fiber.alternate)))
+  );
+}
+
 // findNextUnitOfWork mutates the current priority context. It is reset after
 // after the workLoop exits, so never call findNextUnitOfWork from outside
 // the work loop.
@@ -1331,6 +3042,25 @@ function findNextUnitOfWork() {
   return null;
 }
 
+function performFailedUnitOfWork(workInProgress: Fiber): Fiber | null {
+  // The current, flushed, state of this fiber is the alternate.
+  // Ideally nothing should rely on this, but relying on it here
+  // means that we don't need an additional field on the work in
+  // progress.
+  const current = workInProgress.alternate;
+
+  // See if beginning this work spawns more work.
+  let next = beginFailedWork(current, workInProgress, nextPriorityLevel);
+
+  if (next === null) {
+    // If this doesn't spawn new work, complete the current work.
+    next = completeUnitOfWork(workInProgress);
+  }
+
+  currentOwner = null;
+  return next;
+}
+
 function clearErrors() {
   if (nextUnitOfWork === null) {
     nextUnitOfWork = findNextUnitOfWork();
@@ -1357,6 +3087,143 @@ function clearErrors() {
       nextUnitOfWork = findNextUnitOfWork();
     }
   }
+}
+
+function push<T>(
+  cursor: StackCursor<T>,
+  value: T,
+  fiber: Fiber,
+): void {
+  index++;
+
+  valueStack[index] = cursor.current;
+  cursor.current = value;
+}
+
+function pushContextProvider(workInProgress: Fiber): boolean {
+  if (!isContextProvider(workInProgress)) {
+    return false;
+  }
+
+  const instance = workInProgress.stateNode;
+  // We push the context as early as possible to ensure stack integrity.
+  // If the instance does not exist yet, we will push null at first,
+  // and replace it on the stack later when invalidating the context.
+  const memoizedMergedChildContext =
+    (instance && instance.__reactInternalMemoizedMergedChildContext) ||
+    emptyObject;
+
+  // Remember the parent context so we can merge with it later.
+  previousContext = contextStackCursor.current;
+  push(contextStackCursor, memoizedMergedChildContext, workInProgress);
+  push(didPerformWorkStackCursor, false, workInProgress);
+
+  return true;
+}
+
+function pushHostContainer(fiber: Fiber, nextRootInstance: C) {
+  // Push current root instance onto the stack;
+  // This allows us to reset root when portals are popped.
+  push(rootInstanceStackCursor, nextRootInstance, fiber);
+
+  const nextRootContext = getRootHostContext(nextRootInstance);
+
+  // Track the context and the Fiber that provided it.
+  // This enables us to pop only Fibers that provide unique contexts.
+  push(contextFiberStackCursor, fiber, fiber);
+  push(contextStackCursor, nextRootContext, fiber);
+}
+
+function bailoutOnLowPriority(current, workInProgress) {
+  // TODO: Handle HostComponent tags here as well and call pushHostContext()?
+  // See PR 8590 discussion for context
+  switch (workInProgress.tag) {
+    case ClassComponent:
+      pushContextProvider(workInProgress);
+      break;
+    case HostPortal:
+      pushHostContainer(
+        workInProgress,
+        workInProgress.stateNode.containerInfo,
+      );
+      break;
+  }
+  // TODO: What if this is currently in progress?
+  // How can that happen? How is this not being cloned?
+  return null;
+}
+
+function clearDeletions(workInProgress) {
+  workInProgress.progressedFirstDeletion = workInProgress.progressedLastDeletion = null;
+}
+
+function transferDeletions(workInProgress) {
+  // Any deletions get added first into the effect list.
+  workInProgress.firstEffect = workInProgress.progressedFirstDeletion;
+  workInProgress.lastEffect = workInProgress.progressedLastDeletion;
+}
+
+function reconcileChildrenAtPriority(
+  current,
+  workInProgress,
+  nextChildren,
+  priorityLevel,
+) {
+  // At this point any memoization is no longer valid since we'll have changed
+  // the children.
+  workInProgress.memoizedProps = null;
+  if (current === null) {
+    // If this is a fresh new component that hasn't been rendered yet, we
+    // won't update its child set by applying minimal side-effects. Instead,
+    // we will add them all to the child before it gets rendered. That means
+    // we can optimize this reconciliation pass by not tracking side-effects.
+    workInProgress.child = mountChildFibersInPlace(
+      workInProgress,
+      workInProgress.child,
+      nextChildren,
+      priorityLevel,
+    );
+  } else if (current.child === workInProgress.child) {
+    // If the current child is the same as the work in progress, it means that
+    // we haven't yet started any work on these children. Therefore, we use
+    // the clone algorithm to create a copy of all the current children.
+
+    // If we had any progressed work already, that is invalid at this point so
+    // let's throw it out.
+    clearDeletions(workInProgress);
+
+    workInProgress.child = reconcileChildFibers(
+      workInProgress,
+      workInProgress.child,
+      nextChildren,
+      priorityLevel,
+    );
+
+    transferDeletions(workInProgress);
+  } else {
+    // If, on the other hand, it is already using a clone, that means we've
+    // already begun some work on this tree and we can continue where we left
+    // off by reconciling against the existing children.
+    workInProgress.child = reconcileChildFibersInPlace(
+      workInProgress,
+      workInProgress.child,
+      nextChildren,
+      priorityLevel,
+    );
+
+    transferDeletions(workInProgress);
+  }
+  markChildAsProgressed(current, workInProgress, priorityLevel);
+}
+
+function reconcileChildren(current, workInProgress, nextChildren) {
+  const priorityLevel = workInProgress.pendingWorkPriority;
+  reconcileChildrenAtPriority(
+    current,
+    workInProgress,
+    nextChildren,
+    priorityLevel,
+  );
 }
 
 function beginFailedWork(
@@ -1390,6 +3257,1046 @@ function beginFailedWork(
     workInProgress.pendingProps = null;
   }
 
+  return workInProgress.child;
+}
+
+function memoizeProps(workInProgress: Fiber, nextProps: any) {
+  workInProgress.memoizedProps = nextProps;
+  // Reset the pending props
+  workInProgress.pendingProps = null;
+}
+
+function memoizeState(workInProgress: Fiber, nextState: any) {
+  workInProgress.memoizedState = nextState;
+  // Don't reset the updateQueue, in case there are pending updates. Resetting
+  // is handled by beginUpdateQueue.
+}
+
+function cacheContext(
+  workInProgress: Fiber,
+  unmaskedContext: Object,
+  maskedContext: Object,
+) {
+  const instance = workInProgress.stateNode;
+  instance.__reactInternalMemoizedUnmaskedChildContext = unmaskedContext;
+  instance.__reactInternalMemoizedMaskedChildContext = maskedContext;
+}
+
+function getUnmaskedContext(workInProgress: Fiber): Object {
+  const hasOwnContext = isContextProvider(workInProgress);
+  if (hasOwnContext) {
+    // If the fiber is a context provider itself, when we read its context
+    // we have already pushed its own child context on the stack. A context
+    // provider should not "see" its own child context. Therefore we read the
+    // previous (parent) context instead for a context provider.
+    return previousContext;
+  }
+  return contextStackCursor.current;
+}
+
+ function getMaskedContext(
+  workInProgress: Fiber,
+  unmaskedContext: Object,
+) {
+  const type = workInProgress.type;
+  const contextTypes = type.contextTypes;
+  if (!contextTypes) {
+    return emptyObject;
+  }
+
+  // Avoid recreating masked context unless unmasked context has changed.
+  // Failing to do this will result in unnecessary calls to componentWillReceiveProps.
+  // This may trigger infinite loops if componentWillReceiveProps calls setState.
+  const instance = workInProgress.stateNode;
+  if (
+    instance &&
+    instance.__reactInternalMemoizedUnmaskedChildContext === unmaskedContext
+  ) {
+    return instance.__reactInternalMemoizedMaskedChildContext;
+  }
+
+  const context = {};
+  for (let key in contextTypes) {
+    context[key] = unmaskedContext[key];
+  }
+  // Cache unmasked context so we can avoid recreating masked context unless necessary.
+  // Context is created before the class component is instantiated so check for instance.
+  if (instance) {
+    cacheContext(workInProgress, unmaskedContext, context);
+  }
+
+  return context;
+}
+
+function callComponentWillMount(workInProgress, instance) {
+  const oldState = instance.state;
+  instance.componentWillMount();
+
+  if (oldState !== instance.state) {
+    updater.enqueueReplaceState(instance, instance.state, null);
+  }
+}
+
+function getStateFromUpdate(update, instance, prevState, props) {
+  const partialState = update.partialState;
+  if (typeof partialState === 'function') {
+    const updateFn = partialState;
+    return updateFn.call(instance, prevState, props);
+  } else {
+    return partialState;
+  }
+}
+
+function beginUpdateQueue(
+  workInProgress: Fiber,
+  queue: UpdateQueue,
+  instance: any,
+  prevState: any,
+  props: any,
+  priorityLevel: PriorityLevel,
+): any {
+  queue.hasForceUpdate = false;
+
+  // Applies updates with matching priority to the previous state to create
+  // a new state object.
+  let state = prevState;
+  let dontMutatePrevState = true;
+  let callbackList = queue.callbackList;
+  let update = queue.first;
+  while (
+    update !== null &&
+    comparePriority(update.priorityLevel, priorityLevel) <= 0
+  ) {
+    // Remove each update from the queue right before it is processed. That way
+    // if setState is called from inside an updater function, the new update
+    // will be inserted in the correct position.
+    queue.first = update.next;
+    if (queue.first === null) {
+      queue.last = null;
+    }
+
+    let partialState;
+    if (update.isReplace) {
+      state = getStateFromUpdate(update, instance, state, props);
+      dontMutatePrevState = true;
+    } else {
+      partialState = getStateFromUpdate(update, instance, state, props);
+      if (partialState) {
+        if (dontMutatePrevState) {
+          state = Object.assign({}, state, partialState);
+        } else {
+          state = Object.assign(state, partialState);
+        }
+        dontMutatePrevState = false;
+      }
+    }
+    if (update.isForced) {
+      queue.hasForceUpdate = true;
+    }
+    // Second condition ignores top-level unmount callbacks if they are not the
+    // last update in the queue, since a subsequent update will cause a remount.
+    if (
+      update.callback !== null &&
+      !(update.isTopLevelUnmount && update.next !== null)
+    ) {
+      callbackList = callbackList || [];
+      callbackList.push(update.callback);
+      workInProgress.effectTag |= Callback;
+    }
+    update = update.next;
+  }
+
+  queue.callbackList = callbackList;
+
+  if (queue.first === null && callbackList === null && !queue.hasForceUpdate) {
+    // The queue is empty and there are no callbacks. We can reset it.
+    workInProgress.updateQueue = null;
+  }
+  return state;
+}
+
+// Invokes the mount life-cycles on a previously never rendered instance.
+function mountClassInstance(
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+): void {
+  const instance = workInProgress.stateNode;
+  const state = instance.state || null;
+
+  let props = workInProgress.pendingProps;
+
+  const unmaskedContext = getUnmaskedContext(workInProgress);
+
+  instance.props = props;
+  instance.state = state;
+  instance.refs = emptyObject;
+  instance.context = getMaskedContext(workInProgress, unmaskedContext);
+
+  if (
+    enableAsyncSubtreeAPI &&
+    workInProgress.type != null &&
+    workInProgress.type.unstable_asyncUpdates === true
+  ) {
+    workInProgress.internalContextTag |= AsyncUpdates;
+  }
+
+  if (typeof instance.componentWillMount === 'function') {
+    callComponentWillMount(workInProgress, instance);
+    // If we had additional state updates during this life-cycle, let's
+    // process them now.
+    const updateQueue = workInProgress.updateQueue;
+    if (updateQueue !== null) {
+      instance.state = beginUpdateQueue(
+        workInProgress,
+        updateQueue,
+        instance,
+        state,
+        props,
+        priorityLevel,
+      );
+    }
+  }
+  if (typeof instance.componentDidMount === 'function') {
+    workInProgress.effectTag |= Update;
+  }
+}
+
+function adoptClassInstance(workInProgress: Fiber, instance: any): void {
+  instance.updater = updater;
+  workInProgress.stateNode = instance;
+  // The instance needs access to the fiber so that it can schedule updates
+  ReactInstanceMap.set(instance, workInProgress);
+}
+
+function cloneChildFibers(
+  current: Fiber | null,
+  workInProgress: Fiber,
+): void {
+  if (!workInProgress.child) {
+    return;
+  }
+  if (current !== null && workInProgress.child === current.child) {
+    // We use workInProgress.child since that lets Flow know that it can't be
+    // null since we validated that already. However, as the line above suggests
+    // they're actually the same thing.
+    let currentChild = workInProgress.child;
+    // TODO: This used to reset the pending priority. Not sure if that is needed.
+    // workInProgress.pendingWorkPriority = current.pendingWorkPriority;
+    // TODO: The below priority used to be set to NoWork which would've
+    // dropped work. This is currently unobservable but will become
+    // observable when the first sibling has lower priority work remaining
+    // than the next sibling. At that point we should add tests that catches
+    // this.
+    let newChild = cloneFiber(currentChild, currentChild.pendingWorkPriority);
+    workInProgress.child = newChild;
+
+    newChild.return = workInProgress;
+    while (currentChild.sibling !== null) {
+      currentChild = currentChild.sibling;
+      newChild = newChild.sibling = cloneFiber(
+        currentChild,
+        currentChild.pendingWorkPriority,
+      );
+      newChild.return = workInProgress;
+    }
+    newChild.sibling = null;
+  } else {
+    // If there is no alternate, then we don't need to clone the children.
+    // If the children of the alternate fiber is a different set, then we don't
+    // need to clone. We need to reset the return fiber though since we'll
+    // traverse down into them.
+    let child = workInProgress.child;
+    while (child !== null) {
+      child.return = workInProgress;
+      child = child.sibling;
+    }
+  }
+};
+
+function bailoutOnAlreadyFinishedWork(
+  current,
+  workInProgress: Fiber,
+): Fiber | null {
+  const priorityLevel = workInProgress.pendingWorkPriority;
+  // TODO: We should ideally be able to bail out early if the children have no
+  // more work to do. However, since we don't have a separation of this
+  // Fiber's priority and its children yet - we don't know without doing lots
+  // of the same work we do anyway. Once we have that separation we can just
+  // bail out here if the children has no more work at this priority level.
+  // if (workInProgress.priorityOfChildren <= priorityLevel) {
+  //   // If there are side-effects in these children that have not yet been
+  //   // committed we need to ensure that they get properly transferred up.
+  //   if (current && current.child !== workInProgress.child) {
+  //     reuseChildrenEffects(workInProgress, child);
+  //   }
+  //   return null;
+  // }
+
+  if (current && workInProgress.child === current.child) {
+    // If we had any progressed work already, that is invalid at this point so
+    // let's throw it out.
+    clearDeletions(workInProgress);
+  }
+
+  cloneChildFibers(current, workInProgress);
+  markChildAsProgressed(current, workInProgress, priorityLevel);
+  return workInProgress.child;
+}
+
+function invalidateContextProvider(workInProgress: Fiber): void {
+  const instance = workInProgress.stateNode;
+
+  // Merge parent and own context.
+  const mergedContext = processChildContext(
+    workInProgress,
+    previousContext,
+    true,
+  );
+  instance.__reactInternalMemoizedMergedChildContext = mergedContext;
+
+  // Replace the old (or empty) context with the new one.
+  // It is important to unwind the context in the reverse order.
+  pop(didPerformWorkStackCursor, workInProgress);
+  pop(contextStackCursor, workInProgress);
+  // Now push the new context and mark that it has changed.
+  push(contextStackCursor, mergedContext, workInProgress);
+  push(didPerformWorkStackCursor, true, workInProgress);
+};
+
+function finishClassComponent(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  shouldUpdate: boolean,
+  hasContext: boolean,
+) {
+  // Refs should update even if shouldComponentUpdate returns false
+  markRef(current, workInProgress);
+
+  if (!shouldUpdate) {
+    return bailoutOnAlreadyFinishedWork(current, workInProgress);
+  }
+
+  const instance = workInProgress.stateNode;
+
+  // Rerender
+  currentOwner = workInProgress;
+  let nextChildren;
+  nextChildren = instance.render();
+  reconcileChildren(current, workInProgress, nextChildren);
+  // Memoize props and state using the values we just used to render.
+  // TODO: Restructure so we never read values from the instance.
+  memoizeState(workInProgress, instance.state);
+  memoizeProps(workInProgress, instance.props);
+
+  // The context might have changed so we need to recalculate it.
+  if (hasContext) {
+    invalidateContextProvider(workInProgress);
+  }
+  return workInProgress.child;
+}
+
+function mountIndeterminateComponent(current, workInProgress, priorityLevel) {
+  var fn = workInProgress.type;
+  var props = workInProgress.pendingProps;
+  var unmaskedContext = getUnmaskedContext(workInProgress);
+  var context = getMaskedContext(workInProgress, unmaskedContext);
+
+  const value = fn(props, context);
+
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof value.render === 'function'
+  ) {
+    // Proceed under the assumption that this is a class instance
+    workInProgress.tag = ClassComponent;
+
+    // Push context providers early to prevent context stack mismatches.
+    // During mounting we don't know the child context yet as the instance doesn't exist.
+    // We will invalidate the child context in finishClassComponent() right after rendering.
+    const hasContext = pushContextProvider(workInProgress);
+    adoptClassInstance(workInProgress, value);
+    mountClassInstance(workInProgress, priorityLevel);
+    return finishClassComponent(current, workInProgress, true, hasContext);
+  } else {
+    // Proceed under the assumption that this is a functional component
+    workInProgress.tag = FunctionalComponent;
+    reconcileChildren(current, workInProgress, value);
+    memoizeProps(workInProgress, props);
+    return workInProgress.child;
+  }
+}
+
+function hasContextChanged(): boolean {
+  return didPerformWorkStackCursor.current;
+}
+
+function updateFunctionalComponent(current, workInProgress) {
+  var fn = workInProgress.type;
+  var nextProps = workInProgress.pendingProps;
+
+  const memoizedProps = workInProgress.memoizedProps;
+  if (hasContextChanged()) {
+    // Normally we can bail out on props equality but if context has changed
+    // we don't do the bailout and we have to reuse existing props instead.
+    if (nextProps === null) {
+      nextProps = memoizedProps;
+    }
+  } else {
+    if (nextProps === null || memoizedProps === nextProps) {
+      return bailoutOnAlreadyFinishedWork(current, workInProgress);
+    }
+    // TODO: Disable this before release, since it is not part of the public API
+    // I use this for testing to compare the relative overhead of classes.
+    if (
+      typeof fn.shouldComponentUpdate === 'function' &&
+      !fn.shouldComponentUpdate(memoizedProps, nextProps)
+    ) {
+      // Memoize props even if shouldComponentUpdate returns false
+      memoizeProps(workInProgress, nextProps);
+      return bailoutOnAlreadyFinishedWork(current, workInProgress);
+    }
+  }
+
+  var unmaskedContext = getUnmaskedContext(workInProgress);
+  var context = getMaskedContext(workInProgress, unmaskedContext);
+
+  var nextChildren;
+
+  nextChildren = fn(nextProps, context);
+  reconcileChildren(current, workInProgress, nextChildren);
+  memoizeProps(workInProgress, nextProps);
+  return workInProgress.child;
+}
+
+function isContextConsumer(fiber: Fiber): boolean {
+  return fiber.tag === ClassComponent && fiber.type.contextTypes != null;
+}
+
+function constructClassInstance(workInProgress: Fiber, props: any): any {
+  const ctor = workInProgress.type;
+  const unmaskedContext = getUnmaskedContext(workInProgress);
+  const needsContext = isContextConsumer(workInProgress);
+  const context = needsContext
+    ? getMaskedContext(workInProgress, unmaskedContext)
+    : emptyObject;
+  const instance = new ctor(props, context);
+  adoptClassInstance(workInProgress, instance);
+
+  // Cache unmasked context so we can avoid recreating masked context unless necessary.
+  // ReactFiberContext usually updates this cache but can't for newly-created instances.
+  if (needsContext) {
+    cacheContext(workInProgress, unmaskedContext, context);
+  }
+
+  return instance;
+}
+
+function resetInputPointers(workInProgress: Fiber, instance: any) {
+  instance.props = workInProgress.memoizedProps;
+  instance.state = workInProgress.memoizedState;
+}
+
+function callComponentWillReceiveProps(
+  workInProgress,
+  instance,
+  newProps,
+  newContext,
+) {
+  const oldState = instance.state;
+  instance.componentWillReceiveProps(newProps, newContext);
+
+  if (instance.state !== oldState) {
+    updater.enqueueReplaceState(instance, instance.state, null);
+  }
+}
+
+function checkShouldComponentUpdate(
+  workInProgress,
+  oldProps,
+  newProps,
+  oldState,
+  newState,
+  newContext,
+) {
+  if (
+    oldProps === null ||
+    (workInProgress.updateQueue !== null &&
+      workInProgress.updateQueue.hasForceUpdate)
+  ) {
+    // If the workInProgress already has an Update effect, return true
+    return true;
+  }
+
+  const instance = workInProgress.stateNode;
+  const type = workInProgress.type;
+  if (typeof instance.shouldComponentUpdate === 'function') {
+    const shouldUpdate = instance.shouldComponentUpdate(
+      newProps,
+      newState,
+      newContext,
+    );
+    return shouldUpdate;
+  }
+
+  if (type.prototype && type.prototype.isPureReactComponent) {
+    return (
+      !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState)
+    );
+  }
+
+  return true;
+}
+
+// Called on a preexisting class instance. Returns false if a resumed render
+// could be reused.
+function resumeMountClassInstance(
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+): boolean {
+  const instance = workInProgress.stateNode;
+  resetInputPointers(workInProgress, instance);
+
+  let newState = workInProgress.memoizedState;
+  let newProps = workInProgress.pendingProps;
+  if (!newProps) {
+    // If there isn't any new props, then we'll reuse the memoized props.
+    // This could be from already completed work.
+    newProps = workInProgress.memoizedProps;
+  }
+  const newUnmaskedContext = getUnmaskedContext(workInProgress);
+  const newContext = getMaskedContext(workInProgress, newUnmaskedContext);
+
+  const oldContext = instance.context;
+  const oldProps = workInProgress.memoizedProps;
+
+  if (
+    typeof instance.componentWillReceiveProps === 'function' &&
+    (oldProps !== newProps || oldContext !== newContext)
+  ) {
+    callComponentWillReceiveProps(
+      workInProgress,
+      instance,
+      newProps,
+      newContext,
+    );
+  }
+
+  // Process the update queue before calling shouldComponentUpdate
+  const updateQueue = workInProgress.updateQueue;
+  if (updateQueue !== null) {
+    newState = beginUpdateQueue(
+      workInProgress,
+      updateQueue,
+      instance,
+      newState,
+      newProps,
+      priorityLevel,
+    );
+  }
+
+  // TODO: Should we deal with a setState that happened after the last
+  // componentWillMount and before this componentWillMount? Probably
+  // unsupported anyway.
+
+  if (
+    !checkShouldComponentUpdate(
+      workInProgress,
+      workInProgress.memoizedProps,
+      newProps,
+      workInProgress.memoizedState,
+      newState,
+      newContext,
+    )
+  ) {
+    // Update the existing instance's state, props, and context pointers even
+    // though we're bailing out.
+    instance.props = newProps;
+    instance.state = newState;
+    instance.context = newContext;
+    return false;
+  }
+
+  // Update the input pointers now so that they are correct when we call
+  // componentWillMount
+  instance.props = newProps;
+  instance.state = newState;
+  instance.context = newContext;
+
+  if (typeof instance.componentWillMount === 'function') {
+    callComponentWillMount(workInProgress, instance);
+    // componentWillMount may have called setState. Process the update queue.
+    const newUpdateQueue = workInProgress.updateQueue;
+    if (newUpdateQueue !== null) {
+      newState = beginUpdateQueue(
+        workInProgress,
+        newUpdateQueue,
+        instance,
+        newState,
+        newProps,
+        priorityLevel,
+      );
+    }
+  }
+
+  if (typeof instance.componentDidMount === 'function') {
+    workInProgress.effectTag |= Update;
+  }
+
+  instance.state = newState;
+
+  return true;
+}
+
+// Invokes the update life-cycles and returns false if it shouldn't rerender.
+function updateClassInstance(
+  current: Fiber,
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+): boolean {
+  const instance = workInProgress.stateNode;
+  resetInputPointers(workInProgress, instance);
+
+  const oldProps = workInProgress.memoizedProps;
+  let newProps = workInProgress.pendingProps;
+  if (!newProps) {
+    // If there aren't any new props, then we'll reuse the memoized props.
+    // This could be from already completed work.
+    newProps = oldProps;
+  }
+  const oldContext = instance.context;
+  const newUnmaskedContext = getUnmaskedContext(workInProgress);
+  const newContext = getMaskedContext(workInProgress, newUnmaskedContext);
+
+  // Note: During these life-cycles, instance.props/instance.state are what
+  // ever the previously attempted to render - not the "current". However,
+  // during componentDidUpdate we pass the "current" props.
+
+  if (
+    typeof instance.componentWillReceiveProps === 'function' &&
+    (oldProps !== newProps || oldContext !== newContext)
+  ) {
+    callComponentWillReceiveProps(
+      workInProgress,
+      instance,
+      newProps,
+      newContext,
+    );
+  }
+
+  // Compute the next state using the memoized state and the update queue.
+  const updateQueue = workInProgress.updateQueue;
+  const oldState = workInProgress.memoizedState;
+  // TODO: Previous state can be null.
+  let newState;
+  if (updateQueue !== null) {
+    newState = beginUpdateQueue(
+      workInProgress,
+      updateQueue,
+      instance,
+      oldState,
+      newProps,
+      priorityLevel,
+    );
+  } else {
+    newState = oldState;
+  }
+
+  if (
+    oldProps === newProps &&
+    oldState === newState &&
+    !hasContextChanged() &&
+    !(updateQueue !== null && updateQueue.hasForceUpdate)
+  ) {
+    // If an update was already in progress, we should schedule an Update
+    // effect even though we're bailing out, so that cWU/cDU are called.
+    if (typeof instance.componentDidUpdate === 'function') {
+      if (
+        oldProps !== current.memoizedProps ||
+        oldState !== current.memoizedState
+      ) {
+        workInProgress.effectTag |= Update;
+      }
+    }
+    return false;
+  }
+
+  const shouldUpdate = checkShouldComponentUpdate(
+    workInProgress,
+    oldProps,
+    newProps,
+    oldState,
+    newState,
+    newContext,
+  );
+
+  if (shouldUpdate) {
+    if (typeof instance.componentWillUpdate === 'function') {
+      instance.componentWillUpdate(newProps, newState, newContext);
+    }
+    if (typeof instance.componentDidUpdate === 'function') {
+      workInProgress.effectTag |= Update;
+    }
+  } else {
+    // If an update was already in progress, we should schedule an Update
+    // effect even though we're bailing out, so that cWU/cDU are called.
+    if (typeof instance.componentDidUpdate === 'function') {
+      if (
+        oldProps !== current.memoizedProps ||
+        oldState !== current.memoizedState
+      ) {
+        workInProgress.effectTag |= Update;
+      }
+    }
+
+    // If shouldComponentUpdate returned false, we should still update the
+    // memoized props/state to indicate that this work can be reused.
+    memoizeProps(workInProgress, newProps);
+    memoizeState(workInProgress, newState);
+  }
+
+  // Update the existing instance's state, props, and context pointers even
+  // if shouldComponentUpdate returns false.
+  instance.props = newProps;
+  instance.state = newState;
+  instance.context = newContext;
+
+  return shouldUpdate;
+}
+
+function updateClassComponent(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+) {
+  // Push context providers early to prevent context stack mismatches.
+  // During mounting we don't know the child context yet as the instance doesn't exist.
+  // We will invalidate the child context in finishClassComponent() right after rendering.
+  const hasContext = pushContextProvider(workInProgress);
+
+  let shouldUpdate;
+  if (current === null) {
+    if (!workInProgress.stateNode) {
+      // In the initial pass we might need to construct the instance.
+      constructClassInstance(workInProgress, workInProgress.pendingProps);
+      mountClassInstance(workInProgress, priorityLevel);
+      shouldUpdate = true;
+    } else {
+      // In a resume, we'll already have an instance we can reuse.
+      shouldUpdate = resumeMountClassInstance(workInProgress, priorityLevel);
+    }
+  } else {
+    shouldUpdate = updateClassInstance(
+      current,
+      workInProgress,
+      priorityLevel,
+    );
+  }
+  return finishClassComponent(
+    current,
+    workInProgress,
+    shouldUpdate,
+    hasContext,
+  );
+}
+
+function pushTopLevelContextObject(
+  fiber: Fiber,
+  context: Object,
+  didChange: boolean,
+): void {
+  push(contextStackCursor, context, fiber);
+  push(didPerformWorkStackCursor, didChange, fiber);
+}
+
+function updateHostRoot(current, workInProgress, priorityLevel) {
+  const root = (workInProgress.stateNode: FiberRoot);
+  if (root.pendingContext) {
+    pushTopLevelContextObject(
+      workInProgress,
+      root.pendingContext,
+      root.pendingContext !== root.context,
+    );
+  } else if (root.context) {
+    // Should always be set
+    pushTopLevelContextObject(workInProgress, root.context, false);
+  }
+
+  pushHostContainer(workInProgress, root.containerInfo);
+
+  const updateQueue = workInProgress.updateQueue;
+  if (updateQueue !== null) {
+    const prevState = workInProgress.memoizedState;
+    const state = beginUpdateQueue(
+      workInProgress,
+      updateQueue,
+      null,
+      prevState,
+      null,
+      priorityLevel,
+    );
+    if (prevState === state) {
+      // If the state is the same as before, that's a bailout because we had
+      // no work matching this priority.
+      return bailoutOnAlreadyFinishedWork(current, workInProgress);
+    }
+    const element = state.element;
+    reconcileChildren(current, workInProgress, element);
+    memoizeState(workInProgress, state);
+    return workInProgress.child;
+  }
+  // If there is no update queue, that's a bailout because the root has no props.
+  return bailoutOnAlreadyFinishedWork(current, workInProgress);
+}
+
+function pushHostContext(fiber: Fiber): void {
+  const rootInstance = requiredContext(rootInstanceStackCursor.current);
+  const context = requiredContext(contextStackCursor.current);
+  const nextContext = getChildHostContext(context, fiber.type, rootInstance);
+
+  // Don't push this Fiber's context unless it's unique.
+  if (context === nextContext) {
+    return;
+  }
+
+  // Track the context and the Fiber that provided it.
+  // This enables us to pop only Fibers that provide unique contexts.
+  push(contextFiberStackCursor, fiber, fiber);
+  push(contextStackCursor, nextContext, fiber);
+}
+
+function updateHostComponent(current, workInProgress) {
+  pushHostContext(workInProgress);
+
+  let nextProps = workInProgress.pendingProps;
+  const prevProps = current !== null ? current.memoizedProps : null;
+  const memoizedProps = workInProgress.memoizedProps;
+  if (hasContextChanged()) {
+    // Normally we can bail out on props equality but if context has changed
+    // we don't do the bailout and we have to reuse existing props instead.
+    if (nextProps === null) {
+      nextProps = memoizedProps;
+    }
+  } else if (nextProps === null || memoizedProps === nextProps) {
+    if (
+      !useSyncScheduling &&
+      shouldDeprioritizeSubtree(workInProgress.type, memoizedProps) &&
+      workInProgress.pendingWorkPriority !== OffscreenPriority
+    ) {
+      // This subtree still has work, but it should be deprioritized so we need
+      // to bail out and not do any work yet.
+      // TODO: It would be better if this tree got its correct priority set
+      // during scheduleUpdate instead because otherwise we'll start a higher
+      // priority reconciliation first before we can get down here. However,
+      // that is a bit tricky since workInProgress and current can have
+      // different "hidden" settings.
+      let child = workInProgress.progressedChild;
+      while (child !== null) {
+        // To ensure that this subtree gets its priority reset, the children
+        // need to be reset.
+        child.pendingWorkPriority = OffscreenPriority;
+        child = child.sibling;
+      }
+      return null;
+    }
+    return bailoutOnAlreadyFinishedWork(current, workInProgress);
+  }
+
+  let nextChildren = nextProps.children;
+  const isDirectTextChild = shouldSetTextContent(nextProps);
+
+  if (isDirectTextChild) {
+    // We special case a direct text child of a host node. This is a common
+    // case. We won't handle it as a reified child. We will instead handle
+    // this in the host environment that also have access to this prop. That
+    // avoids allocating another HostText fiber and traversing it.
+    nextChildren = null;
+  } else if (prevProps && shouldSetTextContent(prevProps)) {
+    // If we're switching from a direct text child to a normal child, or to
+    // empty, we need to schedule the text content to be reset.
+    workInProgress.effectTag |= ContentReset;
+  }
+
+  markRef(current, workInProgress);
+
+  if (
+    !useSyncScheduling &&
+    shouldDeprioritizeSubtree(workInProgress.type, nextProps) &&
+    workInProgress.pendingWorkPriority !== OffscreenPriority
+  ) {
+    // If this host component is hidden, we can bail out on the children.
+    // We'll rerender the children later at the lower priority.
+
+    // It is unfortunate that we have to do the reconciliation of these
+    // children already since that will add them to the tree even though
+    // they are not actually done yet. If this is a large set it is also
+    // confusing that this takes time to do right now instead of later.
+
+    if (workInProgress.progressedPriority === OffscreenPriority) {
+      // If we already made some progress on the offscreen priority before,
+      // then we should continue from where we left off.
+      workInProgress.child = workInProgress.progressedChild;
+    }
+
+    // Reconcile the children and stash them for later work.
+    reconcileChildrenAtPriority(
+      current,
+      workInProgress,
+      nextChildren,
+      OffscreenPriority,
+    );
+    memoizeProps(workInProgress, nextProps);
+    workInProgress.child = current !== null ? current.child : null;
+
+    if (current === null) {
+      // If this doesn't have a current we won't track it for placement
+      // effects. However, when we come back around to this we have already
+      // inserted the parent which means that we'll infact need to make this a
+      // placement.
+      // TODO: There has to be a better solution to this problem.
+      let child = workInProgress.progressedChild;
+      while (child !== null) {
+        child.effectTag = Placement;
+        child = child.sibling;
+      }
+    }
+
+    // Abort and don't process children yet.
+    return null;
+  } else {
+    reconcileChildren(current, workInProgress, nextChildren);
+    memoizeProps(workInProgress, nextProps);
+    return workInProgress.child;
+  }
+}
+
+function updateHostText(current, workInProgress) {
+  let nextProps = workInProgress.pendingProps;
+  if (nextProps === null) {
+    nextProps = workInProgress.memoizedProps;
+  }
+  memoizeProps(workInProgress, nextProps);
+  // Nothing to do here. This is terminal. We'll do the completion step
+  // immediately after.
+  return null;
+}
+
+function updateCoroutineComponent(current, workInProgress) {
+  var nextCoroutine = (workInProgress.pendingProps: null | ReactCoroutine);
+  if (hasContextChanged()) {
+    // Normally we can bail out on props equality but if context has changed
+    // we don't do the bailout and we have to reuse existing props instead.
+    if (nextCoroutine === null) {
+      nextCoroutine = current && current.memoizedProps;
+    }
+  } else if (
+    nextCoroutine === null ||
+    workInProgress.memoizedProps === nextCoroutine
+  ) {
+    nextCoroutine = workInProgress.memoizedProps;
+    // TODO: When bailing out, we might need to return the stateNode instead
+    // of the child. To check it for work.
+    // return bailoutOnAlreadyFinishedWork(current, workInProgress);
+  }
+
+  const nextChildren = nextCoroutine.children;
+  const priorityLevel = workInProgress.pendingWorkPriority;
+
+  // The following is a fork of reconcileChildrenAtPriority but using
+  // stateNode to store the child.
+
+  // At this point any memoization is no longer valid since we'll have changed
+  // the children.
+  workInProgress.memoizedProps = null;
+  if (current === null) {
+    workInProgress.stateNode = mountChildFibersInPlace(
+      workInProgress,
+      workInProgress.stateNode,
+      nextChildren,
+      priorityLevel,
+    );
+  } else if (current.child === workInProgress.child) {
+    clearDeletions(workInProgress);
+
+    workInProgress.stateNode = reconcileChildFibers(
+      workInProgress,
+      workInProgress.stateNode,
+      nextChildren,
+      priorityLevel,
+    );
+
+    transferDeletions(workInProgress);
+  } else {
+    workInProgress.stateNode = reconcileChildFibersInPlace(
+      workInProgress,
+      workInProgress.stateNode,
+      nextChildren,
+      priorityLevel,
+    );
+
+    transferDeletions(workInProgress);
+  }
+
+  memoizeProps(workInProgress, nextCoroutine);
+  // This doesn't take arbitrary time so we could synchronously just begin
+  // eagerly do the work of workInProgress.child as an optimization.
+  return workInProgress.stateNode;
+}
+
+function updatePortalComponent(current, workInProgress) {
+  pushHostContainer(workInProgress, workInProgress.stateNode.containerInfo);
+  const priorityLevel = workInProgress.pendingWorkPriority;
+  let nextChildren = workInProgress.pendingProps;
+  if (hasContextChanged()) {
+    // Normally we can bail out on props equality but if context has changed
+    // we don't do the bailout and we have to reuse existing props instead.
+    if (nextChildren === null) {
+      nextChildren = current && current.memoizedProps;
+    }
+  } else if (
+    nextChildren === null ||
+    workInProgress.memoizedProps === nextChildren
+  ) {
+    return bailoutOnAlreadyFinishedWork(current, workInProgress);
+  }
+
+  if (current === null) {
+    // Portals are special because we don't append the children during mount
+    // but at commit. Therefore we need to track insertions which the normal
+    // flow doesn't do during mount. This doesn't happen at the root because
+    // the root always starts with a "current" with a null child.
+    // TODO: Consider unifying this with how the root works.
+    workInProgress.child = reconcileChildFibersInPlace(
+      workInProgress,
+      workInProgress.child,
+      nextChildren,
+      priorityLevel,
+    );
+    memoizeProps(workInProgress, nextChildren);
+    markChildAsProgressed(current, workInProgress, priorityLevel);
+  } else {
+    reconcileChildren(current, workInProgress, nextChildren);
+    memoizeProps(workInProgress, nextChildren);
+  }
+  return workInProgress.child;
+}
+
+function updateFragmentWithWorkInProgress(current, workInProgress) {
+  var nextChildren = workInProgress.pendingProps;
+  if (hasContextChanged()) {
+    // Normally we can bail out on props equality but if context has changed
+    // we don't do the bailout and we have to reuse existing props instead.
+    if (nextChildren === null) {
+      nextChildren = workInProgress.memoizedProps;
+    }
+  } else if (
+    nextChildren === null ||
+    workInProgress.memoizedProps === nextChildren
+  ) {
+    return bailoutOnAlreadyFinishedWork(current, workInProgress);
+  }
+  reconcileChildren(current, workInProgress, nextChildren);
+  memoizeProps(workInProgress, nextChildren);
   return workInProgress.child;
 }
 
@@ -1446,7 +4353,7 @@ function beginWork(
     case HostPortal:
       return updatePortalComponent(current, workInProgress);
     case Fragment:
-      return updateFragment(current, workInProgress);
+      return updateFragmentWithWorkInProgress(current, workInProgress);
   }
 }
 
@@ -1463,6 +4370,112 @@ function markRef(workInProgress: Fiber) {
 function getHostContext(): CX {
   const context = requiredContext(contextStackCursor.current);
   return context;
+}
+
+function markChildAsProgressed(current, workInProgress, priorityLevel) {
+  // We now have clones. Let's store them as the currently progressed work.
+  workInProgress.progressedChild = workInProgress.child;
+  workInProgress.progressedPriority = priorityLevel;
+  if (current !== null) {
+    // We also store it on the current. When the alternate swaps in we can
+    // continue from this point.
+    current.progressedChild = workInProgress.progressedChild;
+    current.progressedPriority = workInProgress.progressedPriority;
+  }
+}
+
+function appendAllYields(yields: Array<mixed>, workInProgress: Fiber) {
+  let node = workInProgress.stateNode;
+  if (node) {
+    node.return = workInProgress;
+  }
+  while (node !== null) {
+    if (
+      node.tag === HostComponent ||
+      node.tag === HostText ||
+      node.tag === HostPortal
+    ) {
+      
+    } else if (node.tag === YieldComponent) {
+      yields.push(node.type);
+    } else if (node.child !== null) {
+      node.child.return = node;
+      node = node.child;
+      continue;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === workInProgress) {
+        return;
+      }
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
+  }
+}
+
+function moveCoroutineToHandlerPhase(
+  current: Fiber | null,
+  workInProgress: Fiber,
+) {
+  var coroutine = (workInProgress.memoizedProps: ?ReactCoroutine);
+
+  // First step of the coroutine has completed. Now we need to do the second.
+  // TODO: It would be nice to have a multi stage coroutine represented by a
+  // single component, or at least tail call optimize nested ones. Currently
+  // that requires additional fields that we don't want to add to the fiber.
+  // So this requires nested handlers.
+  // Note: This doesn't mutate the alternate node. I don't think it needs to
+  // since this stage is reset for every pass.
+  workInProgress.tag = CoroutineHandlerPhase;
+
+  // Build up the yields.
+  // TODO: Compare this to a generator or opaque helpers like Children.
+  var yields = [];
+  appendAllYields(yields, workInProgress);
+  var fn = coroutine.handler;
+  var props = coroutine.props;
+  var nextChildren = fn(props, yields);
+
+  var currentFirstChild = current !== null ? current.child : null;
+  // Inherit the priority of the returnFiber.
+  const priority = workInProgress.pendingWorkPriority;
+  workInProgress.child = reconcileChildFibers(
+    workInProgress,
+    currentFirstChild,
+    nextChildren,
+    priority,
+  );
+  markChildAsProgressed(current, workInProgress, priority);
+  return workInProgress.child;
+}
+
+function appendAllChildren(parent: I, workInProgress: Fiber) {
+  // We only have the top Fiber that was created but we need recurse down its
+  // children to find all the terminal nodes.
+  let node = workInProgress.child;
+  while (node !== null) {
+    if (node.tag === HostComponent || node.tag === HostText) {
+      appendInitialChild(parent, node.stateNode);
+    } else if (node.tag === HostPortal) {
+      // If we have a portal child, then we don't want to traverse
+      // down its children. Instead, we'll get insertions from each child in
+      // the portal directly.
+    } else if (node.child !== null) {
+      node = node.child;
+      continue;
+    }
+    if (node === workInProgress) {
+      return;
+    }
+    while (node.sibling === null) {
+      if (node.return === null || node.return === workInProgress) {
+        return;
+      }
+      node = node.return;
+    }
+    node = node.sibling;
+  }
 }
 
 function completeWork(
@@ -2010,6 +5023,172 @@ function scheduleUpdate(fiber: Fiber, priorityLevel: PriorityLevel) {
     }
     node = node.return;
   }
+}
+
+function createFiberFromYield(
+  yieldNode: ReactYield,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  const fiber = createFiber(YieldComponent, null, internalContextTag);
+  return fiber;
+}
+
+function createFiberFromPortal(
+  portal: ReactPortal,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  const fiber = createFiber(HostPortal, portal.key, internalContextTag);
+  fiber.pendingProps = portal.children || [];
+  fiber.pendingWorkPriority = priorityLevel;
+  fiber.stateNode = {
+    containerInfo: portal.containerInfo,
+    implementation: portal.implementation,
+  };
+  return fiber;
+}
+
+function createFiberFromCoroutine(
+  coroutine: ReactCoroutine,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  const fiber = createFiber(
+    CoroutineComponent,
+    coroutine.key,
+    internalContextTag,
+  );
+  fiber.type = coroutine.handler;
+  fiber.pendingProps = coroutine;
+  fiber.pendingWorkPriority = priorityLevel;
+  return fiber;
+}
+
+function coerceRef(current: Fiber | null, element: ReactElement) {
+  let mixedRef = element.ref;
+  if (mixedRef !== null && typeof mixedRef !== 'function') {
+    if (element._owner) {
+      const owner: ?(Fiber | ReactInstance) = (element._owner: any);
+      let inst;
+      if (owner) {
+        if (typeof owner.tag === 'number') {
+          const ownerFiber = ((owner: any): Fiber);
+          inst = ownerFiber.stateNode;
+        } else {
+          // Stack
+          inst = (owner: any).getPublicInstance();
+        }
+      }
+      const stringRef = '' + mixedRef;
+      // Check if previous string ref matches new string ref
+      if (
+        current !== null &&
+        current.ref !== null &&
+        current.ref._stringRef === stringRef
+      ) {
+        return current.ref;
+      }
+      const ref = function(value) {
+        const refs = inst.refs === emptyObject ? (inst.refs = {}) : inst.refs;
+        if (value === null) {
+          delete refs[stringRef];
+        } else {
+          refs[stringRef] = value;
+        }
+      };
+      ref._stringRef = stringRef;
+      return ref;
+    }
+  }
+  return mixedRef;
+}
+
+function shouldConstruct(Component) {
+  return !!(Component.prototype && Component.prototype.isReactComponent);
+}
+
+function createFiberFromElementType(
+  type: mixed,
+  key: null | string,
+  internalContextTag: TypeOfInternalContext,
+  debugOwner: null | Fiber | ReactInstance,
+): Fiber {
+  let fiber;
+  if (typeof type === 'function') {
+    fiber = shouldConstruct(type)
+      ? createFiber(ClassComponent, key, internalContextTag)
+      : createFiber(IndeterminateComponent, key, internalContextTag);
+    fiber.type = type;
+  } else if (typeof type === 'string') {
+    fiber = createFiber(HostComponent, key, internalContextTag);
+    fiber.type = type;
+  } else if (
+    typeof type === 'object' &&
+    type !== null &&
+    typeof type.tag === 'number'
+  ) {
+    // Currently assumed to be a continuation and therefore is a fiber already.
+    // TODO: The yield system is currently broken for updates in some cases.
+    // The reified yield stores a fiber, but we don't know which fiber that is;
+    // the current or a workInProgress? When the continuation gets rendered here
+    // we don't know if we can reuse that fiber or if we need to clone it.
+    // There is probably a clever way to restructure this.
+    fiber = ((type: any): Fiber);
+  } else {
+  }
+  return fiber;
+}
+
+function createFiberFromElement(
+  element: ReactElement,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  let owner = null;
+  if (__DEV__) {
+    owner = element._owner;
+  }
+
+  const fiber = createFiberFromElementType(
+    element.type,
+    element.key,
+    internalContextTag,
+    owner,
+  );
+  fiber.pendingProps = element.props;
+  fiber.pendingWorkPriority = priorityLevel;
+
+  if (__DEV__) {
+    fiber._debugSource = element._source;
+    fiber._debugOwner = element._owner;
+  }
+
+  return fiber;
+}
+
+function createFiberFromFragment(
+  elements: ReactFragment,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  // TODO: Consider supporting keyed fragments. Technically, we accidentally
+  // support that in the existing React.
+  const fiber = createFiber(Fragment, null, internalContextTag);
+  fiber.pendingProps = elements;
+  fiber.pendingWorkPriority = priorityLevel;
+  return fiber;
+}
+
+function createFiberFromText(
+  content: string,
+  internalContextTag: TypeOfInternalContext,
+  priorityLevel: PriorityLevel,
+): Fiber {
+  const fiber = createFiber(HostText, null, internalContextTag);
+  fiber.pendingProps = content;
+  fiber.pendingWorkPriority = priorityLevel;
+  return fiber;
 }
 
 function scheduleTopLevelUpdate(
