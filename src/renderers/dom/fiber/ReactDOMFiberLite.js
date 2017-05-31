@@ -337,7 +337,7 @@ function setStyle(lastValue, nextValue, domElement) {
 		// do not add a hasOwnProperty check here, it affects performance
 		const value = nextValue[style];
 
-		if (typeof value !== 'number' || isUnitlessNumber.has(style)) {
+		if (typeof value !== 'number' || isUnitlessNumber[style]) {
 			domStyle[style] = value;
 		} else {
 			domStyle[style] = value + 'px';
