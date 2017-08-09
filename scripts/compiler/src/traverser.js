@@ -581,11 +581,33 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
   }
 }
 
-function declareVariable(id, init, action, scope) {
-  const assignKey = getNameFromAst(id);
-  const value = init === null ? createUndefined() : getOrSetValueFromAst(init, scope);
+function getObjectProperty(object, property) {
+  if (object.type === Types.FunctionCall) {
+    return createAbstractUnknown();
+  } else {
+    debugger;
+  }
+}
 
-  assign(scope, 'assignments', assignKey, value);
+function declareVariable(id, init, action, scope) {
+  if (id.type === 'ObjectPattern') {
+    const astProperties = id.properties;
+    const value = getOrSetValueFromAst(init, scope);
+
+    astProperties.forEach(astProperty => {
+      const astKey = astProperty.key;
+      const astValue = astProperty.value;
+      const nameAssignKey = getNameFromAst(astKey);
+      const valueAssignKey = getNameFromAst(astValue);
+
+      assign(scope, 'assignments', valueAssignKey, getObjectProperty(value, nameAssignKey));
+    });
+  } else {
+    const assignKey = getNameFromAst(id);
+    const value = init === null ? createUndefined() : getOrSetValueFromAst(init, scope);
+
+    assign(scope, 'assignments', assignKey, value);
+  }
 }
 
 function declareClass(node, id, superId, body, scope) {

@@ -55,4 +55,17 @@ function Baz({children, age}) {
   return <span>{children}<SoWhat age={age} /></span>
 }
 
-module.exports = Foo;
+var {doSomething, checkSomething} = require('someLib');
+
+function Button() {
+  return <span>123</span>
+}
+
+function MyComponent(props) {
+	if (checkSomething(props.age)) {
+		return <Button onClick={props.handleClick}>{ doSomething(props.title) }</Button>;
+	}
+	return <Button onClick={props.handleClick}>Cancel</Button>;
+}
+
+module.exports = MyComponent;
