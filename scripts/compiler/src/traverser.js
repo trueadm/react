@@ -129,7 +129,6 @@ function createModuleScope() {
     require: createAbstractFunction(),
     window: createAbstractObject(),
     document: createAbstractObject(),
-    Date: createAbstractFunction(),
   });
 }
 
@@ -542,6 +541,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
 
       if (functionRef == null) {
         console.warn(`Could not find an identifier for function call "${getNameFromAst(astCallee)}"`);
+        return createAbstractUnknown();
       } else if (functionRef.type === Types.Undefined) {
         throw new Error(`Could not call an  identifier that is "undefined" for function call "${getNameFromAst(astCallee)}"`);
       } else if (functionRef.type === Types.Null) {
