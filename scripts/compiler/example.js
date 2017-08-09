@@ -1,0 +1,58 @@
+
+const React = require('React');
+const staticThing = 'two!';
+const something = false;
+
+function Foo({ target, age }) {
+  var x = 1;
+  var y = 3;
+  while (x < y * 2) {
+    x++;
+  }
+  if (x !== target) {
+    y = 0;
+  }
+  return <Bar className="hello" x={x} y={y} age={age} />;
+}
+
+function Bar({ className, x, y, age }) {
+  return (
+    <div className={className + ' world ' + staticThing}>
+      X: {x}
+      Y: <Baz age={age}>{y}</Baz>
+    </div>
+  );
+}
+
+class SoWhat extends React.Component {
+  constructor(props) {
+    this.state = {
+      name: 'Dan',
+      age: props.age,
+    }
+  }
+  render() {
+    if (condition) {
+      return <span>{this.state.age}{condition}</span>;
+    } else {
+      return <div>{this._renderHeader()}{condition}</div>;
+    }
+  }
+  _renderHeader() {
+    return <div>Header</div>
+  }
+  onComponentDidMount() {
+    this.setState({
+      name: 'Dan2',
+    })
+  }
+}
+
+function Baz({children, age}) {
+  // Loops over abstract values are not supported.
+  // Comment this out and see how the bailout mechanism works.
+  // for (var i = 0; i < children; i++);
+  return <span>{children}<SoWhat age={age} /></span>
+}
+
+module.exports = Foo;
