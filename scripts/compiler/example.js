@@ -61,11 +61,23 @@ function Button() {
   return <span>123</span>
 }
 
+function fixName(name) {
+  return name.toUpperCase();
+}
+
 function MyComponent(props) {
 	if (checkSomething(props.age)) {
-		return <Button onClick={props.handleClick}>{ doSomething(props.title) }</Button>;
+		return (
+      <div>
+        <p>
+          Age: {doSomething(props.age)}
+          Name: {fixName(props.title)}
+        </p>
+        <Button onClick={props.handleShowClick}>Show</Button>
+      </div>
+    );
 	}
-	return <Button onClick={props.handleClick}>Cancel</Button>;
+	return <Button onClick={props.handleCloseClick}>Cancel</Button>;
 }
 
 module.exports = MyComponent;
