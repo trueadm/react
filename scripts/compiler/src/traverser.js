@@ -26,7 +26,7 @@ function createMathExpression(left, right, operator) {
     operator: operator,
     right: right,
     type: Types.MathExpression,
-  }
+  };
 }
 
 function createUndefined() {
@@ -44,26 +44,26 @@ function createNull() {
 function createIdentifier() {
   return {
     type: Types.Identifier,
-  }
+  };
 }
 
 function createAbstractObject() {
   return {
     type: Types.AbstractObject,
-  }
+  };
 }
 
 function createAbstractUnknown() {
   return {
     type: Types.AbstractUnknown,
-  }
+  };
 }
 
 function createAbstractFunction() {
   return {
     callSites: [],
     type: Types.AbstractFunction,
-  }
+  };
 }
 
 function createFunction(name, astNode) {
@@ -124,7 +124,7 @@ function createObject(properties) {
 function createModuleScope() {
   return createScope({
     module: createObject({
-      exports: createObject()
+      exports: createObject(),
     }),
     require: createAbstractFunction(),
     window: createAbstractObject(),
@@ -672,7 +672,7 @@ function assignExpression(left, right, action, scope) {
 }
 
 module.exports = {
-  Actions, Actions,
+  Actions: Actions,
   createModuleScope: createModuleScope,
-  traverse: traverse
+  traverse: traverse,
 };
