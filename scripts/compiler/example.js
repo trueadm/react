@@ -16,8 +16,7 @@ function MyComponent(props) {
 		return (
       <div>
         <p>
-          Age: {doSomething(props.age)}
-          Name: {fixName(props.title)}
+          Age: {doSomething(props.age.foo)}
         </p>
         <Button onClick={props.handleShowClick}>Show</Button>
       </div>

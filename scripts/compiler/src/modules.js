@@ -212,7 +212,7 @@ function analyzeModule(moduleName, hasteMap) {
 function compileComponentTree(originalAstComponent, prepackEvaluatedComponent, fallbackCompileComponentTree) {
   // create an abstract props object
   const initialProps = evaluator.createAbstractObject("props");
-  let expression;
+  let node;
   
   try {
     const resolvedResult = reconciler.renderAsDeepAsPossible(
@@ -221,16 +221,16 @@ function compileComponentTree(originalAstComponent, prepackEvaluatedComponent, f
       fallbackCompileComponentTree
     );
 
-    expression = serializer.serializeEvaluatedFunction(
+    node = serializer.serializeEvaluatedFunction(
       prepackEvaluatedComponent,
       [initialProps],
       resolvedResult
     );
   } catch (e) {
     // bail out
-    expression = fallbackCompileComponentTree(originalAstComponent);
+    node = fallbackCompileComponentTree(originalAstComponent);
   }
-  return expression;
+  return convertToExpression(node);
 }
 
 function constructExternalImports() {
@@ -251,11 +251,15 @@ function constructModuleExports(componentTree) {
   );
 }
 
+function convertToExpression(node) {
+  if (node.type === 'FunctionDeclaration') {
+    node.type = 'FunctionExpression';
+  }
+  return node;
+}
+
 function constructModule(functionCalls, externalModules, declarations, defaultExport, defaultExportEvaluation) {
   const defaultExportComponent = defaultExport.astNode;
-  if (defaultExportComponent.type === 'FunctionDeclaration') {
-    defaultExportComponent.type = 'FunctionExpression';
-  }
 
   const fallbackCompileComponentTree = (astComponent) => (
     optimizer.optimizeComponentTree(astComponent, declarations, externalModules, functionCalls)
