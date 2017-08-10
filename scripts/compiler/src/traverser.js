@@ -612,6 +612,17 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "NullLiteral": {
       return createNull();
     }
+    case "ArrowFunctionExpression": {
+      return declareFunction(
+        astNode,
+        astNode.id,
+        astNode.params,
+        astNode.body,
+        action,
+        subject,
+        false
+      );
+    }
     default: {
       debugger;
     }
@@ -751,14 +762,19 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
     name: getNameFromAst(node.id),
     scopeFunc() {
       return traverse(body, Actions.ScanInnerScope, newScope);
-    },
+    }
   });
   newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
   return func;
 }
 
 function assignExpression(left, right, action, scope) {
-  getOrSetValueFromAst(left, scope, action, getOrSetValueFromAst(right, scope, action));
+  getOrSetValueFromAst(
+    left,
+    scope,
+    action,
+    getOrSetValueFromAst(right, scope, action)
+  );
 }
 
 module.exports = {

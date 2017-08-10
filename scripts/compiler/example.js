@@ -3,6 +3,10 @@ const React = require('React');
 
 var {doSomething, checkSomething} = require('someLib');
 
+const foo = () => {
+
+};
+
 function Button() {
   return <span>123</span>
 }
