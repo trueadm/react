@@ -7,6 +7,7 @@ const traverser = require("./traverser");
 const evaluator = require("./evaluator");
 const serializer = require("./serializer");
 const reconciler = require("./reconciler");
+const optimizer = require('./optimizer');
 
 const cache = new Map();
 
@@ -38,7 +39,8 @@ function handleAssignmentValue(
   } else if (typeof assignmentValue === "boolean") {
     declarations[assignmentKey] = t.booleanLiteral(assignmentValue);
   } else if (assignmentValue.type !== undefined) {
-    switch (assignmentValue.type) {
+    const type = assignmentValue.type;
+    switch (type) {
       case "Function": {
         const astNode = assignmentValue.astNode;
         if (astNode === null) {
@@ -107,6 +109,10 @@ function handleAssignmentValue(
         declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
         break;
       }
+      case "Object": {
+        declarations[assignmentKey] = assignmentValue.astNode;
+        break;
+      }
       default: {
         debugger;
       }
@@ -173,13 +179,12 @@ function cacheDataFromModuleScope(moduleName, moduleScope) {
         );
       }
     } else {
-      const assignmentValue = moduleScope.assignments.get(assignmentKey);
-
       handleAssignmentValue(
         assignmentValue,
         assignmentKey,
         declarations,
-        externalModules
+        externalModules,
+        functionCalls
       );
     }
   });
@@ -204,11 +209,72 @@ function analyzeModule(moduleName, hasteMap) {
   cacheDataFromModuleScope(moduleName, moduleScope);
 }
 
+function compileComponentTree(originalAstComponent, prepackEvaluatedComponent, fallbackCompileComponentTree) {
+  // create an abstract props object
+  const initialProps = evaluator.createAbstractObject("props");
+  let expression;
+  
+  try {
+    const resolvedResult = reconciler.renderAsDeepAsPossible(
+      prepackEvaluatedComponent,
+      initialProps,
+      fallbackCompileComponentTree
+    );
+
+    expression = serializer.serializeEvaluatedFunction(
+      prepackEvaluatedComponent,
+      [initialProps],
+      resolvedResult
+    );
+  } catch (e) {
+    // bail out
+    expression = fallbackCompileComponentTree(originalAstComponent);
+  }
+  return expression;
+}
+
+function constructExternalImports() {
+  // TODO
+  return t.expressionStatement(t.identifier('null'));
+}
+
+function constructModuleExports(componentTree) {
+  return t.expressionStatement(
+    t.assignmentExpression(
+      '=',
+      t.memberExpression(
+        t.identifier('module'),
+        t.identifier('exports')
+      ),
+      componentTree
+    )
+  );
+}
+
+function constructModule(functionCalls, externalModules, declarations, defaultExport, defaultExportEvaluation) {
+  const defaultExportComponent = defaultExport.astNode;
+  if (defaultExportComponent.type === 'FunctionDeclaration') {
+    defaultExportComponent.type = 'FunctionExpression';
+  }
+
+  const fallbackCompileComponentTree = (astComponent) => (
+    optimizer.optimizeComponentTree(astComponent, declarations, externalModules, functionCalls)
+  );
+  const componentTree = compileComponentTree(defaultExportComponent, defaultExportEvaluation, fallbackCompileComponentTree);
+
+  return t.blockStatement([
+    constructExternalImports(externalModules),
+    constructModuleExports(componentTree),
+  ]);
+}
+
 function compileModule(moduleName) {
   if (cache.has(moduleName)) {
     const dataForModule = cache.get(moduleName);
     const declarations = dataForModule.declarations;
+    const externalModules = dataForModule.externalModules;
     const defaultExport = dataForModule.defaultExport;
+    const functionCalls = dataForModule.functionCalls;
     const moduleEnv = new evaluator.ModuleEnvironment();
     let defaultExportEvaluation = null;
     // eval and declare all declarations
@@ -225,18 +291,7 @@ function compileModule(moduleName) {
         }
       }
     });
-    // create an abstract props object
-    const initialProps = evaluator.createAbstractObject("props");
-    const resolvedResult = reconciler.renderAsDeepAsPossible(
-      defaultExportEvaluation,
-      initialProps
-    );
-    const expression = serializer.serializeEvaluatedFunction(
-      defaultExportEvaluation,
-      [initialProps],
-      resolvedResult
-    );
-    return expression;
+    return constructModule(functionCalls, externalModules, declarations, defaultExport, defaultExportEvaluation);
   }
   return null;
 }

@@ -3,7 +3,7 @@ let construct_realm = require('prepack/lib/construct_realm').default;
 let { ExecutionContext } = require('prepack/lib/realm');
 let { NewDeclarativeEnvironment, GetValue, Get, ObjectCreate, Construct } = require('prepack/lib/methods');
 let { AbruptCompletion } = require('prepack/lib/completions');
-let { AbstractValue, ObjectValue, NumberValue, FunctionValue } = require('prepack/lib/values');
+let { AbstractValue, ObjectValue, NumberValue, StringValue, FunctionValue } = require('prepack/lib/values');
 let { TypesDomain, ValuesDomain } = require('prepack/lib/domains');
 let { Generator } = require('prepack/lib/utils/generator');
 let buildExpressionTemplate = require('prepack/lib/utils/builder').default;
@@ -39,6 +39,22 @@ function createAbstractNumber(nameString) {
   let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
   let types = new TypesDomain(NumberValue);
   let values = ValuesDomain.topVal;
+  let result = realm.createAbstract(types, values, [], buildNode, undefined, nameString);
+  return result;
+}
+
+function createAbstractString(nameString) {
+  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
+  let types = new TypesDomain(StringValue);
+  let values = ValuesDomain.topVal;
+  let result = realm.createAbstract(types, values, [], buildNode, undefined, nameString);
+  return result;
+}
+
+function createObject(nameString, template) {
+  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
+  let types = new TypesDomain(ObjectValue);
+  let values = new ValuesDomain(new Set([template]));
   let result = realm.createAbstract(types, values, [], buildNode, undefined, nameString);
   return result;
 }
@@ -213,11 +229,15 @@ exports.get = get;
 
 exports.createAbstractNumber = createAbstractNumber;
 
+exports.createAbstractString = createAbstractString;
+
 exports.createAbstractObject = createAbstractObject;
 
 exports.createAbstractFunction = createAbstractFunction;
 
 exports.createAbstractUnknown = createAbstractUnknown;
+
+exports.createObject = createObject;
 
 exports.call = call;
 
