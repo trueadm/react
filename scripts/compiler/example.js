@@ -7,6 +7,10 @@ const foo = () => {
 
 };
 
+function makeThingsBad() {
+  doSomething = null;
+}
+
 function Button() {
   return <span>123</span>
 }

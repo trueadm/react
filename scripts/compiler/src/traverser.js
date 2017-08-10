@@ -3,7 +3,6 @@
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
   ScanInnerScope: "ScanInnerScope",
-  AssignConst: "AssignConst"
 };
 
 const Types = {
@@ -23,6 +22,7 @@ const Types = {
 
 function createMathExpression(left, right, operator) {
   return {
+    action: null,
     left: left,
     operator: operator,
     right: right,
@@ -32,36 +32,42 @@ function createMathExpression(left, right, operator) {
 
 function createUndefined() {
   return {
+    action: null,
     type: Types.Undefined
   };
 }
 
 function createNull() {
   return {
+    action: null,
     type: Types.Null
   };
 }
 
 function createIdentifier() {
   return {
+    action: null,
     type: Types.Identifier
   };
 }
 
 function createAbstractObject() {
   return {
+    action: null,
     type: Types.AbstractObject
   };
 }
 
 function createAbstractUnknown() {
   return {
+    action: null,
     type: Types.AbstractUnknown
   };
 }
 
 function createAbstractFunction(name) {
   return {
+    action: null,
     callSites: [],
     name: name,
     type: Types.AbstractFunction
@@ -70,6 +76,7 @@ function createAbstractFunction(name) {
 
 function createFunction(name, astNode, scope) {
   return {
+    action: null,
     astNode: astNode,
     callSites: [],
     name: name,
@@ -81,6 +88,7 @@ function createFunction(name, astNode, scope) {
 
 function createClass(name, astNode, superIdentifier) {
   return {
+    action: null,
     type: Types.Class,
     astNode: astNode,
     name: name,
@@ -90,6 +98,7 @@ function createClass(name, astNode, superIdentifier) {
 
 function createFunctionCall(identifier, astNode) {
   return {
+    action: null,
     astNode: astNode,
     type: Types.FunctionCall,
     identifier: identifier,
@@ -99,6 +108,7 @@ function createFunctionCall(identifier, astNode) {
 
 function createScope(assignments) {
   const scope = {
+    action: null,
     assignments: new Map(),
     calls: [],
     deferredScopes: [],
@@ -115,6 +125,7 @@ function createScope(assignments) {
 
 function createObject(astNode, properties) {
   const object = {
+    action: null,
     astNode: astNode,
     type: Types.Object,
     properties: new Map()
@@ -463,8 +474,13 @@ function getNameFromAst(astNode) {
 
 function handleMultipleValues(value) {
   if (Array.isArray(value)) {
-    // return the last one in the array
-    const lastValue = value[value.length - 1];
+    // return the last one in the array that is not innerScope
+    let i = 1;
+    let lastValue = value[value.length - i];
+    while (lastValue.action === Actions.ScanInnerScope) {
+      i++;
+      lastValue = value[value.length - i];
+    }
     return lastValue;
   } else {
     return value;
@@ -489,6 +505,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
             if (newValue !== undefined) {
+              newValue.action = action;
               assign(subject, "assignments", key, newValue);
               break;
             } else {
@@ -500,6 +517,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Object) {
         if (newValue !== undefined) {
+          newValue.action = action;
           assign(subject, "properties", key, newValue);
         } else {
           if (subject.properties.has(key)) {
