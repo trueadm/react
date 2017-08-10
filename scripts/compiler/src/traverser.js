@@ -1,7 +1,8 @@
 "use strict";
 
 const Actions = {
-  Scan: "Scan",
+  ScanTopLevelScope: "ScanTopLevelScope",
+  ScanInnerScope: "ScanInnerScope",
   AssignConst: "AssignConst"
 };
 
@@ -98,10 +99,11 @@ function createFunctionCall(identifier, astNode) {
 
 function createScope(assignments) {
   const scope = {
-    type: Types.Scope,
     assignments: new Map(),
     calls: [],
-    parentScope: null
+    deferredScopes: [],
+    parentScope: null,
+    type: Types.Scope
   };
   if (assignments != null) {
     Object.keys(assignments).forEach(assignment =>
@@ -207,7 +209,6 @@ function traverse(node, action, scope) {
     }
     case "VariableDeclaration": {
       const declarations = node.declarations;
-      action = Actions.AssignConst;
       for (let i = 0; i < declarations.length; i++) {
         traverse(declarations[i], action, scope);
       }
@@ -405,14 +406,15 @@ function traverse(node, action, scope) {
       for (let i = 0; i < body.length; i++) {
         traverse(body[i], action, scope);
       }
+      scope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
       break;
     }
     case "ClassDeclaration": {
-      declareClass(node, node.id, node.superClass, node.body, scope);
+      declareClass(node, node.id, node.superClass, node.body, action, scope);
       break;
     }
     case "ClassExpression": {
-      declareClass(node, node.id, node.superClass, node.body, scope);
+      declareClass(node, node.id, node.superClass, node.body, action, scope);
       break;
     }
     case "Super":
@@ -469,8 +471,7 @@ function handleMultipleValues(value) {
   }
 }
 
-function getOrSetValueFromAst(astNode, subject, newValue) {
-  if (!astNode) debugger;
+function getOrSetValueFromAst(astNode, subject, action, newValue) {
   const type = astNode.type;
   switch (type) {
     case "NumericLiteral":
@@ -529,18 +530,20 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
           getOrSetValueFromAst(
             astProperty.key,
             obj,
-            getOrSetValueFromAst(astProperty.value, subject)
+            action,
+            getOrSetValueFromAst(astProperty.value, subject, action)
           );
         } else if (astProperty.type === "ObjectMethod") {
           getOrSetValueFromAst(
             astProperty.key,
             obj,
+            action,
             declareFunction(
               astProperty,
               astProperty.id,
               astProperty.params,
               astProperty.body,
-              Actions.Scan,
+              action,
               subject,
               false
             )
@@ -558,11 +561,11 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
     case "MemberExpression": {
       const astObject = astNode.object;
       const astProperty = astNode.property;
-      const object = getOrSetValueFromAst(astObject, subject);
+      const object = getOrSetValueFromAst(astObject, subject, action);
 
       if (object !== null) {
         if (astProperty.type === "Identifier") {
-          return getOrSetValueFromAst(astProperty, object, newValue);
+          return getOrSetValueFromAst(astProperty, object, action, newValue);
         } else {
           debugger;
         }
@@ -578,7 +581,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
         astNode,
         astNode.callee,
         astNode.arguments,
-        Actions.Scan,
+        action,
         subject
       );
     }
@@ -587,13 +590,13 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
       const astRight = astNode.right;
       const operator = astNode.operator;
       return createMathExpression(
-        getOrSetValueFromAst(astLeft, subject),
-        getOrSetValueFromAst(astRight, subject),
+        getOrSetValueFromAst(astLeft, subject, action),
+        getOrSetValueFromAst(astRight, subject, action),
         operator
       );
     }
     case "NewExpression": {
-      return getOrSetValueFromAst(astNode.callee, subject);
+      return getOrSetValueFromAst(astNode.callee, subject, action);
     }
     case "FunctionExpression": {
       return declareFunction(
@@ -601,7 +604,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
         astNode.id,
         astNode.params,
         astNode.body,
-        Actions.Scan,
+        action,
         subject,
         true
       );
@@ -616,7 +619,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
 }
 
 function callFunction(astNode, callee, args, action, scope) {
-  let functionRef = getOrSetValueFromAst(callee, scope);
+  let functionRef = getOrSetValueFromAst(callee, scope, action);
 
   if (functionRef == null) {
     console.warn(
@@ -638,7 +641,7 @@ function callFunction(astNode, callee, args, action, scope) {
   }
   const functionCall = createFunctionCall(functionRef, astNode);
   functionCall.args = args.map(astArgument =>
-    getOrSetValueFromAst(astArgument, scope)
+    getOrSetValueFromAst(astArgument, scope, action)
   );
   if (
     functionRef.type === Types.AbstractFunction ||
@@ -661,7 +664,7 @@ function getObjectProperty(object, property) {
 function declareVariable(id, init, action, scope) {
   if (id.type === "ObjectPattern") {
     const astProperties = id.properties;
-    const value = getOrSetValueFromAst(init, scope);
+    const value = getOrSetValueFromAst(init, scope, action);
 
     astProperties.forEach(astProperty => {
       const astKey = astProperty.key;
@@ -680,16 +683,16 @@ function declareVariable(id, init, action, scope) {
     const assignKey = getNameFromAst(id);
     const value = init === null
       ? createUndefined()
-      : getOrSetValueFromAst(init, scope);
+      : getOrSetValueFromAst(init, scope, action);
 
     assign(scope, "assignments", assignKey, value);
   }
 }
 
-function declareClass(node, id, superId, body, scope) {
+function declareClass(node, id, superId, body, action, scope) {
   const classAssignKey = getNameFromAst(id);
   const superAssignKey = superId !== null
-    ? getOrSetValueFromAst(superId, scope)
+    ? getOrSetValueFromAst(superId, scope, action)
     : null;
   const theClass = createClass(classAssignKey, node, superAssignKey);
   const astClassBody = body.body;
@@ -701,7 +704,7 @@ function declareClass(node, id, superId, body, scope) {
     if (bodyPart.type === "ClassMethod") {
       const newScope = createScope(thisAssignment);
       newScope.parentScope = scope;
-      traverse(bodyPart, Actions.Scan, newScope);
+      traverse(bodyPart, action, newScope);
     } else {
       debugger;
     }
@@ -744,12 +747,18 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
   if (assignToScope === true) {
     assign(scope, "assignments", assignKey, func);
   }
-  traverse(body, Actions.Scan, newScope);
+  scope.deferredScopes.push({
+    name: getNameFromAst(node.id),
+    scopeFunc() {
+      return traverse(body, Actions.ScanInnerScope, newScope);
+    },
+  });
+  newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
   return func;
 }
 
 function assignExpression(left, right, action, scope) {
-  getOrSetValueFromAst(left, scope, getOrSetValueFromAst(right, scope));
+  getOrSetValueFromAst(left, scope, action, getOrSetValueFromAst(right, scope, action));
 }
 
 module.exports = {
