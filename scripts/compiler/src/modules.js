@@ -136,6 +136,7 @@ function cacheDataFromModuleScope(moduleName, moduleScope) {
   const declarations = {};
   const externalModules = [];
   const assignmentKeys = Array.from(moduleScope.assignments.keys());
+  const functionCalls = moduleScope.calls;
 
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);

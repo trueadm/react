@@ -59,19 +59,21 @@ function createAbstractUnknown() {
   };
 }
 
-function createAbstractFunction() {
+function createAbstractFunction(name) {
   return {
     callSites: [],
+    name: name,
     type: Types.AbstractFunction,
   };
 }
 
-function createFunction(name, astNode) {
+function createFunction(name, astNode, scope) {
   return {
     astNode: astNode,
     callSites: [],
     name: name,
     params: [],
+    scope: scope,
     type: Types.Function,
   }
 }
@@ -98,6 +100,7 @@ function createScope(assignments) {
   const scope = {
     type: Types.Scope,
     assignments: new Map(),
+    calls: [],
     parentScope: null,
   };
   if (assignments != null) {
@@ -126,7 +129,7 @@ function createModuleScope() {
     module: createObject({
       exports: createObject(),
     }),
-    require: createAbstractFunction(),
+    require: createAbstractFunction('require'),
     window: createAbstractObject(),
     document: createAbstractObject(),
   });
@@ -198,11 +201,7 @@ function traverse(node, action, scope) {
       break;
     }
     case "CallExpression": {
-      traverse(node.callee, action, scope);
-      const args = node.arguments;
-      for (let i = 0; i < args.length; i++) {
-        traverse(args[i], action, scope);
-      }
+      callFunction(node, node.callee, node.arguments, action, scope);
       break;
     }
     case "VariableDeclaration": {
@@ -502,6 +501,8 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
       } else if (subject.type === Types.AbstractFunction) {
         // who knows what it could be?
         return createAbstractUnknown();
+      } else if (subject.type === Types.Identifier) {
+        // NO OP
       } else {
         debugger;
       }
@@ -517,6 +518,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
     }
     case 'ObjectProperty': {
       debugger;
+      break;
     }
     case 'MemberExpression': {
       const astObject = astNode.object;
@@ -535,26 +537,7 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
       }
     }
     case 'CallExpression': {
-      const astCallee = astNode.callee;
-      const astArguments = astNode.arguments;
-      let functionRef = getOrSetValueFromAst(astCallee, subject);
-
-      if (functionRef == null) {
-        console.warn(`Could not find an identifier for function call "${getNameFromAst(astCallee)}"`);
-        return createAbstractUnknown();
-      } else if (functionRef.type === Types.Undefined) {
-        throw new Error(`Could not call an  identifier that is "undefined" for function call "${getNameFromAst(astCallee)}"`);
-      } else if (functionRef.type === Types.Null) {
-        throw new Error(`Could not call an  identifier that is "null" for function call "${getNameFromAst(astCallee)}"`);
-      } else if (functionRef.type === Types.FunctionCall) {
-        functionRef = createAbstractFunction();
-      }
-      const functionCall = createFunctionCall(functionRef, astNode);
-      functionCall.args = astArguments.map(astArgument => getOrSetValueFromAst(astArgument, subject));
-      if (functionRef.type === Types.AbstractFunction || functionRef.type === Types.Function) {
-        functionRef.callSites.push(functionCall);
-      }
-      return functionCall;
+      return callFunction(astNode, astNode.callee, astNode.arguments, Actions.Scan, subject);
     }
     case 'BinaryExpression': {
       const astLeft = astNode.left;
@@ -579,6 +562,30 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
       debugger;
     }
   }
+}
+
+function callFunction(astNode, callee, args, action, scope) {
+  let functionRef = getOrSetValueFromAst(callee, scope);
+
+  if (functionRef == null) {
+    console.warn(`Could not find an identifier for function call "${getNameFromAst(callee)}"`);
+    const abstractUnknown = createAbstractUnknown();
+    scope.calls.push(abstractUnknown);
+    return abstractUnknown;
+  } else if (functionRef.type === Types.Undefined) {
+    throw new Error(`Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`);
+  } else if (functionRef.type === Types.Null) {
+    throw new Error(`Could not call an  identifier that is "null" for function call "${getNameFromAst(callee)}"`);
+  } else if (functionRef.type === Types.FunctionCall) {
+    functionRef = createAbstractFunction(getNameFromAst(callee));
+  }
+  const functionCall = createFunctionCall(functionRef, astNode);
+  functionCall.args = args.map(astArgument => getOrSetValueFromAst(astArgument, scope));
+  if (functionRef.type === Types.AbstractFunction || functionRef.type === Types.Function) {
+    functionRef.callSites.push(functionCall);
+  }
+  scope.calls.push(functionCall);
+  return functionCall;
 }
 
 function getObjectProperty(object, property) {
@@ -633,8 +640,8 @@ function declareClass(node, id, superId, body, scope) {
 
 function declareFunction(node, id, params, body, action, scope) {
   const assignKey = getNameFromAst(id);
-  const func = createFunction(assignKey, node);
   const newScope = createScope();
+  const func = createFunction(assignKey, node, scope);
   
   for (let i = 0; i < params.length; i++) {
     const param = params[i];
