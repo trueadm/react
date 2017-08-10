@@ -209,12 +209,13 @@ function analyzeModule(moduleName, hasteMap) {
   cacheDataFromModuleScope(moduleName, moduleScope);
 }
 
-function compileComponentTree(originalAstComponent, prepackEvaluatedComponent, fallbackCompileComponentTree) {
+function compileComponentTreeWithPrepack(moduleEnv, originalAstComponent, fallbackCompileComponentTree) {
   // create an abstract props object
   const initialProps = evaluator.createAbstractObject("props");
   let node;
   
   try {
+    const prepackEvaluatedComponent = moduleEnv.eval(originalAstComponent);
     const resolvedResult = reconciler.renderAsDeepAsPossible(
       prepackEvaluatedComponent,
       initialProps,
@@ -228,6 +229,7 @@ function compileComponentTree(originalAstComponent, prepackEvaluatedComponent, f
     );
   } catch (e) {
     // bail out
+    console.warn('Bailed out of compiling component with Prepack');
     node = fallbackCompileComponentTree(originalAstComponent);
   }
   return convertToExpression(node);
@@ -258,13 +260,13 @@ function convertToExpression(node) {
   return node;
 }
 
-function constructModule(functionCalls, externalModules, declarations, defaultExport, defaultExportEvaluation) {
+function constructModule(moduleEnv, functionCalls, externalModules, declarations, defaultExport) {
   const defaultExportComponent = defaultExport.astNode;
 
   const fallbackCompileComponentTree = (astComponent) => (
-    optimizer.optimizeComponentTree(astComponent, declarations, externalModules, functionCalls)
+    optimizer.optimizeComponentTree(astComponent, declarations, externalModules, functionCalls, compileComponentTreeWithPrepack)
   );
-  const componentTree = compileComponentTree(defaultExportComponent, defaultExportEvaluation, fallbackCompileComponentTree);
+  const componentTree = compileComponentTreeWithPrepack(moduleEnv, defaultExportComponent, fallbackCompileComponentTree);
 
   return t.blockStatement([
     constructExternalImports(externalModules),
@@ -280,7 +282,6 @@ function compileModule(moduleName) {
     const defaultExport = dataForModule.defaultExport;
     const functionCalls = dataForModule.functionCalls;
     const moduleEnv = new evaluator.ModuleEnvironment();
-    let defaultExportEvaluation = null;
     // eval and declare all declarations
     Object.keys(declarations).forEach(declarationKey => {
       const declaration = declarations[declarationKey];
@@ -290,12 +291,9 @@ function compileModule(moduleName) {
       } else {
         const evaluation = moduleEnv.eval(declaration);
         moduleEnv.declare(declarationKey, evaluation);
-        if (declaration === defaultExport.astNode) {
-          defaultExportEvaluation = evaluation;
-        }
       }
     });
-    return constructModule(functionCalls, externalModules, declarations, defaultExport, defaultExportEvaluation);
+    return constructModule(moduleEnv, functionCalls, externalModules, declarations, defaultExport);
   }
   return null;
 }
