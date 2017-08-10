@@ -16,13 +16,14 @@ function MyComponent(props) {
 		return (
       <div>
         <p>
-          Age: {doSomething(props.age.foo)}
+          Age: {doSomething(props.person.age)}
+          Name: {fixName(props.person.title)}
         </p>
-        <Button onClick={props.handleShowClick}>Show</Button>
+        <Button onClick={props.events.handleShowClick}>Show</Button>
       </div>
     );
 	}
-	return <Button onClick={props.handleCloseClick}>Cancel</Button>;
+	return <Button onClick={props.events.handleCloseClick}>Cancel</Button>;
 }
 
 module.exports = MyComponent;
