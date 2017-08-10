@@ -61,5 +61,5 @@ function getHasteMap(done) {
 }
 
 module.exports = {
-  getHasteMap: getHasteMap,
+  getHasteMap: getHasteMap
 };

@@ -1,5 +1,4 @@
-
-let { 
+let {
   AbstractValue,
   ArrayValue,
   BooleanValue,
@@ -10,13 +9,12 @@ let {
   SymbolValue,
   NullValue,
   UndefinedValue
-} = require('prepack/lib/values');
+} = require("prepack/lib/values");
 
-let evaluator = require('./evaluator');
+let evaluator = require("./evaluator");
 
 function isReactElement(value) {
-  return value instanceof ObjectValue &&
-         value.properties.has('$$typeof');
+  return value instanceof ObjectValue && value.properties.has("$$typeof");
 }
 
 function isReactClassComponent(type) {
@@ -24,18 +22,22 @@ function isReactClassComponent(type) {
     return false;
   }
   // Any ES6 class supported for now.
-  return (type.$FunctionKind === 'classConstructor');
+  return type.$FunctionKind === "classConstructor";
 }
 
 function resolveFragment(arrayValue) {
-  let lengthProperty = arrayValue.properties.get('length');
-  if (!lengthProperty || !(lengthProperty.descriptor.value instanceof NumberValue)) {
-    throw new Error('Invalid length');
+  let lengthProperty = arrayValue.properties.get("length");
+  if (
+    !lengthProperty ||
+    !(lengthProperty.descriptor.value instanceof NumberValue)
+  ) {
+    throw new Error("Invalid length");
   }
   let length = lengthProperty.descriptor.value.value;
   for (let i = 0; i < length; i++) {
-    let elementProperty = arrayValue.properties.get('' + i);
-    let elementValue = elementProperty &&
+    let elementProperty = arrayValue.properties.get("" + i);
+    let elementValue =
+      elementProperty &&
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
@@ -45,12 +47,14 @@ function resolveFragment(arrayValue) {
 }
 
 function resolveDeeply(value) {
-  if (value instanceof StringValue ||
+  if (
+    value instanceof StringValue ||
     value instanceof NumberValue ||
     value instanceof BooleanValue ||
     value instanceof NullValue ||
     value instanceof UndefinedValue ||
-    value instanceof AbstractValue) {
+    value instanceof AbstractValue
+  ) {
     // Terminal values
     return value;
   }
@@ -59,11 +63,11 @@ function resolveDeeply(value) {
     return value;
   }
   if (isReactElement(value)) {
-    let type = value.properties.get('type').descriptor.value;
-    let props = value.properties.get('props').descriptor.value;
+    let type = value.properties.get("type").descriptor.value;
+    let props = value.properties.get("props").descriptor.value;
     if (type instanceof StringValue) {
       // Terminal host component. Start evaluating its children.
-      let childrenProperty = props.properties.get('children');
+      let childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
         let resolvedChildren = resolveDeeply(childrenProperty.descriptor.value);
         childrenProperty.descriptor.value = resolvedChildren;
@@ -77,14 +81,14 @@ function resolveDeeply(value) {
       return value;
     }
   }
-  throw new Error('Unsupported return value from render or children.');
+  throw new Error("Unsupported return value from render or children.");
 }
 
 function renderOneLevel(componentType, props) {
   if (isReactClassComponent(componentType)) {
     // Class Component
     let inst = evaluator.construct(componentType, [props]);
-    let render = evaluator.get(inst, 'render');
+    let render = evaluator.get(inst, "render");
     return evaluator.call(render, inst, []);
   } else {
     // Stateless Functional Component

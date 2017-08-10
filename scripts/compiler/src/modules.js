@@ -7,7 +7,7 @@ const traverser = require("./traverser");
 const evaluator = require("./evaluator");
 const serializer = require("./serializer");
 const reconciler = require("./reconciler");
-const optimizer = require('./optimizer');
+const optimizer = require("./optimizer");
 
 const cache = new Map();
 
@@ -45,7 +45,9 @@ function handleAssignmentValue(
         const astNode = assignmentValue.astNode;
         if (astNode === null) {
           // some mystery here, so return abstract unknown
-          declarations[assignmentKey] = evaluator.createAbstractUnknown(assignmentKey);
+          declarations[assignmentKey] = evaluator.createAbstractUnknown(
+            assignmentKey
+          );
         } else {
           declarations[assignmentKey] = astNode;
         }
@@ -70,7 +72,7 @@ function handleAssignmentValue(
       case "FunctionCall": {
         const identifier = assignmentValue.identifier;
 
-        if (identifier.type === 'AbstractFunction') {
+        if (identifier.type === "AbstractFunction") {
           if (identifier.name) {
             console.warn(
               `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
@@ -80,7 +82,9 @@ function handleAssignmentValue(
               `Found a nondeterministic function call (treating as abstract)`
             );
           }
-          declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
+          declarations[assignmentKey] = evaluator.createAbstractFunction(
+            assignmentKey
+          );
         } else {
           declarations[assignmentKey] = t.callExpression(
             t.identifier(identifier.name),
@@ -98,15 +102,21 @@ function handleAssignmentValue(
         break;
       }
       case "AbstractObject": {
-        declarations[assignmentKey] = evaluator.createAbstractObject(assignmentKey);
+        declarations[assignmentKey] = evaluator.createAbstractObject(
+          assignmentKey
+        );
         break;
       }
       case "AbstractUnknown": {
-        declarations[assignmentKey] = evaluator.createAbstractUnknown(assignmentKey);
+        declarations[assignmentKey] = evaluator.createAbstractUnknown(
+          assignmentKey
+        );
         break;
       }
       case "AbstractFunction": {
-        declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
+        declarations[assignmentKey] = evaluator.createAbstractFunction(
+          assignmentKey
+        );
         break;
       }
       case "Object": {
@@ -153,7 +163,7 @@ function cacheDataFromModuleScope(moduleName, moduleScope) {
       assignmentKey === "require" &&
       moduleScope.parentScope === null
     ) {
-      declarations.require = evaluator.createAbstractFunction('require');
+      declarations.require = evaluator.createAbstractFunction("require");
       externalModules.push.apply(
         externalModules,
         removeDuplicates(
@@ -209,11 +219,15 @@ function analyzeModule(moduleName, hasteMap) {
   cacheDataFromModuleScope(moduleName, moduleScope);
 }
 
-function compileComponentTreeWithPrepack(moduleEnv, originalAstComponent, fallbackCompileComponentTree) {
+function compileComponentTreeWithPrepack(
+  moduleEnv,
+  originalAstComponent,
+  fallbackCompileComponentTree
+) {
   // create an abstract props object
   const initialProps = evaluator.createAbstractObject("props");
   let node;
-  
+
   try {
     const prepackEvaluatedComponent = moduleEnv.eval(originalAstComponent);
     const resolvedResult = reconciler.renderAsDeepAsPossible(
@@ -229,7 +243,7 @@ function compileComponentTreeWithPrepack(moduleEnv, originalAstComponent, fallba
     );
   } catch (e) {
     // bail out
-    console.warn('Bailed out of compiling component with Prepack');
+    console.warn("Bailed out of compiling component with Prepack");
     node = fallbackCompileComponentTree(originalAstComponent);
   }
   return convertToExpression(node);
@@ -237,40 +251,53 @@ function compileComponentTreeWithPrepack(moduleEnv, originalAstComponent, fallba
 
 function constructExternalImports() {
   // TODO
-  return t.expressionStatement(t.identifier('null'));
+  return t.expressionStatement(t.identifier("null"));
 }
 
 function constructModuleExports(componentTree) {
   return t.expressionStatement(
     t.assignmentExpression(
-      '=',
-      t.memberExpression(
-        t.identifier('module'),
-        t.identifier('exports')
-      ),
+      "=",
+      t.memberExpression(t.identifier("module"), t.identifier("exports")),
       componentTree
     )
   );
 }
 
 function convertToExpression(node) {
-  if (node.type === 'FunctionDeclaration') {
-    node.type = 'FunctionExpression';
+  if (node.type === "FunctionDeclaration") {
+    node.type = "FunctionExpression";
   }
   return node;
 }
 
-function constructModule(moduleEnv, functionCalls, externalModules, declarations, defaultExport) {
+function constructModule(
+  moduleEnv,
+  functionCalls,
+  externalModules,
+  declarations,
+  defaultExport
+) {
   const defaultExportComponent = defaultExport.astNode;
 
-  const fallbackCompileComponentTree = (astComponent) => (
-    optimizer.optimizeComponentTree(astComponent, declarations, externalModules, functionCalls, compileComponentTreeWithPrepack)
+  const fallbackCompileComponentTree = astComponent =>
+    optimizer.optimizeComponentTree(
+      astComponent,
+      declarations,
+      externalModules,
+      functionCalls,
+      compileComponentTreeWithPrepack,
+      fallbackCompileComponentTree
+    );
+  const componentTree = compileComponentTreeWithPrepack(
+    moduleEnv,
+    defaultExportComponent,
+    fallbackCompileComponentTree
   );
-  const componentTree = compileComponentTreeWithPrepack(moduleEnv, defaultExportComponent, fallbackCompileComponentTree);
 
   return t.blockStatement([
     constructExternalImports(externalModules),
-    constructModuleExports(componentTree),
+    constructModuleExports(componentTree)
   ]);
 }
 
@@ -293,7 +320,13 @@ function compileModule(moduleName) {
         moduleEnv.declare(declarationKey, evaluation);
       }
     });
-    return constructModule(moduleEnv, functionCalls, externalModules, declarations, defaultExport);
+    return constructModule(
+      moduleEnv,
+      functionCalls,
+      externalModules,
+      declarations,
+      defaultExport
+    );
   }
   return null;
 }
