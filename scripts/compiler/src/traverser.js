@@ -58,9 +58,10 @@ function createAbstractObject() {
   };
 }
 
-function createAbstractUnknown() {
+function createAbstractUnknown(crossModule) {
   return {
     action: null,
+    crossModule: crossModule,
     type: Types.AbstractUnknown
   };
 }
@@ -526,13 +527,13 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.FunctionCall) {
         // who knows what it could be?
-        return createAbstractUnknown();
+        return createAbstractUnknown(false);
       } else if (subject.type === Types.AbstractFunction) {
         // who knows what it could be?
-        return createAbstractUnknown();
+        return createAbstractUnknown(false);
       } else if (subject.type === Types.AbstractUnknown) {
         // who knows what it could be?
-        return createAbstractUnknown();
+        return createAbstractUnknown(false);
       } else if (subject.type === Types.Identifier) {
         // NO OP
       } else {
@@ -654,7 +655,7 @@ function callFunction(astNode, callee, args, action, scope) {
     console.warn(
       `Could not find an identifier for function call "${getNameFromAst(callee)}"`
     );
-    const abstractUnknown = createAbstractUnknown();
+    const abstractUnknown = createAbstractUnknown(false);
     scope.calls.push(abstractUnknown);
     return abstractUnknown;
   } else if (functionRef.type === Types.Undefined) {
@@ -684,7 +685,7 @@ function callFunction(astNode, callee, args, action, scope) {
 
 function getObjectProperty(object, property) {
   if (object.type === Types.FunctionCall) {
-    return createAbstractUnknown();
+    return createAbstractUnknown(true);
   } else {
     debugger;
   }
@@ -798,5 +799,6 @@ function assignExpression(left, right, action, scope) {
 module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
-  traverse: traverse
+  traverse: traverse,
+  handleMultipleValues: handleMultipleValues,
 };

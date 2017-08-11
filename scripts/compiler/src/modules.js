@@ -200,6 +200,7 @@ function cacheDataFromModuleScope(moduleName, moduleScope) {
   });
 
   cache.set(moduleName, {
+    assignments: moduleScope.assignments,
     defaultExport: defaultExport,
     externalModules: externalModules,
     declarations: declarations
@@ -249,9 +250,37 @@ function compileComponentTreeWithPrepack(
   return convertToExpression(node);
 }
 
-function constructExternalImports() {
-  // TODO
-  return t.expressionStatement(t.identifier("null"));
+// this is a slow implementation to do this, can be refactored to perform better
+function constructExternalImports(externalModules, assignments) {
+  const assignmentKeys = Array.from(assignments.keys());
+  const moduleImports = externalModules.map(externalModule => {
+    // find the externalModule in the assignments
+
+    for (let i = 0; i < assignmentKeys.length; i++) {
+      const assignmentKey = assignmentKeys[i];
+      let assignment = assignments.get(assignmentKey);
+      let pass = false;
+
+      if (Array.isArray(assignment)) {
+        assignment = traverser.handleMultipleValues(assignment);
+      }
+      if (assignment.type === 'FunctionCall') {
+        if (assignment.identifier !== null && assignment.identifier.name === 'require') {
+          if (assignment.args.length === 1 && assignment.args[0] === externalModule) {
+            pass = true;
+          }
+        }
+      } else if (assignment.type === 'AbstractUnknown' && assignment.crossModule === true) {
+        pass = true;
+      }
+      if (pass === true) {
+        return t.variableDeclaration('var',
+        [t.variableDeclarator(t.identifier(assignmentKey), assignment.astNode)]
+        );
+      }
+    }
+  });
+  return t.blockStatement(moduleImports);
 }
 
 function constructModuleExports(componentTree) {
@@ -275,7 +304,7 @@ function constructModule(
   moduleEnv,
   functionCalls,
   externalModules,
-  declarations,
+  assignments,
   defaultExport
 ) {
   const defaultExportComponent = defaultExport.astNode;
@@ -283,7 +312,7 @@ function constructModule(
   const fallbackCompileComponentTree = astComponent =>
     optimizer.optimizeComponentTree(
       astComponent,
-      declarations,
+      assignments,
       externalModules,
       functionCalls,
       compileComponentTreeWithPrepack,
@@ -296,7 +325,7 @@ function constructModule(
   );
 
   return t.blockStatement([
-    constructExternalImports(externalModules),
+    constructExternalImports(externalModules, assignments),
     constructModuleExports(componentTree)
   ]);
 }
@@ -304,6 +333,7 @@ function constructModule(
 function compileModule(moduleName) {
   if (cache.has(moduleName)) {
     const dataForModule = cache.get(moduleName);
+    const assignments = dataForModule.assignments;
     const declarations = dataForModule.declarations;
     const externalModules = dataForModule.externalModules;
     const defaultExport = dataForModule.defaultExport;
@@ -324,7 +354,7 @@ function compileModule(moduleName) {
       moduleEnv,
       functionCalls,
       externalModules,
-      declarations,
+      assignments,
       defaultExport
     );
   }

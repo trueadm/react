@@ -2,7 +2,7 @@
 
 function optimizeComponentTree(
   astComponent,
-  declarations,
+  assignments,
   externalModules,
   functionCalls,
   compileComponentTreeWithPrepack,
