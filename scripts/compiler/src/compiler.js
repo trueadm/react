@@ -68,17 +68,19 @@ function setupPrepackEnvironment(declarations) {
 }
 
 function compileBundle(result) {
-  const bundleMetadata = result.bundleMetadata;
+  const prepackMetadata = result.prepackMetadata;
   const destinationBundlePath = result.destinationBundlePath;
-  const defaultExportComponent = bundleMetadata.defaultExport.astNode;
+  const defaultExportComponent = prepackMetadata.defaultExport.astNode;
+  const moduleScope = result.moduleScope;
   const ast = result.ast;
 
   optimizeComponentTree(
     ast,
-    setupPrepackEnvironment(bundleMetadata.declarations),
+    setupPrepackEnvironment(prepackMetadata.declarations),
     defaultExportComponent
   );
-  const moduleScope = traverser.createModuleScope();
+  // clear the deferredScopes, as we may have removed some scopes
+  moduleScope.deferredScopes = [];
   traverser.traverse(ast.program, traverser.Actions.ReplaceWithOptimized, moduleScope);
 
   const transformedCode = babel.transformFromAst(ast, {

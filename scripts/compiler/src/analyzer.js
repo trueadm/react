@@ -11,10 +11,6 @@ const whitelist = {
   document: true,
 };
 
-function removeDuplicates(arr) {
-  return Array.from(new Set(arr));
-}
-
 function toAst(node) {
   if (typeof node === "string") {
     return t.stringLiteral(node);
@@ -27,7 +23,6 @@ function handleAssignmentValue(
   assignmentValue,
   assignmentKey,
   declarations,
-  externalModules
 ) {
   if (assignmentValue === null) {
     declarations[assignmentKey] = t.identifier("undefined");
@@ -135,19 +130,16 @@ function handleAssignmentValue(
       lastAssignmentValue,
       assignmentKey,
       declarations,
-      externalModules
     );
   } else {
     debugger;
   }
 }
 
-function createBundleMetadata(moduleScope) {
+function createPrepackMetadata(moduleScope) {
   let defaultExport;
   const declarations = {};
-  const externalModules = [];
   const assignmentKeys = Array.from(moduleScope.assignments.keys());
-  const functionCalls = moduleScope.calls;
 
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
@@ -159,12 +151,6 @@ function createBundleMetadata(moduleScope) {
       moduleScope.parentScope === null
     ) {
       declarations.require = evaluator.createAbstractFunction("require");
-      externalModules.push.apply(
-        externalModules,
-        removeDuplicates(
-          assignmentValue.callSites.map(callSite => callSite.args[0])
-        )
-      );
     } else if (assignmentKey === "module" && moduleScope.parentScope === null) {
       const exportValues = assignmentValue.properties.get("exports");
 
@@ -188,16 +174,11 @@ function createBundleMetadata(moduleScope) {
         assignmentValue,
         assignmentKey,
         declarations,
-        externalModules,
-        functionCalls
       );
     }
   });
-
   return {
-    assignments: moduleScope.assignments,
     defaultExport: defaultExport,
-    externalModules: externalModules,
     declarations: declarations,
   };
 }
@@ -213,8 +194,9 @@ function analyzeBundle(destinationBundlePath) {
 
   return Promise.resolve({
     ast: ast,
-    bundleMetadata: createBundleMetadata(moduleScope),
+    prepackMetadata: createPrepackMetadata(moduleScope),
     destinationBundlePath: destinationBundlePath,
+    moduleScope,
   });
 }
 
