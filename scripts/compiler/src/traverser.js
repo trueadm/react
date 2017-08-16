@@ -3,6 +3,7 @@
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
   ScanInnerScope: "ScanInnerScope",
+  ReplaceWithOptimized: "ReplaceWithOptimized",
 };
 
 const Types = {
@@ -216,7 +217,9 @@ function traverse(node, action, scope) {
       break;
     }
     case "CallExpression": {
-      callFunction(node, node.callee, node.arguments, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        callFunction(node, node.callee, node.arguments, action, scope);
+      }
       break;
     }
     case "VariableDeclaration": {
@@ -227,7 +230,9 @@ function traverse(node, action, scope) {
       break;
     }
     case "VariableDeclarator": {
-      declareVariable(node.id, node.init, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        declareVariable(node.id, node.init, action, scope);
+      }
       break;
     }
     case "ForStatement": {
@@ -352,7 +357,9 @@ function traverse(node, action, scope) {
       break;
     }
     case "AssignmentExpression": {
-      assignExpression(node.left, node.right, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        assignExpression(node.left, node.right, action, scope);
+      }
       break;
     }
     case "TryStatement": {
@@ -396,16 +403,22 @@ function traverse(node, action, scope) {
       break;
     }
     case "FunctionDeclaration": {
-      declareFunction(
-        node,
-        node.id,
-        node.params,
-        node.body,
-        action,
-        scope,
-        true
-      );
-      break;
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        node.optimized = false;
+        node.optimizedReplacement = null;
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          true
+        );
+        break;
+      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        return node.optimizedReplacement;
+      }
     }
     case "ClassProperty": {
       traverse(node.key, action, scope);
@@ -416,17 +429,26 @@ function traverse(node, action, scope) {
       const body = node.body;
       node.scope = scope;
       for (let i = 0; i < body.length; i++) {
-        traverse(body[i], action, scope);
+        const bodyNode = traverse(body[i], action, scope);
+        if (bodyNode !== undefined) {
+          body[i] = bodyNode;
+        }
       }
       scope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
       break;
     }
     case "ClassDeclaration": {
-      declareClass(node, node.id, node.superClass, node.body, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        declareClass(node, node.id, node.superClass, node.body, action, scope);
+      } else if (action === Actions.ReplaceWithOptimized) {
+        debugger;
+      }
       break;
     }
     case "ClassExpression": {
-      declareClass(node, node.id, node.superClass, node.body, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        declareClass(node, node.id, node.superClass, node.body, action, scope);
+      }
       break;
     }
     case "Super":

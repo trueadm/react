@@ -209,7 +209,7 @@ function analyzeBundle(destinationBundlePath) {
     plugins: ["jsx", "flow"]
   });
   const moduleScope = traverser.createModuleScope();
-  traverser.traverse(ast.program, traverser.Actions.Scan, moduleScope);
+  traverser.traverse(ast.program, traverser.Actions.ScanTopLevelScope, moduleScope);
 
   return Promise.resolve({
     ast: ast,

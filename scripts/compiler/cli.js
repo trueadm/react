@@ -1,10 +1,9 @@
 const analyzeBundle = require('./src/analyzer').analyzeBundle;
 const compileBundle = require('./src/compiler').compileBundle;
-const getHasteMap = require('./src/haste-map').getHasteMap;
+const createHasteMap = require('./src/haste-map').createHasteMap;
 const createBundle = require('./src/bundler').createBundle;
 const argv = require("minimist")(process.argv.slice(2));
 const path = require("path");
-const generate = require('babel-generator').default;
 const entryFilePath = argv._[0];
 const outputFilePath = argv._[1];
 
@@ -22,12 +21,12 @@ const destinationBundlePath = path.resolve(outputFilePath);
 console.log(`Entry file path: "${resolveEntryFilePath}", Destination bundle path: ${destinationBundlePath}`);
 console.log('Scanning for all JavaScript modules. This may take a while.');
 
-getHasteMap(resolveEntryFilePath, destinationBundlePath)
+createHasteMap(resolveEntryFilePath, destinationBundlePath)
   .then(createBundle)
   .then(analyzeBundle)
   .then(compileBundle)
-  .then(result => {
-    console.log(generate(result).code);
+  .then(code => {
+    console.log('Compilation complete!');
   }).catch(e => {
     console.error(e.stack);
     process.exit(1);

@@ -1,16 +1,12 @@
 "use strict";
 
 const t = require("babel-types");
+const fs = require("fs");
 const evaluator = require("./evaluator");
 const optimizeComponentTree = require("./optimizer").optimizeComponentTree;
 const traverser = require("./traverser");
-
-function convertToExpression(node) {
-  if (node.type === "FunctionDeclaration") {
-    node.type = "FunctionExpression";
-  }
-  return node;
-}
+const babel = require('babel-core');
+const createBundle = require('./bundler').createBundle;
 
 function constructModuleExports(componentTree) {
   return t.expressionStatement(
@@ -82,8 +78,23 @@ function compileBundle(result) {
     setupPrepackEnvironment(bundleMetadata.declarations),
     defaultExportComponent
   );
+  const moduleScope = traverser.createModuleScope();
+  traverser.traverse(ast.program, traverser.Actions.ReplaceWithOptimized, moduleScope);
 
-  return Promise.resolve(ast);
+  const transformedCode = babel.transformFromAst(ast, {
+    presets: [],
+    plugins: [
+      // this doesn't seem to do DCE on JSX :(
+      // ['minify-dead-code-elimination', {"optimizeRawSize": true}]
+    ]
+  }).code;
+  fs.writeFileSync(destinationBundlePath, transformedCode);
+  // let's use Rollup again for DCE! it handles JSX with our fork
+  return createBundle({
+    hasteMap: null,
+    entryFilePath: destinationBundlePath,
+    destinationBundlePath: destinationBundlePath,
+  });
 }
 
 module.exports = {

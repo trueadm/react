@@ -17,7 +17,7 @@ function getCache(pathKey) {
     );
     if (fs.existsSync(filename)) {
       const data = fs.readFileSync(filename, "utf8");
-      return new Map(JSON.parse(data));
+      return JSON.parse(data);
     }
   }
   return null;
@@ -29,16 +29,16 @@ function updateCache(pathKey, map) {
   }
   fs.writeFileSync(
     path.join(cacheDirectory, sha256(pathKey).substring(0, 10)) + ".json",
-    JSON.stringify(Array.from(map))
+    JSON.stringify(map)
   );
 }
 
-function getHasteMap(entryFilePath, destinationBundlePath) {
+function createHasteMap(entryFilePath, destinationBundlePath) {
   const processCwd = process.cwd();
   let hasteMap = getCache(processCwd);
   // if our cache is empty, we need to create a new haste map
   if (hasteMap === null) {
-    hasteMap = new Map();
+    hasteMap = {};
     return new Promise((resolve, reject) => {
       glob(
         processCwd + "/**/*.js",
@@ -48,7 +48,7 @@ function getHasteMap(entryFilePath, destinationBundlePath) {
         (er, files) => {
           for (let i = 0, length = files.length; i < length; i++) {
             const filename = files[i];
-            hasteMap.set(path.basename(filename, ".js"), filename);
+            hasteMap[path.basename(filename, ".js")] = filename;
           }
           updateCache(processCwd, hasteMap);
           resolve({
@@ -69,5 +69,5 @@ function getHasteMap(entryFilePath, destinationBundlePath) {
 }
 
 module.exports = {
-  getHasteMap: getHasteMap
+  createHasteMap: createHasteMap
 };

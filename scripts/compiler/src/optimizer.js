@@ -4,6 +4,13 @@ const evaluator = require("./evaluator");
 const reconciler = require("./reconciler");
 const serializer = require("./serializer");
 
+function convertToExpression(node) {
+  if (node.type === "FunctionDeclaration") {
+    node.type = "FunctionExpression";
+  }
+  return node;
+}
+
 function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
@@ -15,10 +22,10 @@ function optimizeComponentWithPrepack(
   const resolvedResult = reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
-    fallbackCompileComponentTree
+    optimizeComponentTree
   );
 
-  node = serializer.serializeEvaluatedFunction(
+  const node = serializer.serializeEvaluatedFunction(
     prepackEvaluatedComponent,
     [initialProps],
     resolvedResult
@@ -32,8 +39,9 @@ function optimizeComponentTree(
   astComponent,
 ) {
   try {
-    const optimizedComponent = optimizeComponentWithPrepack(ast, moduleEnv, astComponent);
-    debugger;
+    const optimizedAstComponent = optimizeComponentWithPrepack(ast, moduleEnv, astComponent);
+    astComponent.optimized = true;
+    astComponent.optimizedReplacement = optimizedAstComponent;
   } catch (e) {
     console.warn("Bailed out of compiling component with Prepack");
   }
