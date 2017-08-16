@@ -1,25 +1,34 @@
-const Modules = require('./src/modules');
+const analyzeBundle = require('./src/analyzer').analyzeBundle;
+const compileBundle = require('./src/compiler').compileBundle;
 const getHasteMap = require('./src/haste-map').getHasteMap;
-const createBundle = require('./src/bundles').createBundle;
+const createBundle = require('./src/bundler').createBundle;
 const argv = require("minimist")(process.argv.slice(2));
 const path = require("path");
 const generate = require('babel-generator').default;
 const entryFilePath = argv._[0];
+const outputFilePath = argv._[1];
 
 if (!entryFilePath) {
   console.error("No entry file path supplied");
   process.exit(1);
 }
-const resolveEntryFilePath = path.resolve(entryFilePath);
-
-console.log(`Using entry file path: "${resolveEntryFilePath}"`);
-console.log('Scanning for all JavaScript modules. This may take a while.');
-getHasteMap(resolveEntryFilePath).then(hasteMap => {
-  const entryModuleName = path.basename(resolveEntryFilePath, '.js');
-  Modules.analyzeModule(entryModuleName, hasteMap);
-  const result = Modules.compileModule(entryModuleName);
-  console.log(generate(result).code);
-}).catch(e => {
-  console.error(e.stack);
+if (!outputFilePath) {
+  console.error("No output file path supplied");
   process.exit(1);
-});
+}
+const resolveEntryFilePath = path.resolve(entryFilePath);
+const destinationBundlePath = path.resolve(outputFilePath);
+
+console.log(`Entry file path: "${resolveEntryFilePath}", Destination bundle path: ${destinationBundlePath}`);
+console.log('Scanning for all JavaScript modules. This may take a while.');
+
+getHasteMap(resolveEntryFilePath, destinationBundlePath)
+  .then(createBundle)
+  .then(analyzeBundle)
+  .then(compileBundle)
+  .then(result => {
+    console.log(generate(result).code);
+  }).catch(e => {
+    console.error(e.stack);
+    process.exit(1);
+  });

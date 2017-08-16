@@ -33,7 +33,7 @@ function updateCache(pathKey, map) {
   );
 }
 
-function getHasteMap(done) {
+function getHasteMap(entryFilePath, destinationBundlePath) {
   const processCwd = process.cwd();
   let hasteMap = getCache(processCwd);
   // if our cache is empty, we need to create a new haste map
@@ -51,15 +51,23 @@ function getHasteMap(done) {
             hasteMap.set(path.basename(filename, ".js"), filename);
           }
           updateCache(processCwd, hasteMap);
-          resolve(hasteMap);
+          resolve({
+            entryFilePath: entryFilePath,
+            destinationBundlePath: destinationBundlePath,
+            hasteMap: hasteMap,
+          });
         }
       );
     });
   } else {
-    return Promise.resolve(hasteMap);
+    return Promise.resolve({
+      entryFilePath: entryFilePath,
+      destinationBundlePath: destinationBundlePath,
+      hasteMap: hasteMap,
+    });
   }
 }
 
 module.exports = {
-  getHasteMap: getHasteMap,
+  getHasteMap: getHasteMap
 };

@@ -14,7 +14,7 @@
     "minimist": "^1.2.0",
     "prepack": "^0.2.5",
     "rollup": "git://github.com/trueadm/rollup#jsx-support",
-    "rollup-plugin-commonjs": "^8.1.0",
+    "rollup-plugin-commonjs": "git://github.com/trueadm/rollup-plugin-commonjs#jsx-support",
     "rollup-plugin-flow": "^1.1.1"
   }
 }

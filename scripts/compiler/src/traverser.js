@@ -1,121 +1,139 @@
 "use strict";
 
 const Actions = {
-  Scan: 'Scan',
-  AssignConst: 'AssignConst',
+  ScanTopLevelScope: "ScanTopLevelScope",
+  ScanInnerScope: "ScanInnerScope",
 };
 
 const Types = {
-  Class: 'Class',
-  Function: 'Function',
-  FunctionCall: 'FunctionCall',
-  Object: 'Object',
-  Scope: 'Scope',
-  Identifier: 'Identifier',
-  MathExpression: 'MathExpression',
-  Undefined: 'Undefined',
-  Null: 'Null',
-  AbstractObject: 'AbstractObject',
-  AbstractFunction: 'AbstractFunction',
-  AbstractUnknown: 'AbstractUnknown',
+  Class: "Class",
+  Function: "Function",
+  FunctionCall: "FunctionCall",
+  Object: "Object",
+  Scope: "Scope",
+  Identifier: "Identifier",
+  MathExpression: "MathExpression",
+  Undefined: "Undefined",
+  Null: "Null",
+  AbstractObject: "AbstractObject",
+  AbstractFunction: "AbstractFunction",
+  AbstractUnknown: "AbstractUnknown"
 };
 
 function createMathExpression(left, right, operator) {
   return {
+    action: null,
     left: left,
     operator: operator,
     right: right,
-    type: Types.MathExpression,
-  }
+    type: Types.MathExpression
+  };
 }
 
 function createUndefined() {
   return {
-    type: Types.Undefined,
+    action: null,
+    type: Types.Undefined
   };
 }
 
 function createNull() {
   return {
-    type: Types.Null,
+    action: null,
+    type: Types.Null
   };
 }
 
 function createIdentifier() {
   return {
-    type: Types.Identifier,
-  }
+    action: null,
+    type: Types.Identifier
+  };
 }
 
 function createAbstractObject() {
   return {
-    type: Types.AbstractObject,
-  }
+    action: null,
+    type: Types.AbstractObject
+  };
 }
 
-function createAbstractUnknown() {
+function createAbstractUnknown(crossModule) {
   return {
-    type: Types.AbstractUnknown,
-  }
+    action: null,
+    crossModule: crossModule,
+    type: Types.AbstractUnknown
+  };
 }
 
-function createAbstractFunction() {
+function createAbstractFunction(name) {
   return {
+    action: null,
     callSites: [],
-    type: Types.AbstractFunction,
-  }
+    name: name,
+    type: Types.AbstractFunction
+  };
 }
 
-function createFunction(name, astNode) {
+function createFunction(name, astNode, scope) {
   return {
+    action: null,
     astNode: astNode,
     callSites: [],
     name: name,
     params: [],
-    type: Types.Function,
-  }
+    scope: scope,
+    type: Types.Function
+  };
 }
 
 function createClass(name, astNode, superIdentifier) {
   return {
+    action: null,
     type: Types.Class,
     astNode: astNode,
     name: name,
-    superIdentifier: superIdentifier,
-  }
+    superIdentifier: superIdentifier
+  };
 }
 
 function createFunctionCall(identifier, astNode) {
   return {
+    action: null,
     astNode: astNode,
     type: Types.FunctionCall,
     identifier: identifier,
-    args: [],
+    args: []
   };
 }
 
 function createScope(assignments) {
   const scope = {
-    type: Types.Scope,
+    action: null,
     assignments: new Map(),
+    calls: [],
+    deferredScopes: [],
     parentScope: null,
+    type: Types.Scope
   };
   if (assignments != null) {
-    Object.keys(assignments).forEach(
-      assignment => assign(scope, 'assignments', assignment, assignments[assignment])
+    Object.keys(assignments).forEach(assignment =>
+      assign(scope, "assignments", assignment, assignments[assignment])
     );
   }
   return scope;
 }
 
-function createObject(properties) {
+function createObject(astNode, properties) {
   const object = {
+    action: null,
+    astNode: astNode,
     type: Types.Object,
-    properties: new Map(),
+    properties: new Map()
   };
   if (properties != null) {
-    Object.keys(properties).forEach(
-      property => assign(object, 'properties', property, properties[property])
+    Object.keys(properties).forEach(property =>
+      assign(object, "properties", property, properties[property])
     );
   }
   return object;
@@ -123,13 +141,12 @@ function createObject(properties) {
 
 function createModuleScope() {
   return createScope({
-    module: createObject({
-      exports: createObject()
+    module: createObject(null, {
+      exports: createObject(null)
     }),
-    require: createAbstractFunction(),
+    require: createAbstractFunction("require"),
     window: createAbstractObject(),
-    document: createAbstractObject(),
-    Date: createAbstractFunction(),
+    document: createAbstractObject()
   });
 }
 
@@ -138,7 +155,7 @@ function assign(subject, topic, name, value) {
     const previousValue = subject[topic].get(name);
 
     if (Array.isArray(previousValue)) {
-      previousValue.push(value)
+      previousValue.push(value);
     } else {
       const newValue = [previousValue, value];
       subject[topic].set(name, newValue);
@@ -199,16 +216,11 @@ function traverse(node, action, scope) {
       break;
     }
     case "CallExpression": {
-      traverse(node.callee, action, scope);
-      const args = node.arguments;
-      for (let i = 0; i < args.length; i++) {
-        traverse(args[i], action, scope);
-      }
+      callFunction(node, node.callee, node.arguments, action, scope);
       break;
     }
     case "VariableDeclaration": {
       const declarations = node.declarations;
-      action = Actions.AssignConst;
       for (let i = 0; i < declarations.length; i++) {
         traverse(declarations[i], action, scope);
       }
@@ -384,7 +396,15 @@ function traverse(node, action, scope) {
       break;
     }
     case "FunctionDeclaration": {
-      declareFunction(node, node.id, node.params, node.body, action, scope);
+      declareFunction(
+        node,
+        node.id,
+        node.params,
+        node.body,
+        action,
+        scope,
+        true
+      );
       break;
     }
     case "ClassProperty": {
@@ -398,14 +418,15 @@ function traverse(node, action, scope) {
       for (let i = 0; i < body.length; i++) {
         traverse(body[i], action, scope);
       }
+      scope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
       break;
     }
     case "ClassDeclaration": {
-      declareClass(node, node.id, node.superClass, node.body, scope);
+      declareClass(node, node.id, node.superClass, node.body, action, scope);
       break;
     }
     case "ClassExpression": {
-      declareClass(node, node.id, node.superClass, node.body, scope);
+      declareClass(node, node.id, node.superClass, node.body, action, scope);
       break;
     }
     case "Super":
@@ -424,8 +445,8 @@ function traverse(node, action, scope) {
       break;
     }
     default:
-    // TODO
-    debugger;
+      // TODO
+      debugger;
   }
 }
 
@@ -435,52 +456,58 @@ function getNameFromAst(astNode) {
   }
   const type = astNode.type;
   switch (type) {
-    case 'Identifier': {
+    case "Identifier": {
       return astNode.name;
     }
-    case 'ThisExpression': {
-      return 'this';
+    case "ThisExpression": {
+      return "this";
     }
-    case 'NewExpression': {
+    case "NewExpression": {
       return `new ${getNameFromAst(astNode.callee)}()`;
     }
-    case 'MemberExpression': {
+    case "MemberExpression": {
       return `${getNameFromAst(astNode.object)}.${getNameFromAst(astNode.property)}`;
     }
     default:
-      debugger; 
+      debugger;
   }
 }
 
 function handleMultipleValues(value) {
   if (Array.isArray(value)) {
-    // return the last one in the array
-    const lastValue = value[value.length - 1];
+    // return the last one in the array that is not innerScope
+    let i = 1;
+    let lastValue = value[value.length - i];
+    while (lastValue.action === Actions.ScanInnerScope) {
+      i++;
+      lastValue = value[value.length - i];
+    }
     return lastValue;
   } else {
     return value;
   }
 }
 
-function getOrSetValueFromAst(astNode, subject, newValue) {
+function getOrSetValueFromAst(astNode, subject, action, newValue) {
   const type = astNode.type;
   switch (type) {
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-    case 'StringLiteral': {
+    case "NumericLiteral":
+    case "BooleanLiteral":
+    case "StringLiteral": {
       return astNode.value;
     }
-    case 'ThisExpression':
-    case 'Identifier': {
+    case "ThisExpression":
+    case "Identifier": {
       const key = getNameFromAst(astNode);
 
-      if (key === 'undefined') {
+      if (key === "undefined") {
         return createUndefined();
       } else if (subject.type === Types.Scope) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
             if (newValue !== undefined) {
-              assign(subject, 'assignments', key, newValue);
+              newValue.action = action;
+              assign(subject, "assignments", key, newValue);
               break;
             } else {
               return handleMultipleValues(subject.assignments.get(key));
@@ -491,7 +518,8 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
         }
       } else if (subject.type === Types.Object) {
         if (newValue !== undefined) {
-          assign(subject, 'properties', key, newValue);
+          newValue.action = action;
+          assign(subject, "properties", key, newValue);
         } else {
           if (subject.properties.has(key)) {
             return handleMultipleValues(subject.properties.get(key));
@@ -499,81 +527,123 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
         }
       } else if (subject.type === Types.FunctionCall) {
         // who knows what it could be?
-        return createAbstractUnknown();
+        return createAbstractUnknown(false);
       } else if (subject.type === Types.AbstractFunction) {
         // who knows what it could be?
-        return createAbstractUnknown();
+        return createAbstractUnknown(false);
+      } else if (subject.type === Types.AbstractUnknown) {
+        // who knows what it could be?
+        return createAbstractUnknown(false);
+      } else if (subject.type === Types.MathExpression) {
+        // who knows what it could be?
+        return createAbstractUnknown(false);
+      } else if (subject.type === Types.Identifier) {
+        // NO OP
       } else {
         debugger;
       }
       return null;
     }
-    case 'ObjectExpression': {
+    case "ObjectExpression": {
       const astProperties = astNode.properties;
-      const obj = createObject();
+      const obj = createObject(astNode);
       astProperties.forEach(astProperty => {
-        getOrSetValueFromAst(astProperty.key, obj, getOrSetValueFromAst(astProperty.value, subject));
+        if (astProperty.type === "ObjectProperty") {
+          getOrSetValueFromAst(
+            astProperty.key,
+            obj,
+            action,
+            getOrSetValueFromAst(astProperty.value, subject, action)
+          );
+        } else if (astProperty.type === "ObjectMethod") {
+          getOrSetValueFromAst(
+            astProperty.key,
+            obj,
+            action,
+            declareFunction(
+              astProperty,
+              astProperty.id,
+              astProperty.params,
+              astProperty.body,
+              action,
+              subject,
+              false
+            )
+          );
+        } else {
+          debugger;
+        }
       });
       return obj;
     }
-    case 'ObjectProperty': {
+    case "ObjectProperty": {
       debugger;
+      break;
     }
-    case 'MemberExpression': {
+    case "MemberExpression": {
       const astObject = astNode.object;
       const astProperty = astNode.property;
-      const object = getOrSetValueFromAst(astObject, subject);
+      const object = getOrSetValueFromAst(astObject, subject, action);
 
       if (object !== null) {
-        if (astProperty.type === 'Identifier') {
-          return getOrSetValueFromAst(astProperty, object, newValue);
+        if (astProperty.type === "Identifier") {
+          return getOrSetValueFromAst(astProperty, object, action, newValue);
         } else {
           debugger;
         }
       } else {
-        console.warn(`Could not find an identifier for "${getNameFromAst(astObject)}.${getNameFromAst(astProperty)}"`);
+        console.warn(
+          `Could not find an identifier for "${getNameFromAst(astObject)}.${getNameFromAst(astProperty)}"`
+        );
         return null;
       }
     }
-    case 'CallExpression': {
-      const astCallee = astNode.callee;
-      const astArguments = astNode.arguments;
-      let functionRef = getOrSetValueFromAst(astCallee, subject);
-
-      if (functionRef == null) {
-        console.warn(`Could not find an identifier for function call "${getNameFromAst(astCallee)}"`);
-      } else if (functionRef.type === Types.Undefined) {
-        throw new Error(`Could not call an  identifier that is "undefined" for function call "${getNameFromAst(astCallee)}"`);
-      } else if (functionRef.type === Types.Null) {
-        throw new Error(`Could not call an  identifier that is "null" for function call "${getNameFromAst(astCallee)}"`);
-      } else if (functionRef.type === Types.FunctionCall) {
-        functionRef = createAbstractFunction();
-      }
-      const functionCall = createFunctionCall(functionRef, astNode);
-      functionCall.args = astArguments.map(astArgument => getOrSetValueFromAst(astArgument, subject));
-      if (functionRef.type === Types.AbstractFunction || functionRef.type === Types.Function) {
-        functionRef.callSites.push(functionCall);
-      }
-      return functionCall;
+    case "CallExpression": {
+      return callFunction(
+        astNode,
+        astNode.callee,
+        astNode.arguments,
+        action,
+        subject
+      );
     }
-    case 'BinaryExpression': {
+    case "BinaryExpression": {
       const astLeft = astNode.left;
       const astRight = astNode.right;
       const operator = astNode.operator;
       return createMathExpression(
-        getOrSetValueFromAst(astLeft, subject),
-        getOrSetValueFromAst(astRight, subject),
+        getOrSetValueFromAst(astLeft, subject, action),
+        getOrSetValueFromAst(astRight, subject, action),
         operator
       );
     }
-    case 'NewExpression': {
-      return getOrSetValueFromAst(astNode.callee, subject);
+    case "NewExpression": {
+      return getOrSetValueFromAst(astNode.callee, subject, action);
     }
-    case 'FunctionExpression': {
-      return declareFunction(astNode, astNode.id, astNode.params, astNode.body, Actions.Scan, subject);
+    case "FunctionExpression": {
+      return declareFunction(
+        astNode,
+        astNode.id,
+        astNode.params,
+        astNode.body,
+        action,
+        subject,
+        true
+      );
     }
-    case 'NullLiteral': {
+    case "NullLiteral": {
       return createNull();
+    }
+    case "ArrowFunctionExpression": {
+      return declareFunction(
+        astNode,
+        astNode.id,
+        astNode.params,
+        astNode.body,
+        action,
+        subject,
+        false
+      );
     }
     default: {
       debugger;
@@ -581,59 +651,125 @@ function getOrSetValueFromAst(astNode, subject, newValue) {
   }
 }
 
-function declareVariable(id, init, action, scope) {
-  const assignKey = getNameFromAst(id);
-  const value = init === null ? createUndefined() : getOrSetValueFromAst(init, scope);
+function callFunction(astNode, callee, args, action, scope) {
+  let functionRef = getOrSetValueFromAst(callee, scope, action);
 
-  assign(scope, 'assignments', assignKey, value);
+  if (functionRef == null) {
+    console.warn(
+      `Could not find an identifier for function call "${getNameFromAst(callee)}"`
+    );
+    const abstractUnknown = createAbstractUnknown(false);
+    scope.calls.push(abstractUnknown);
+    return abstractUnknown;
+  } else if (functionRef.type === Types.Undefined) {
+    throw new Error(
+      `Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
+    );
+  } else if (functionRef.type === Types.Null) {
+    throw new Error(
+      `Could not call an  identifier that is "null" for function call "${getNameFromAst(callee)}"`
+    );
+  } else if (functionRef.type === Types.FunctionCall) {
+    functionRef = createAbstractFunction(getNameFromAst(callee));
+  }
+  const functionCall = createFunctionCall(functionRef, astNode);
+  functionCall.args = args.map(astArgument =>
+    getOrSetValueFromAst(astArgument, scope, action)
+  );
+  if (
+    functionRef.type === Types.AbstractFunction ||
+    functionRef.type === Types.Function
+  ) {
+    functionRef.callSites.push(functionCall);
+  }
+  scope.calls.push(functionCall);
+  return functionCall;
 }
 
-function declareClass(node, id, superId, body, scope) {
+function getObjectProperty(object, property) {
+  if (object.type === Types.FunctionCall) {
+    return createAbstractUnknown(true);
+  } else {
+    debugger;
+  }
+}
+
+function declareVariable(id, init, action, scope) {
+  if (id.type === "ObjectPattern") {
+    const astProperties = id.properties;
+    const value = getOrSetValueFromAst(init, scope, action);
+
+    astProperties.forEach(astProperty => {
+      const astKey = astProperty.key;
+      const astValue = astProperty.value;
+      const nameAssignKey = getNameFromAst(astKey);
+      const valueAssignKey = getNameFromAst(astValue);
+
+      assign(
+        scope,
+        "assignments",
+        valueAssignKey,
+        getObjectProperty(value, nameAssignKey)
+      );
+    });
+  } else {
+    const assignKey = getNameFromAst(id);
+    const value = init === null
+      ? createUndefined()
+      : getOrSetValueFromAst(init, scope, action);
+
+    assign(scope, "assignments", assignKey, value);
+  }
+}
+
+function declareClass(node, id, superId, body, action, scope) {
   const classAssignKey = getNameFromAst(id);
-  const superAssignKey = superId !== null ? getOrSetValueFromAst(superId, scope) : null;
+  const superAssignKey = superId !== null
+    ? getOrSetValueFromAst(superId, scope, action)
+    : null;
   const theClass = createClass(classAssignKey, node, superAssignKey);
   const astClassBody = body.body;
   const thisAssignment = {
-    this: createObject()
+    this: createObject(null)
   };
   // TODO, work out the "this" variables etc
   astClassBody.forEach(bodyPart => {
-    if (bodyPart.type === 'ClassMethod') {
+    if (bodyPart.type === "ClassMethod") {
       const newScope = createScope(thisAssignment);
       newScope.parentScope = scope;
-      traverse(bodyPart, Actions.Scan, newScope);
+      traverse(bodyPart, action, newScope);
     } else {
       debugger;
     }
   });
-  assign(scope, 'assignments', classAssignKey, theClass);
+  assign(scope, "assignments", classAssignKey, theClass);
 }
 
-function declareFunction(node, id, params, body, action, scope) {
+function declareFunction(node, id, params, body, action, scope, assignToScope) {
   const assignKey = getNameFromAst(id);
-  const func = createFunction(assignKey, node);
   const newScope = createScope();
-  
+  const func = createFunction(assignKey, node, scope);
+
   for (let i = 0; i < params.length; i++) {
     const param = params[i];
 
-    if (param.type === 'ObjectPattern') {
-      const paramObject = createObject();
+    if (param.type === "ObjectPattern") {
+      const paramObject = createObject(null);
       param.properties.forEach(property => {
-        if (property.type === 'ObjectProperty') {
+        if (property.type === "ObjectProperty") {
           const propertyAssignKey = getNameFromAst(property.value);
           const identifier = createIdentifier();
-          assign(newScope, 'assignments', propertyAssignKey, identifier);
-          assign(paramObject, 'properties', propertyAssignKey, identifier);
+          assign(newScope, "assignments", propertyAssignKey, identifier);
+          assign(paramObject, "properties", propertyAssignKey, identifier);
         } else {
           debugger;
         }
       });
       func.params.push(paramObject);
-    } else if (param.type === 'Identifier') {
+    } else if (param.type === "Identifier") {
       const propertyAssignKey = param.name;
       const identifier = createIdentifier();
-      assign(newScope, 'assignments', propertyAssignKey, identifier);
+      assign(newScope, "assignments", propertyAssignKey, identifier);
       func.params.push(identifier);
     } else {
       debugger;
@@ -641,16 +777,31 @@ function declareFunction(node, id, params, body, action, scope) {
   }
   node.scope = newScope;
   newScope.parentScope = scope;
-  assign(scope, 'assignments', assignKey, func);
-  traverse(body, Actions.Scan, newScope);
+  if (assignToScope === true) {
+    assign(scope, "assignments", assignKey, func);
+  }
+  scope.deferredScopes.push({
+    name: getNameFromAst(node.id),
+    scopeFunc() {
+      return traverse(body, Actions.ScanInnerScope, newScope);
+    }
+  });
+  newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
+  return func;
 }
 
 function assignExpression(left, right, action, scope) {
-  getOrSetValueFromAst(left, scope, getOrSetValueFromAst(right, scope));
+  getOrSetValueFromAst(
+    left,
+    scope,
+    action,
+    getOrSetValueFromAst(right, scope, action)
+  );
 }
 
 module.exports = {
-  Actions, Actions,
+  Actions: Actions,
   createModuleScope: createModuleScope,
-  traverse: traverse
+  traverse: traverse,
+  handleMultipleValues: handleMultipleValues,
 };

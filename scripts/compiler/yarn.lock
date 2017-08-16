@@ -2,9 +2,15 @@
 # yarn lockfile v1
 
 
-acorn@^4.0.1:
-  version "4.0.13"
-  resolved "https://registry.yarnpkg.com/acorn/-/acorn-4.0.13.tgz#105495ae5361d697bd195c825192e1ad7f253787"
+acorn-jsx@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/acorn-jsx/-/acorn-jsx-4.0.1.tgz#ada5a01573727a237774ce625564d079ec9de12a"
+  dependencies:
+    acorn "^5.0.3"
+
+acorn@^5.0.3, acorn@^5.1.1:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/acorn/-/acorn-5.1.1.tgz#53fe161111f912ab999ee887a90a0bc52822fd75"
 
 ansi-regex@^2.0.0:
   version "2.1.1"
@@ -138,13 +144,9 @@ babel-types@^6.25.0, babel-types@^6.9.0:
     lodash "^4.2.0"
     to-fast-properties "^1.0.1"
 
-babylon@^6.15.0:
+babylon@^6.15.0, babylon@^6.17.2, babylon@^6.17.4, babylon@^6.5.2:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
-
-babylon@^6.17.2, babylon@^6.17.4, babylon@^6.5.2:
-  version "6.17.4"
-  resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.17.4.tgz#3e8b7402b88d22c3423e137a1577883b15ff869a"
 
 balanced-match@^1.0.0:
   version "1.0.0"
@@ -188,8 +190,8 @@ convert-source-map@^1.1.0:
   resolved "https://registry.yarnpkg.com/convert-source-map/-/convert-source-map-1.5.0.tgz#9acd70851c6d5dfdd93d9282e5edf94a03ff46b5"
 
 core-js@^2.4.0:
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.4.1.tgz#4de911e667b0eae9124e34254b53aea6fc618d3e"
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.5.0.tgz#569c050918be6486b3837552028ae0466b717086"
 
 debug@^2.1.1, debug@^2.2.0:
   version "2.6.8"
@@ -596,11 +598,12 @@ resolve@^1.1.7:
   dependencies:
     path-parse "^1.0.5"
 
-rollup-plugin-commonjs@^8.1.0:
+"rollup-plugin-commonjs@git://github.com/trueadm/rollup-plugin-commonjs#jsx-support":
   version "8.1.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-commonjs/-/rollup-plugin-commonjs-8.1.0.tgz#8ac9a87e6ea4c0d136e3e0e25ef41058957622b0"
+  resolved "git://github.com/trueadm/rollup-plugin-commonjs#272246f232c9b3f87edc35698d40d0ec8bbc1083"
   dependencies:
-    acorn "^4.0.1"
+    acorn "^5.1.1"
+    acorn-jsx "^4.0.1"
     estree-walker "^0.3.0"
     magic-string "^0.19.0"
     resolve "^1.1.7"
@@ -629,7 +632,7 @@ rollup-pluginutils@^2.0.1:
 
 "rollup@git://github.com/trueadm/rollup#jsx-support":
   version "0.47.4"
-  resolved "git://github.com/trueadm/rollup#ba38bda819024370b2c4c7c44cd478ec5b99eae2"
+  resolved "git://github.com/trueadm/rollup#59b589c6c6bffa4c3d89c0a2c91025163f765468"
   dependencies:
     estree-walker "^0.5.0"
 
