@@ -7,7 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const sha256 = require("js-sha256");
 
-const cacheDirectory = path.join(__dirname, "_cache");
+const cacheDirectory = path.join(__dirname, "..", "_cache");
 
 function getCache(pathKey) {
   if (fs.existsSync(cacheDirectory)) {
