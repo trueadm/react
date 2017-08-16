@@ -4,7 +4,7 @@
   "devEngines": {
     "node": "4.x || 5.x || 6.x || 7.x || 8.x",
     "npm": "2.x || 3.x || 4.x || 5.x"
-  },  
+  },
   "dependencies": {
     "babel-generator": "^6.25.0",
     "babel-types": "^6.25.0",
@@ -12,6 +12,9 @@
     "glob": "^7.1.2",
     "js-sha256": "^0.6.0",
     "minimist": "^1.2.0",
-    "prepack": "^0.2.5"
+    "prepack": "^0.2.5",
+    "rollup": "git://github.com/trueadm/rollup#jsx-support",
+    "rollup-plugin-commonjs": "^8.1.0",
+    "rollup-plugin-flow": "^1.1.1"
   }
 }

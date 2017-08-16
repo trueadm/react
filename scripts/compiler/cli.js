@@ -1,5 +1,6 @@
 const Modules = require('./src/modules');
 const getHasteMap = require('./src/haste-map').getHasteMap;
+const createBundle = require('./src/bundles').createBundle;
 const argv = require("minimist")(process.argv.slice(2));
 const path = require("path");
 const generate = require('babel-generator').default;
