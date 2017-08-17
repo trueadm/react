@@ -5,6 +5,7 @@ const evaluator = require("./evaluator");
 const fs = require("fs");
 const babylon = require("babylon");
 const traverser = require("./traverser");
+const createMockReact = require("./mocks").createMockReact;
 
 const whitelist = {
   window: true,
@@ -54,11 +55,6 @@ function handleAssignmentValue(
         // a ClassExpression for Prepack to play ball with it
         if (astNode.type === "ClassDeclaration") {
           astNode.type = "ClassExpression";
-        }
-        // TODO:
-        // we also need to remove the superClass or Prepack doesn't compile it?
-        if (astNode.superClass !== null) {
-          astNode.superClass = null;
         }
         declarations[assignmentKey] = assignmentValue.astNode;
         break;
@@ -144,7 +140,9 @@ function createPrepackMetadata(moduleScope) {
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
-    if (whitelist[assignmentKey] === true && moduleScope.parentScope === null) {
+    if (assignmentKey === 'React' && moduleScope.parentScope === null) {
+      declarations.React = createMockReact();
+    } else if (whitelist[assignmentKey] === true && moduleScope.parentScope === null) {
       // skip whitelist items
     } else if (
       assignmentKey === "require" &&

@@ -4,7 +4,17 @@ const React = require('React');
 const HeaderBar = require('HeaderBar');
 const StoryList = require('StoryList');
 
-function App({ stories }) {
+class AppBody extends React.Component {
+  render() {
+    return [
+      <HeaderBar />,
+        <tr height="10" />,
+      <StoryList stories={this.props.stories} />,
+    ];
+  }
+}
+
+function App({stories}) {
   return (
     <center>
       <table 
@@ -17,9 +27,7 @@ function App({ stories }) {
           backgroundColor: '#f6f6ef',
         }}>
         <tbody>
-          <HeaderBar />
-          <tr height="10" />
-          <StoryList stories={stories} />
+          {stories.length > 0 ? <AppBody stories={stories} /> : null}
         </tbody>
       </table>
     </center>

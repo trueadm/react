@@ -46,7 +46,7 @@ function resolveFragment(arrayValue) {
   }
 }
 
-function resolveDeeply(value) {
+function resolveDeeply(value, fallback) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -96,9 +96,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-function renderAsDeepAsPossible(componentType, props) {
+function renderAsDeepAsPossible(componentType, props, fallback) {
   let result = renderOneLevel(componentType, props);
-  return resolveDeeply(result);
+  return resolveDeeply(result, fallback);
 }
 
 exports.renderOneLevel = renderOneLevel;

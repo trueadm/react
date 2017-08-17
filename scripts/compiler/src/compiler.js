@@ -77,7 +77,8 @@ function compileBundle(result) {
   optimizeComponentTree(
     ast,
     setupPrepackEnvironment(prepackMetadata.declarations),
-    defaultExportComponent
+    defaultExportComponent,
+    moduleScope
   );
   // clear the deferredScopes, as we may have removed some scopes
   moduleScope.deferredScopes = [];

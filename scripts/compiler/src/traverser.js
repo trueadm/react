@@ -114,6 +114,7 @@ function createScope(assignments) {
     assignments: new Map(),
     calls: [],
     deferredScopes: [],
+    jsxElementIdentifiers: new Map(),
     parentScope: null,
     type: Types.Scope
   };
@@ -183,7 +184,14 @@ function traverse(node, action, scope) {
       break;
     }
     case "JSXElement": {
-      traverse(node.openingElement, action, scope);
+      const astOpeningElement = node.openingElement;
+      const astName = astOpeningElement.name;
+      const name = getNameFromAst(astName);
+      const isReactComponent = name[0].toUpperCase() === name[0];
+      if (isReactComponent === true) {
+        scope.jsxElementIdentifiers.set(name, getOrSetValueFromAst(astName, scope, action))
+      }
+      // TODO deal with attributes?
       const children = node.children;
       for (let i = 0; i < children.length; i++) {
         traverse(children[i], action, scope);
@@ -440,14 +448,16 @@ function traverse(node, action, scope) {
     case "ClassDeclaration": {
       if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
-      } else if (action === Actions.ReplaceWithOptimized) {
-        debugger;
+      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        return node.optimizedReplacement;
       }
       break;
     }
     case "ClassExpression": {
       if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
+      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        return node.optimizedReplacement;
       }
       break;
     }
@@ -478,7 +488,8 @@ function getNameFromAst(astNode) {
   }
   const type = astNode.type;
   switch (type) {
-    case "Identifier": {
+    case "Identifier":
+    case "JSXIdentifier": {
       return astNode.name;
     }
     case "ThisExpression": {
@@ -519,6 +530,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       return astNode.value;
     }
     case "ThisExpression":
+    case "JSXIdentifier":
     case "Identifier": {
       const key = getNameFromAst(astNode);
 
@@ -754,11 +766,14 @@ function declareClass(node, id, superId, body, action, scope) {
   const thisAssignment = {
     this: createObject(null)
   };
+  node.optimized = false;
+  node.optimizedReplacement = null;  
   // TODO, work out the "this" variables etc
   astClassBody.forEach(bodyPart => {
     if (bodyPart.type === "ClassMethod") {
       const newScope = createScope(thisAssignment);
       newScope.parentScope = scope;
+      bodyPart.scope = newScope;
       traverse(bodyPart, action, newScope);
     } else {
       debugger;
