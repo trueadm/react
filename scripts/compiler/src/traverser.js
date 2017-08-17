@@ -110,6 +110,7 @@ function createFunctionCall(identifier, astNode) {
 
 function createScope(assignments) {
   const scope = {
+    accessors: new Map(),
     action: null,
     assignments: new Map(),
     calls: [],

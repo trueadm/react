@@ -1,5 +1,6 @@
 "use strict";
 
+const t = require("babel-types");
 const evaluator = require("./evaluator");
 const reconciler = require("./reconciler");
 const serializer = require("./serializer");
@@ -11,6 +12,17 @@ function convertToExpression(node) {
   return node;
 }
 
+function createAbstractPropsObject(scope) {
+  const propsInScope = scope.accessors.get('props');
+  debugger;
+  // const propsShape = Array.from
+  // TODO
+  // first we create some AST and convert it... need to do this properly later
+  debugger;
+  const astProps = t.objectExpression(
+  );
+}
+
 function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
@@ -18,7 +30,13 @@ function optimizeComponentWithPrepack(
   moduleScope
 ) {
   // create an abstract props object
-  const initialProps = evaluator.createAbstractObject("props");
+  const initialProps = createAbstractPropsObject(astComponent.scope);
+  // const initialProps = evaluator.createAbstractObject("props");
+  // const astTest = t.objectExpression([t.objectProperty(t.identifier('x'), t.nullLiteral())]);
+  // const initialProps = moduleEnv.eval(astTest);
+  // initialProps.properties.get('x').descriptor.value = evaluator.createAbstractUnknown("x");
+  // debugger;
+  // initialProps.intrinsicName = 'props';
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   const resolvedResult = reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
@@ -60,7 +78,7 @@ function optimizeComponentTree(
     console.warn(`\nPrepack component bail-out on "${astComponent.id.name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component
     let jsxElementIdentifiers;
-    if (astComponent.type === 'FunctionDeclaration' && astComponent.scope !== undefined) {
+    if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
       scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
     } else if (astComponent.type === 'ClassExpression') {
       // scan all class methods for now
