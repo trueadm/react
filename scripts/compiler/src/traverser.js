@@ -18,7 +18,8 @@ const Types = {
   Null: "Null",
   AbstractObject: "AbstractObject",
   AbstractFunction: "AbstractFunction",
-  AbstractUnknown: "AbstractUnknown"
+  AbstractUnknown: "AbstractUnknown",
+  Param: "Param"
 };
 
 function createMathExpression(left, right, operator) {
@@ -110,7 +111,6 @@ function createFunctionCall(identifier, astNode) {
 
 function createScope(assignments) {
   const scope = {
-    accessors: new Map(),
     action: null,
     assignments: new Map(),
     calls: [],
@@ -125,6 +125,16 @@ function createScope(assignments) {
     );
   }
   return scope;
+}
+
+
+function createParam(astNode) {
+  return {
+    action: null,
+    astNode: astNode,
+    type: Types.Param,
+    accessors: new Map()
+  };
 }
 
 function createObject(astNode, properties) {
@@ -222,7 +232,16 @@ function traverse(node, action, scope) {
       break;
     }
     case "MemberExpression": {
-      traverse(node.object, action, scope);
+      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+        const astObject = node.object;
+        const astProperty = node.property;
+        // we don't actually need to get or set anything, we just need to register the accesor
+        // in case the member is a param
+        getOrSetValueFromAst(astProperty, getOrSetValueFromAst(astObject, scope, action), action)
+      } else {
+        traverse(node.object, action, scope);
+        traverse(node.property, action, scope);
+      }
       break;
     }
     case "CallExpression": {
@@ -241,6 +260,12 @@ function traverse(node, action, scope) {
     case "VariableDeclarator": {
       if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
         declareVariable(node.id, node.init, action, scope);
+      } else {
+        traverse(node.id, action, scope);
+        const nodeInit = traverse(node.init, action, scope);
+        if (nodeInit !== undefined) {
+          node.init = nodeInit;
+        }
       }
       break;
     }
@@ -278,10 +303,15 @@ function traverse(node, action, scope) {
     case "IfStatement": {
       traverse(node.test, action, scope);
       traverse(node.consequent, action, scope);
+      traverse(node.alternate, action, scope);
       break;
     }
     case "FunctionExpression": {
-      traverse(node.body, action, scope);
+      if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        return node.optimizedReplacement;
+      } else {
+        traverse(node.body, action, scope);
+      }
       break;
     }
     case "SwitchStatement": {
@@ -541,7 +571,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
             if (newValue !== undefined) {
-              newValue.action = action;
+              if (newValue !== undefined) {
+                newValue.action = action;
+              }
               assign(subject, "assignments", key, newValue);
               break;
             } else {
@@ -553,7 +585,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Object) {
         if (newValue !== undefined) {
-          newValue.action = action;
+          if (newValue.action !== undefined) {
+            newValue.action = action;
+          }
           assign(subject, "properties", key, newValue);
         } else {
           if (subject.properties.has(key)) {
@@ -574,6 +608,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         return createAbstractUnknown(false);
       } else if (subject.type === Types.Identifier) {
         // NO OP
+      } else if (subject.type === Types.Param) {
+        if (newValue === undefined) {
+          assign(subject, "accessors", key, true);
+        }
       } else {
         debugger;
       }
@@ -792,7 +830,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
     const param = params[i];
 
     if (param.type === "ObjectPattern") {
-      const paramObject = createObject(null);
+      const paramObject = createParam(null);
       param.properties.forEach(property => {
         if (property.type === "ObjectProperty") {
           const propertyAssignKey = getNameFromAst(property.value);
@@ -806,14 +844,15 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
       func.params.push(paramObject);
     } else if (param.type === "Identifier") {
       const propertyAssignKey = param.name;
-      const identifier = createIdentifier();
-      assign(newScope, "assignments", propertyAssignKey, identifier);
-      func.params.push(identifier);
+      const paramObject = createParam();
+      assign(newScope, "assignments", propertyAssignKey, paramObject);
+      func.params.push(paramObject);
     } else {
       debugger;
     }
   }
   node.scope = newScope;
+  node.func = func;
   newScope.parentScope = scope;
   if (assignToScope === true) {
     assign(scope, "assignments", assignKey, func);

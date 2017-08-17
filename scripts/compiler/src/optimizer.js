@@ -12,15 +12,24 @@ function convertToExpression(node) {
   return node;
 }
 
-function createAbstractPropsObject(scope) {
-  const propsInScope = scope.accessors.get('props');
-  debugger;
-  // const propsShape = Array.from
-  // TODO
-  // first we create some AST and convert it... need to do this properly later
-  debugger;
-  const astProps = t.objectExpression(
-  );
+function createAbstractPropsObject(scope, func, moduleEnv) {
+  // props is the first param of the function component
+  const propsInScope = func.params[0];
+  if (propsInScope !== undefined) {
+    const propsShape = Array.from(propsInScope.accessors.keys());
+    // TODO
+    // first we create some AST and convert it... need to do this properly later
+    const astProps = t.objectExpression(
+      propsShape.map(prop => t.objectProperty(t.identifier(prop), t.nullLiteral()))
+    );
+    const initialProps = moduleEnv.eval(astProps);
+    propsShape.forEach(prop => {
+      initialProps.properties.get(prop).descriptor.value = evaluator.createAbstractUnknown(`props.${prop}`);
+    });
+    initialProps.intrinsicName = 'props';
+    return initialProps;
+  }
+  return evaluator.createAbstractObject("props");
 }
 
 function optimizeComponentWithPrepack(
@@ -30,20 +39,11 @@ function optimizeComponentWithPrepack(
   moduleScope
 ) {
   // create an abstract props object
-  const initialProps = createAbstractPropsObject(astComponent.scope);
-  // const initialProps = evaluator.createAbstractObject("props");
-  // const astTest = t.objectExpression([t.objectProperty(t.identifier('x'), t.nullLiteral())]);
-  // const initialProps = moduleEnv.eval(astTest);
-  // initialProps.properties.get('x').descriptor.value = evaluator.createAbstractUnknown("x");
-  // debugger;
-  // initialProps.intrinsicName = 'props';
+  const initialProps = createAbstractPropsObject(astComponent.scope, astComponent.func, moduleEnv);
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   const resolvedResult = reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
-    initialProps,
-    function fallback(fallbackAstComponent) {
-      optimizeComponentTree(ast, moduleEnv, fallbackAstComponent, moduleScope);
-    }
+    initialProps
   );
 
   const node = serializer.serializeEvaluatedFunction(

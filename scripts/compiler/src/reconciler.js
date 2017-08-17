@@ -46,7 +46,7 @@ function resolveFragment(arrayValue) {
   }
 }
 
-function resolveDeeply(value, fallback) {
+function resolveDeeply(value) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -55,6 +55,11 @@ function resolveDeeply(value, fallback) {
     value instanceof UndefinedValue ||
     value instanceof AbstractValue
   ) {
+    if (value.kind === 'conditional') {
+      for (let i = 0; i < value.args.length; i++) {
+        value.args[i] = resolveDeeply(value.args[i]);
+      }
+    }
     // Terminal values
     return value;
   }
@@ -96,9 +101,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-function renderAsDeepAsPossible(componentType, props, fallback) {
+function renderAsDeepAsPossible(componentType, props) {
   let result = renderOneLevel(componentType, props);
-  return resolveDeeply(result, fallback);
+  return resolveDeeply(result);
 }
 
 exports.renderOneLevel = renderOneLevel;

@@ -1119,7 +1119,7 @@ var FluxContainer_AdsPETopNavContainer_26 = function FluxContainer_AdsPETopNavCo
   props
 ) {
   if (props.x === 41) {
-    return <AdsPETopNav25 x={40} />;
+    return <div>123</div>
   }
 };
 
@@ -4333,27 +4333,6 @@ var AdsPEContainer181 = function AdsPEContainer181(props) {
     return (
       <div id="ads_pe_container">
         <FluxContainer_AdsPETopNavContainer_26 x="41" />
-        {null},
-        <FluxContainer_AdsPEWorkspaceContainer_162 x="477" />
-        <FluxContainer_AdsSessionExpiredDialogContainer_163 x="478" />
-        <FluxContainer_AdsPEUploadDialogLazyContainer_164 x="479" />
-        <FluxContainer_DialogContainer_165 x="480" />
-        <AdsBugReportContainer166 x="481" />
-        <AdsPEAudienceSplittingDialogContainer168 x="483" />
-        <FluxContainer_AdsRuleDialogBootloadContainer_169 x="484" />
-        <FluxContainer_AdsPECFTrayContainer_170 x="485" />
-        <span>
-          <FluxContainer_AdsPEDeleteDraftContainer_171 x="486" />
-          <FluxContainer_AdsPEInitialDraftPublishDialogContainer_172 x="487" />
-          <FluxContainer_AdsPEReachFrequencyStatusTransitionDialogBootloadContainer_173 x="488" />
-        </span>
-        <FluxContainer_AdsPEPurgeArchiveDialogContainer_174 x="489" />
-        <AdsPECreateDialogContainer175 x="490" />
-        <FluxContainer_AdsPEModalStatusContainer_176 x="491" />
-        <FluxContainer_AdsBrowserExtensionErrorDialogContainer_177 x="492" />
-        <FluxContainer_AdsPESortByErrorTipContainer_178 x="493" />
-        <FluxContainer_AdsPELeadDownloadDialogContainerClass_180 x="495" />,
-        <div id="web_ads_guidance_tips" />
       </div>
     );
   }
@@ -4365,12 +4344,4 @@ var Benchmark = function Benchmark(props) {
   }
 };
 
-function Benchmark2(props) {
-  if (props.x === 100) {
-    return <div>123</div>;
-  } else {
-    return <div>456</div>;
-  }
-}
-
-module.exports = Benchmark2;
+module.exports = Benchmark;

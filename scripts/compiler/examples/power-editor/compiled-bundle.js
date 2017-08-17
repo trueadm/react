@@ -2,14 +2,14 @@
 
 require('React');
 
-function Benchmark2(props) {
-  if (props.x === 100) {
-    return <div>123</div>;
-  } else {
-    return <div>456</div>;
-  }
-}
+var Benchmark = function Benchmark(props) {
+  return props.x === undefined ? <div id="ads_pe_container">
+        {undefined}
+      </div> : undefined;
+};
 
-var PowerEditor = Benchmark2;
+var PowerEditor = Benchmark;
 
-module.exports = PowerEditor;
+var compiledBundle = PowerEditor;
+
+module.exports = compiledBundle;
