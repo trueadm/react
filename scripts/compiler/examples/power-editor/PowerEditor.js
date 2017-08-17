@@ -189,7 +189,7 @@ var AbstractLink1 = function AbstractLink1(props) {
             {"Dick Madanson (10149999073643408)"}
           </span>
         </span>
-        <ReactImage0 x="0" />
+        <ReactImage0 x={0} />
       </a>
     );
   }
@@ -755,22 +755,22 @@ var AbstractPopoverButton5 = function AbstractPopoverButton5(props) {
 
 var ReactXUIPopoverButton6 = function ReactXUIPopoverButton6(props) {
   if (props.x === 6) {
-    return <AbstractPopoverButton5 x="5" />;
+    return <AbstractPopoverButton5 x={5} />;
   }
   if (props.x === 133) {
-    return <AbstractPopoverButton5 x="132" />;
+    return <AbstractPopoverButton5 x={132} />;
   }
   if (props.x === 141) {
-    return <AbstractPopoverButton5 x="140" />;
+    return <AbstractPopoverButton5 x={140} />;
   }
   if (props.x === 272) {
-    return <AbstractPopoverButton5 x="271" />;
+    return <AbstractPopoverButton5 x={271} />;
   }
 };
 
 var BIGAdAccountSelector7 = function BIGAdAccountSelector7(props) {
   if (props.x === 7) {
-    return <div><ReactXUIPopoverButton6 x="6" /></div>;
+    return <div><ReactXUIPopoverButton6 x={6} /></div>;
   }
 };
 
@@ -778,13 +778,13 @@ var FluxContainer_AdsPEBIGAdAccountSelectorContainer_8 = function FluxContainer_
   props
 ) {
   if (props.x === 8) {
-    return <BIGAdAccountSelector7 x="7" />;
+    return <BIGAdAccountSelector7 x={7} />;
   }
 };
 
 var ErrorBoundary9 = function ErrorBoundary9(props) {
   if (props.x === 9) {
-    return <FluxContainer_AdsPEBIGAdAccountSelectorContainer_8 x="8" />;
+    return <FluxContainer_AdsPEBIGAdAccountSelectorContainer_8 x={8} />;
   }
   if (props.x === 13) {
     return <FluxContainer_AdsPENavigationBarContainer_12 x={12} />;
@@ -829,58 +829,58 @@ var ErrorBoundary9 = function ErrorBoundary9(props) {
     return <AdsPECampaignGroupTableContainer159 x={470} />;
   }
   if (props.x === 475) {
-    return <AdsPEContentContainer161 x="474" />;
+    return <AdsPEContentContainer161 x={474} />;
   }
 };
 
 var AdsErrorBoundary10 = function AdsErrorBoundary10(props) {
   if (props.x === 10) {
-    return <ErrorBoundary9 x="9" />;
+    return <ErrorBoundary9 x={9} />;
   }
   if (props.x === 14) {
-    return <ErrorBoundary9 x="13" />;
+    return <ErrorBoundary9 x={13} />;
   }
   if (props.x === 28) {
-    return <ErrorBoundary9 x="27" />;
+    return <ErrorBoundary9 x={27} />;
   }
   if (props.x === 33) {
-    return <ErrorBoundary9 x="32" />;
+    return <ErrorBoundary9 x={32} />;
   }
   if (props.x === 39) {
-    return <ErrorBoundary9 x="38" />;
+    return <ErrorBoundary9 x={38} />;
   }
   if (props.x === 58) {
-    return <ErrorBoundary9 x="57" />;
+    return <ErrorBoundary9 x={57} />;
   }
   if (props.x === 61) {
-    return <ErrorBoundary9 x="60" />;
+    return <ErrorBoundary9 x={60} />;
   }
   if (props.x === 65) {
-    return <ErrorBoundary9 x="64" />;
+    return <ErrorBoundary9 x={64} />;
   }
   if (props.x === 125) {
-    return <ErrorBoundary9 x="124" />;
+    return <ErrorBoundary9 x={124} />;
   }
   if (props.x === 171) {
-    return <ErrorBoundary9 x="170" />;
+    return <ErrorBoundary9 x={170} />;
   }
   if (props.x === 176) {
-    return <ErrorBoundary9 x="175" />;
+    return <ErrorBoundary9 x={175} />;
   }
   if (props.x === 194) {
-    return <ErrorBoundary9 x="193" />;
+    return <ErrorBoundary9 x={193} />;
   }
   if (props.x === 302) {
-    return <ErrorBoundary9 x="301" />;
+    return <ErrorBoundary9 x={301} />;
   }
   if (props.x === 312) {
-    return <ErrorBoundary9 x="311" />;
+    return <ErrorBoundary9 x={311} />;
   }
   if (props.x === 472) {
-    return <ErrorBoundary9 x="471" />;
+    return <ErrorBoundary9 x={471} />;
   }
   if (props.x === 476) {
-    return <ErrorBoundary9 x="475" />;
+    return <ErrorBoundary9 x={475} />;
   }
 };
 
@@ -894,7 +894,7 @@ var FluxContainer_AdsPENavigationBarContainer_12 = function FluxContainer_AdsPEN
   props
 ) {
   if (props.x === 12) {
-    return <AdsPENavigationBar11 x="11" />;
+    return <AdsPENavigationBar11 x={11} />;
   }
 };
 
@@ -1119,7 +1119,7 @@ var FluxContainer_AdsPETopNavContainer_26 = function FluxContainer_AdsPETopNavCo
   props
 ) {
   if (props.x === 41) {
-    return <div>123</div>
+    return <AdsPETopNav25 x={40} />;
   }
 };
 
@@ -4131,7 +4131,7 @@ var AdsPECampaignGroupTableContainer159 = function AdsPECampaignGroupTableContai
   props
 ) {
   if (props.x === 470) {
-    return <ResponsiveBlock37 x="469" />;
+    return <ResponsiveBlock37 x={469} />;
   }
 };
 
@@ -4141,24 +4141,24 @@ var AdsPEManageAdsPaneContainer160 = function AdsPEManageAdsPaneContainer160(
   if (props.x === 473) {
     return (
       <div>
-        <AdsErrorBoundary10 x="65" />
+        <AdsErrorBoundary10 x={65} />
         <div className="_2uty">
-          <AdsErrorBoundary10 x="125" />
+          <AdsErrorBoundary10 x={125} />
         </div>
         <div className="_2utx _21oc">
-          <AdsErrorBoundary10 x="171" />
+          <AdsErrorBoundary10 x={171} />
           <div className="_41tu">
-            <AdsErrorBoundary10 x="176" />
-            <AdsErrorBoundary10 x="194" />
+            <AdsErrorBoundary10 x={176} />
+            <AdsErrorBoundary10 x={19} />
           </div>
         </div>
         <div className="_2utz" style={{ height: 25 }}>
-          <AdsErrorBoundary10 x="302" />
+          <AdsErrorBoundary10 x={302} />
           <div className="_2ut-">
-            <AdsErrorBoundary10 x="312" />
+            <AdsErrorBoundary10 x={312} />
           </div>
           <div className="_2ut_">
-            <AdsErrorBoundary10 x="472" />
+            <AdsErrorBoundary10 x={472} />
           </div>
         </div>
       </div>
@@ -4168,7 +4168,7 @@ var AdsPEManageAdsPaneContainer160 = function AdsPEManageAdsPaneContainer160(
 
 var AdsPEContentContainer161 = function AdsPEContentContainer161(props) {
   if (props.x === 474) {
-    return <AdsPEManageAdsPaneContainer160 x="473" />;
+    return <AdsPEManageAdsPaneContainer160 x={473} />;
   }
 };
 
@@ -4178,8 +4178,8 @@ var FluxContainer_AdsPEWorkspaceContainer_162 = function FluxContainer_AdsPEWork
   if (props.x === 477) {
     return (
       <div className="_49wu" style={{ height: 177, top: 43, width: 1306 }}>
-        <ResponsiveBlock37 x="62" key="0" />
-        <AdsErrorBoundary10 x="476" key="1" />
+        <ResponsiveBlock37 x={62} key="0" />
+        <AdsErrorBoundary10 x={476} key="1" />
         {null}
       </div>
     );
@@ -4228,7 +4228,7 @@ var AdsPEAudienceSplittingDialogContainer168 = function AdsPEAudienceSplittingDi
   props
 ) {
   if (props.x === 483) {
-    return <div><AdsPEAudienceSplittingDialog167 x="482" /></div>;
+    return <div><AdsPEAudienceSplittingDialog167 x={482} /></div>;
   }
 };
 
@@ -4324,7 +4324,7 @@ var FluxContainer_AdsPELeadDownloadDialogContainerClass_180 = function FluxConta
   props
 ) {
   if (props.x === 495) {
-    return <LeadDownloadDialogSelector179 x="494" />;
+    return <LeadDownloadDialogSelector179 x={494} />;
   }
 };
 
@@ -4332,7 +4332,28 @@ var AdsPEContainer181 = function AdsPEContainer181(props) {
   if (props.x === 496) {
     return (
       <div id="ads_pe_container">
-        <FluxContainer_AdsPETopNavContainer_26 x="41" />
+        <FluxContainer_AdsPETopNavContainer_26 x={41} />
+        {null},
+        <FluxContainer_AdsPEWorkspaceContainer_162 x={477} />
+        <FluxContainer_AdsSessionExpiredDialogContainer_163 x={478} />
+        <FluxContainer_AdsPEUploadDialogLazyContainer_164 x={479} />
+        <FluxContainer_DialogContainer_165 x={480} />
+        <AdsBugReportContainer166 x={481} />
+        <AdsPEAudienceSplittingDialogContainer168 x={483} />
+        <FluxContainer_AdsRuleDialogBootloadContainer_169 x={484} />
+        <FluxContainer_AdsPECFTrayContainer_170 x={485} />
+        <span>
+          <FluxContainer_AdsPEDeleteDraftContainer_171 x={486} />
+          <FluxContainer_AdsPEInitialDraftPublishDialogContainer_172 x={487} />
+          <FluxContainer_AdsPEReachFrequencyStatusTransitionDialogBootloadContainer_173 x={488} />
+        </span>
+        <FluxContainer_AdsPEPurgeArchiveDialogContainer_174 x={489} />
+        <AdsPECreateDialogContainer175 x={490} />
+        <FluxContainer_AdsPEModalStatusContainer_176 x={491} />
+        <FluxContainer_AdsBrowserExtensionErrorDialogContainer_177 x={492} />
+        <FluxContainer_AdsPESortByErrorTipContainer_178 x={493} />
+        <FluxContainer_AdsPELeadDownloadDialogContainerClass_180 x={495} />,
+        <div id="web_ads_guidance_tips" />
       </div>
     );
   }
