@@ -25,7 +25,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-function resolveFragment(arrayValue) {
+async function resolveFragment(arrayValue) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -41,30 +41,31 @@ function resolveFragment(arrayValue) {
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
-      elementProperty.descriptor.value = resolveDeeply(elementValue);
+      elementProperty.descriptor.value = await resolveDeeply(elementValue);
     }
   }
 }
 
-function resolveDeeply(value) {
+async function resolveDeeply(value) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
     value instanceof BooleanValue ||
     value instanceof NullValue ||
-    value instanceof UndefinedValue ||
-    value instanceof AbstractValue
+    value instanceof UndefinedValue
   ) {
+    // Terminal values
+    return value;
+  } else if (value instanceof AbstractValue) {
     if (value.kind === 'conditional') {
       for (let i = 0; i < value.args.length; i++) {
-        value.args[i] = resolveDeeply(value.args[i]);
+        value.args[i] = await resolveDeeply(value.args[i]);
       }
     }
-    // Terminal values
     return value;
   }
   if (value instanceof ArrayValue) {
-    resolveFragment(value);
+    await resolveFragment(value);
     return value;
   }
   if (isReactElement(value)) {
@@ -74,13 +75,13 @@ function resolveDeeply(value) {
       // Terminal host component. Start evaluating its children.
       let childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
-        let resolvedChildren = resolveDeeply(childrenProperty.descriptor.value);
+        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value);
         childrenProperty.descriptor.value = resolvedChildren;
       }
       return value;
     }
     try {
-      return renderAsDeepAsPossible(type, props);
+      return await renderAsDeepAsPossible(type, props);
     } catch (x) {
       // If something went wrong, just bail out and return the value we had.
       return value;
@@ -101,9 +102,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-function renderAsDeepAsPossible(componentType, props) {
+async function renderAsDeepAsPossible(componentType, props) {
   let result = renderOneLevel(componentType, props);
-  return resolveDeeply(result);
+  return await resolveDeeply(result);
 }
 
 exports.renderOneLevel = renderOneLevel;

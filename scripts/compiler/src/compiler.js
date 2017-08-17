@@ -8,49 +8,6 @@ const traverser = require("./traverser");
 const babel = require('babel-core');
 const createBundle = require('./bundler').createBundle;
 
-function constructModuleExports(componentTree) {
-  return t.expressionStatement(
-    t.assignmentExpression(
-      "=",
-      t.memberExpression(t.identifier("module"), t.identifier("exports")),
-      componentTree
-    )
-  );
-}
-
-// this is a slow implementation to do this, can be refactored to perform better
-function constructExternalImports(externalModules, assignments) {
-  const assignmentKeys = Array.from(assignments.keys());
-  const moduleImports = externalModules.map(externalModule => {
-    // find the externalModule in the assignments
-
-    for (let i = 0; i < assignmentKeys.length; i++) {
-      const assignmentKey = assignmentKeys[i];
-      let assignment = assignments.get(assignmentKey);
-      let pass = false;
-
-      if (Array.isArray(assignment)) {
-        assignment = traverser.handleMultipleValues(assignment);
-      }
-      if (assignment.type === 'FunctionCall') {
-        if (assignment.identifier !== null && assignment.identifier.name === 'require') {
-          if (assignment.args.length === 1 && assignment.args[0] === externalModule) {
-            pass = true;
-          }
-        }
-      } else if (assignment.type === 'AbstractUnknown' && assignment.crossModule === true) {
-        pass = true;
-      }
-      if (pass === true) {
-        return t.variableDeclaration('var',
-        [t.variableDeclarator(t.identifier(assignmentKey), assignment.astNode)]
-        );
-      }
-    }
-  });
-  return t.blockStatement(moduleImports);
-}
-
 function setupPrepackEnvironment(declarations) {
   const moduleEnv = new evaluator.ModuleEnvironment();
   // eval and declare all declarations
@@ -67,14 +24,14 @@ function setupPrepackEnvironment(declarations) {
   return moduleEnv;
 }
 
-function compileBundle(result) {
+async function compileBundle(result) {
   const prepackMetadata = result.prepackMetadata;
   const destinationBundlePath = result.destinationBundlePath;
   const defaultExportComponent = prepackMetadata.defaultExport.astNode;
   const moduleScope = result.moduleScope;
   const ast = result.ast;
 
-  optimizeComponentTree(
+  await optimizeComponentTree(
     ast,
     setupPrepackEnvironment(prepackMetadata.declarations),
     defaultExportComponent,
@@ -89,7 +46,7 @@ function compileBundle(result) {
     plugins: [
       // this doesn't seem to do DCE on JSX :(
       // ['minify-dead-code-elimination', {"optimizeRawSize": true}]
-    ]
+    ],
   }).code;
   fs.writeFileSync(destinationBundlePath, transformedCode);
   // let's use Rollup again for DCE! it handles JSX with our fork

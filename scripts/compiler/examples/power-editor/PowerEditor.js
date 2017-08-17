@@ -4352,7 +4352,7 @@ var AdsPEContainer181 = function AdsPEContainer181(props) {
         <FluxContainer_AdsPEModalStatusContainer_176 x={491} />
         <FluxContainer_AdsBrowserExtensionErrorDialogContainer_177 x={492} />
         <FluxContainer_AdsPESortByErrorTipContainer_178 x={493} />
-        <FluxContainer_AdsPELeadDownloadDialogContainerClass_180 x={495} />,
+        <FluxContainer_AdsPELeadDownloadDialogContainerClass_180 x={495} />
         <div id="web_ads_guidance_tips" />
       </div>
     );

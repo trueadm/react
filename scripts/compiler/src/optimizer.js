@@ -32,7 +32,7 @@ function createAbstractPropsObject(scope, func, moduleEnv) {
   return evaluator.createAbstractObject("props");
 }
 
-function optimizeComponentWithPrepack(
+async function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
   astComponent,
@@ -41,7 +41,7 @@ function optimizeComponentWithPrepack(
   // create an abstract props object
   const initialProps = createAbstractPropsObject(astComponent.scope, astComponent.func, moduleEnv);
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
-  const resolvedResult = reconciler.renderAsDeepAsPossible(
+  const resolvedResult = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps
   );
@@ -54,39 +54,40 @@ function optimizeComponentWithPrepack(
   return convertToExpression(node);
 }
 
-function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEnv, moduleScope) {
+async function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEnv, moduleScope) {
   const elementIdentifiers = Array.from(jsxElementIdentifiers.values());
   for (let i = 0; i < elementIdentifiers.length; i++) {
     const elementIdentifier = elementIdentifiers[i];
     if (elementIdentifier !== null) {
-      optimizeComponentTree(ast, moduleEnv, elementIdentifier.astNode, moduleScope);
+      await optimizeComponentTree(ast, moduleEnv, elementIdentifier.astNode, moduleScope);
     }
   }
 }
 
-function optimizeComponentTree(
+async function optimizeComponentTree(
   ast,
   moduleEnv,
   astComponent,
   moduleScope
 ) {
   try {
-    const optimizedAstComponent = optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
+    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
     astComponent.optimized = true;
     astComponent.optimizedReplacement = optimizedAstComponent;
   } catch (e) {
     console.warn(`\nPrepack component bail-out on "${astComponent.id.name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component
-    let jsxElementIdentifiers;
     if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
-      scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
+      await scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
     } else if (astComponent.type === 'ClassExpression') {
       // scan all class methods for now
-      astComponent.body.body.forEach(bodyPart => {
+      const bodyParts = astComponent.body.body;
+      for (let i = 0; i < bodyParts.length; i++) {
+        const bodyPart = bodyParts[i];
         if (bodyPart.type === 'ClassMethod' && bodyPart.scope !== undefined) {
-          scanAllJsxElementIdentifiers(bodyPart.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
+          await scanAllJsxElementIdentifiers(bodyPart.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
         }
-      });
+      }
     }
   }
 }

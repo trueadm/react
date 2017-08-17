@@ -11,9 +11,11 @@ let {
 let t = require("babel-types");
 
 function getFunctionReferenceName(functionValue) {
+  const namer = functionValue.properties.get("name");
   return (
     functionValue.__originalName ||
-    functionValue.properties.get("name").descriptor.value.value
+    (namer && namer.descriptor.value.value) ||
+    'Unknown'
   );
 }
 

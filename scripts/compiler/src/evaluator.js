@@ -43,9 +43,9 @@ let realmOptions = {
   serialize: true,
   debugNames: false,
   uniqueSuffix: false,
-  timeout: 1000,
+  timeout: 5000,
   compatibility: "browser",
-  errorHandler: onError
+  errorHandler: onError,
 };
 
 let realm = construct_realm(realmOptions);
