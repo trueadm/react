@@ -20,25 +20,32 @@ function convertAccessorsToNestedObject(accessors) {
   
   if (keys.length > 0) {
     const object = {};
-    keys.forEach(key => {
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
       const value = accessors.get(key).accessors;
 
       if (value.size === 0) {
         object[key] = PROP_ABSTRACT_UNKNOWN;
+        return PROP_ABSTRACT_OBJECT;
       } else {
-        object[key] = PROP_ABSTRACT_OBJECT;
+        object[key] = convertAccessorsToNestedObject(value);
       }
-    });
+    }
     return object;
   }
-  return true;
+  return PROP_ABSTRACT_UNKNOWN;
 }
 
 function convertNestedObjectToAst(object) {
   return t.objectExpression(
-    Object.keys(object).map(key => 
-      t.objectProperty(t.identifier(key), t.nullLiteral())
-    )
+    Object.keys(object).map(key => {
+      const value = object[key];
+      if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_OBJECT) {
+        return t.objectProperty(t.identifier(key), t.nullLiteral());
+      } else {
+        return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
+      }
+    })
   );
 }
 
@@ -52,6 +59,13 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
       properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
     } else if (value === PROP_ABSTRACT_OBJECT) {
       properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+    } else {
+      setAbstractPropsUsingNestedObject(
+        properties.get(key).descriptor.value,
+        value,
+        newPrefix,
+        false
+      );
     }
   });
 }
