@@ -4,6 +4,7 @@ const t = require("babel-types");
 const evaluator = require("./evaluator");
 const reconciler = require("./reconciler");
 const serializer = require("./serializer");
+const Types = require("./types").Types;
 
 function convertToExpression(node) {
   if (node.type === "FunctionDeclaration") {
@@ -11,10 +12,6 @@ function convertToExpression(node) {
   }
   return node;
 }
-
-const PROP_ABSTRACT_UNKNOWN = 1;
-const PROP_ABSTRACT_OBJECT = 2;
-const PROP_ABSTRACT_ARRAY = 3;
 
 function convertAccessorsToNestedObject(accessors, propTypes) {
   const keys = Array.from(accessors.keys());
@@ -24,32 +21,27 @@ function convertAccessorsToNestedObject(accessors, propTypes) {
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       if (propTypes !== undefined && propTypes.has(key)) {
-        const typeInfo = propTypes.get(key);
-
-        switch (typeInfo) {
-          case 'array': {
-            object[key] = PROP_ABSTRACT_ARRAY;
-            break;
-          }
-          default: {
-            debugger;
-          }
-        }
+        object[key] = propTypes.get(key);
       } else {
-        object[key] = PROP_ABSTRACT_UNKNOWN;
+        object[key] = Types.ANY;
       }
     }
     return object;
   }
-  return PROP_ABSTRACT_UNKNOWN;
+  return Types.ANY;
 }
 
 function convertNestedObjectToAst(object) {
   return t.objectExpression(
     Object.keys(object).map(key => {
       const value = object[key];
-      if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_ARRAY) {
-        return t.objectProperty(t.identifier(key), t.nullLiteral());
+      switch (value) {
+        case Types.ANY:
+        case Types.ARRAY:
+        case Types.OBJECT:
+          return t.objectProperty(t.identifier(key), t.nullLiteral());
+        default:
+          debugger;
       }
     })
   );
@@ -61,9 +53,9 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
     const value = object[key];
     const newPrefix = `${prefix}.${key}`;
 
-    if (value === PROP_ABSTRACT_UNKNOWN) {
+    if (value === Types.ANY) {
       properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-    } else if (value === PROP_ABSTRACT_ARRAY) {
+    } else if (value === Types.ARRAY) {
       properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
     }
   });

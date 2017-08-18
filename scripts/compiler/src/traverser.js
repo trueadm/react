@@ -1,9 +1,11 @@
 "use strict";
 
+const Types = require("./types").Types;
+
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
   ScanInnerScope: "ScanInnerScope",
-  ReplaceWithOptimized: "ReplaceWithOptimized",
+  ReplaceWithOptimized: "ReplaceWithOptimized"
 };
 
 const Types = {
@@ -22,10 +24,16 @@ const Types = {
 };
 
 const propTypes = createObject(null, {
-  string: 'string',
-  array: 'array',
-  object: 'object',
-  number: 'number',
+  string: Types.STRING,
+  array: Types.ARRAY,
+  object: Types.OBJECT,
+  number: Types.NUMBER,
+  bool: Types.BOOL,
+  func: Types.FUNC,
+  symbol: Types.SYMBOL,
+  any: Types.ANY,
+  element: Types.ELEMENT,
+  node: Types.NODE
 });
 
 function createMathExpression(left, right, operator) {
@@ -103,7 +111,7 @@ function createClass(name, astNode, superIdentifier) {
     astNode: astNode,
     name: name,
     superIdentifier: superIdentifier,
-    thisObject: createObject(null),
+    thisObject: createObject(null)
   };
 }
 
@@ -158,7 +166,7 @@ function createModuleScope() {
     }),
     require: createAbstractFunction("require"),
     window: createAbstractObject(),
-    document: createAbstractObject(),
+    document: createAbstractObject()
   });
 }
 
@@ -199,7 +207,10 @@ function traverse(node, action, scope) {
       const name = getNameFromAst(astName);
       const isReactComponent = name[0].toUpperCase() === name[0];
       if (isReactComponent === true) {
-        scope.jsxElementIdentifiers.set(name, getOrSetValueFromAst(astName, scope, action))
+        scope.jsxElementIdentifiers.set(
+          name,
+          getOrSetValueFromAst(astName, scope, action)
+        );
       }
       const astAttributes = astOpeningElement.attributes;
       for (let i = 0; i < astAttributes.length; i++) {
@@ -226,12 +237,19 @@ function traverse(node, action, scope) {
       break;
     }
     case "MemberExpression": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         const astObject = node.object;
         const astProperty = node.property;
         // we don't actually need to get or set anything, we just need to register the accesor
         // in case the member is a param
-        getOrSetValueFromAst(astProperty, getOrSetValueFromAst(astObject, scope, action), action);
+        getOrSetValueFromAst(
+          astProperty,
+          getOrSetValueFromAst(astObject, scope, action),
+          action
+        );
       } else {
         traverse(node.object, action, scope);
         traverse(node.property, action, scope);
@@ -239,7 +257,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "CallExpression": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         callFunction(node, node.callee, node.arguments, action, scope);
       }
       break;
@@ -252,7 +273,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "VariableDeclarator": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         declareVariable(node.id, node.init, action, scope);
       } else {
         traverse(node.id, action, scope);
@@ -390,7 +414,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "AssignmentExpression": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         assignExpression(node.left, node.right, action, scope);
       }
       break;
@@ -436,7 +463,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "FunctionDeclaration": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         node.optimized = false;
         node.optimizedReplacement = null;
         declareFunction(
@@ -449,7 +479,10 @@ function traverse(node, action, scope) {
           true
         );
         break;
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       }
     }
@@ -471,17 +504,29 @@ function traverse(node, action, scope) {
       break;
     }
     case "ClassDeclaration": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       }
       break;
     }
     case "ClassExpression": {
-      if (action === Actions.ScanInnerScope || action === Actions.ScanTopLevelScope) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       }
       break;
@@ -597,7 +642,11 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           return accesorObject;
         }
       } else if (subject.type === Types.FunctionCall) {
-        if (subject.identifier.name === 'require' && subject.args.length === 1 && subject.args[0] === 'PropTypes') {
+        if (
+          subject.identifier.name === "require" &&
+          subject.args.length === 1 &&
+          (subject.args[0] === "PropTypes" || subject.args[0] === "prop-types")
+        ) {
           return getOrSetValueFromAst(astNode, propTypes, action, newValue);
         }
         // who knows what it could be?
@@ -614,7 +663,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else if (subject.type === Types.Identifier) {
         // NO OP
       } else if (subject.type === Types.Function) {
-        return getOrSetValueFromAst(astNode, subject.properties, action, newValue);
+        return getOrSetValueFromAst(
+          astNode,
+          subject.properties,
+          action,
+          newValue
+        );
       } else {
         debugger;
       }
@@ -806,7 +860,7 @@ function declareClass(node, id, superId, body, action, scope) {
   const theClass = createClass(classAssignKey, node, superAssignKey);
   const astClassBody = body.body;
   const thisAssignment = {
-    this: theClass.thisObject,
+    this: theClass.thisObject
   };
   node.optimized = false;
   node.optimizedReplacement = null;
@@ -884,5 +938,5 @@ module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
   traverse: traverse,
-  handleMultipleValues: handleMultipleValues,
+  handleMultipleValues: handleMultipleValues
 };
