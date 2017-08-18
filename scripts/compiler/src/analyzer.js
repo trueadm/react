@@ -23,7 +23,7 @@ function toAst(node) {
 function handleAssignmentValue(
   assignmentValue,
   assignmentKey,
-  declarations,
+  declarations
 ) {
   if (assignmentValue === null) {
     declarations[assignmentKey] = t.identifier("undefined");
@@ -125,7 +125,7 @@ function handleAssignmentValue(
     handleAssignmentValue(
       lastAssignmentValue,
       assignmentKey,
-      declarations,
+      declarations
     );
   } else {
     debugger;
@@ -171,7 +171,7 @@ function createPrepackMetadata(moduleScope) {
       handleAssignmentValue(
         assignmentValue,
         assignmentKey,
-        declarations,
+        declarations
       );
     }
   });

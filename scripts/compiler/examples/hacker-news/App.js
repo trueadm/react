@@ -5,11 +5,16 @@ const HeaderBar = require('HeaderBar');
 const StoryList = require('StoryList');
 
 class AppBody extends React.Component {
+  getDefaultProps() {
+    return {
+      storyLimit: 10,
+    };
+  }
   render() {
     return [
       <HeaderBar />,
         <tr height="10" />,
-      <StoryList stories={this.props.stories} />,
+      <StoryList stories={this.props.stories} limit={this.props.storyLimit} />,
     ];
   }
 }
@@ -27,7 +32,7 @@ function App({stories}) {
           backgroundColor: '#f6f6ef',
         }}>
         <tbody>
-          {stories.length > 0 ? <AppBody stories={stories} /> : null}
+          {stories ? <AppBody stories={stories} /> : null}
         </tbody>
       </table>
     </center>

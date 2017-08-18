@@ -83,6 +83,7 @@ function createFunction(name, astNode, scope) {
     callSites: [],
     name: name,
     params: [],
+    properties: createObject(),
     scope: scope,
     type: Types.Function
   };
@@ -602,6 +603,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         return createAbstractUnknown(false);
       } else if (subject.type === Types.Identifier) {
         // NO OP
+      } else if (subject.type === Types.Function) {
+        return getOrSetValueFromAst(astNode, subject.properties, action, newValue);
       } else {
         debugger;
       }

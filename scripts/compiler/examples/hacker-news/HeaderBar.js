@@ -2,7 +2,7 @@
 
 const React = require('React');
 
-function HeaderBar() {
+function HeaderBar(props) {
   return (
     <tr style={{backgroundColor: '#222'}}>
       <table
@@ -28,7 +28,7 @@ function HeaderBar() {
             </td>
             <td style={{lineHeight: '12pt'}} height="10">
               <span className="pagetop">
-                <b className="hnname">React HN Benchmark</b>
+                <b className="hnname">{props.title}</b>
                 <a href="#">new</a>
                 {' | '}
                 <a href="#">comments</a>
@@ -48,5 +48,9 @@ function HeaderBar() {
     </tr>
   );
 }
+
+HeaderBar.defaultProps = {
+  title: 'React HN Benchmark',
+};
 
 module.exports = HeaderBar;

@@ -8,6 +8,7 @@ let {
   Set,
   ToString
 } = require("prepack/lib/methods");
+let evaluator = require("./evaluator");
 
 let reactElementSymbol = undefined;
 let reactElementSymbolKey = "react.element";
@@ -47,14 +48,45 @@ function createReactElement(realm, type, key, ref, props) {
   return obj;
 }
 
-function createReactProps(realm, attributes, children) {
-  // TODO: Deal with defaultProps here.
+function createReactProps(realm, type, attributes, children, env) {
   let obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
   for (let [key, value] of attributes) {
     if (RESERVED_PROPS.hasOwnProperty(key)) {
       continue;
     }
     CreateDataPropertyOrThrow(realm, obj, key, value);
+  }
+  // handle defaultProps
+  let defaultProps = null;
+  if (type.$FunctionKind === "classConstructor") {
+    const classPrototype = type.properties.get("prototype").descriptor.value
+      .properties;
+    // check for a static property called defaultProps
+    if (classPrototype.has("defaultProps")) {
+      debugger;
+    } else if (classPrototype.has("getDefaultProps")) {
+      // check for a method called getDefaultProps
+      const getDefaultPropsFunction = classPrototype.get("getDefaultProps").descriptor.value;
+      defaultProps = GetValue(realm, evaluator.call(getDefaultPropsFunction));
+    }
+  } else if (type.$FunctionKind === "normal" && type.func !== undefined) {
+    const functionProperties = type.func.properties.properties;
+
+    if (functionProperties.has("defaultProps")) {
+      const defaultPropertiesObject = functionProperties.get("defaultProps").astNode;
+
+      if (defaultPropertiesObject !== undefined) {
+        defaultProps = env.evaluate(defaultPropertiesObject);
+      }
+    }
+  }
+  if (defaultProps !== null) {
+    for (let [key, value] of defaultProps.properties) {
+      if (RESERVED_PROPS.hasOwnProperty(key) || attributes.has(key)) {
+        continue;
+      }
+      CreateDataPropertyOrThrow(realm, obj, key, value.descriptor.value);
+    }
   }
   if (children !== null) {
     CreateDataPropertyOrThrow(realm, obj, "children", children);
@@ -74,9 +106,7 @@ function evaluateJSXMemberExpression(ast, strictCode, env, realm) {
 }
 
 function evaluateJSXIdentifier(ast, strictCode, env, realm) {
-  let isTagName =
-    ast.type === "JSXIdentifier" &&
-    /^[a-z]|\-/.test(ast.name);
+  let isTagName = ast.type === "JSXIdentifier" && /^[a-z]|\-/.test(ast.name);
   if (isTagName) {
     // Special cased lower-case and custom elements
     return new StringValue(realm, ast.name);
@@ -165,7 +195,7 @@ module.exports = function(ast, strictCode, env, realm) {
     key = new StringValue(realm, ToString(realm, key));
   }
 
-  let props = createReactProps(realm, attributes, children);
+  let props = createReactProps(realm, type, attributes, children, env);
 
   return createReactElement(realm, type, key, ref, props);
 };

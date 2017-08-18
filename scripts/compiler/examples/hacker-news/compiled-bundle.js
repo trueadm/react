@@ -77,7 +77,7 @@ function App(props) {
       "backgroundColor": "#f6f6ef"
     }}>
         <tbody>
-          {props.stories !== "foo" ? [<tr style={{
+          {props.stories ? [<tr style={{
           "backgroundColor": "#222"
         }}>
       <table style={{
@@ -116,7 +116,7 @@ function App(props) {
           </tr>
         </tbody>
       </table>
-    </tr>, <tr height="10" />, <StoryList stories={props.stories} />] : null}
+    </tr>, <tr height="10" />, <StoryList stories={props.stories} limit={10} />] : null}
         </tbody>
       </table>
     </center>;
