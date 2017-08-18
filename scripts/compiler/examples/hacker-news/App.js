@@ -32,7 +32,7 @@ function App({stories}) {
           backgroundColor: '#f6f6ef',
         }}>
         <tbody>
-          {stories ? <AppBody stories={stories} /> : null}
+          {stories.length > 0 ? <AppBody stories={stories} /> : null}
         </tbody>
       </table>
     </center>

@@ -12,6 +12,50 @@ function convertToExpression(node) {
   return node;
 }
 
+const PROP_ABSTRACT_UNKNOWN = 1;
+const PROP_ABSTRACT_OBJECT = 2;
+
+function convertAccessorsToNestedObject(accessors) {
+  const keys = Array.from(accessors.keys());
+  
+  if (keys.length > 0) {
+    const object = {};
+    keys.forEach(key => {
+      const value = accessors.get(key).accessors;
+
+      if (value.size === 0) {
+        object[key] = PROP_ABSTRACT_UNKNOWN;
+      } else {
+        object[key] = PROP_ABSTRACT_OBJECT;
+      }
+    });
+    return object;
+  }
+  return true;
+}
+
+function convertNestedObjectToAst(object) {
+  return t.objectExpression(
+    Object.keys(object).map(key => 
+      t.objectProperty(t.identifier(key), t.nullLiteral())
+    )
+  );
+}
+
+function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
+  const properties = ast.properties;
+  Object.keys(object).forEach(key => {
+    const value = object[key];
+    const newPrefix = `${prefix}.${key}`;
+
+    if (value === PROP_ABSTRACT_UNKNOWN) {
+      properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
+    } else if (value === PROP_ABSTRACT_OBJECT) {
+      properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+    }
+  });
+}
+
 function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   const type = astComponent.type;
   let propsShape = null;
@@ -20,24 +64,20 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   if (type === 'FunctionExpression' || type === 'FunctionDeclaration') {
     const propsInScope = astComponent.func.params[0];
     if (propsInScope !== undefined) {
-      propsShape = Array.from(propsInScope.accessors.keys());
+      propsShape = convertAccessorsToNestedObject(propsInScope.accessors);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const propsOnClass = astComponent.class.thisObject.accessors.get('props');
     if (propsOnClass !== undefined) {
-      propsShape = Array.from(propsOnClass.accessors.keys());
+      propsShape = convertAccessorsToNestedObject(propsOnClass.accessors);
     }
   }
   if (propsShape !== null) {
     // TODO
     // first we create some AST and convert it... need to do this properly later
-    const astProps = t.objectExpression(
-      propsShape.map(prop => t.objectProperty(t.identifier(prop), t.nullLiteral()))
-    );
+    const astProps = convertNestedObjectToAst(propsShape);
     const initialProps = moduleEnv.eval(astProps);
-    propsShape.forEach(prop => {
-      initialProps.properties.get(prop).descriptor.value = evaluator.createAbstractUnknown(`props.${prop}`);
-    });
+    setAbstractPropsUsingNestedObject(initialProps, propsShape, 'props', true);
     initialProps.intrinsicName = 'props';
     return initialProps;
   }
@@ -48,14 +88,16 @@ async function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
   astComponent,
-  moduleScope
+  moduleScope,
+  bailOuts
 ) {
   // create an abstract props object
   const initialProps = createAbstractPropsObject(astComponent.scope, astComponent, moduleEnv);
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   const resolvedResult = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
-    initialProps
+    initialProps,
+    bailOuts
   );
 
   const node = serializer.serializeEvaluatedFunction(
@@ -76,6 +118,19 @@ async function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEn
   }
 }
 
+async function handleBailouts(bailOuts, ast, moduleEnv, moduleScope) {
+  if (bailOuts.length > 0) {
+    for (let i = 0; i < bailOuts.length; i++) {
+      const bailOut = bailOuts[i];
+      const component = moduleScope.assignments.get(bailOut);
+
+      if (component !== undefined) {
+        await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+      }
+    }
+  }
+}
+
 async function optimizeComponentTree(
   ast,
   moduleEnv,
@@ -83,9 +138,11 @@ async function optimizeComponentTree(
   moduleScope
 ) {
   try {
-    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
+    const bailOuts = [];
+    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope, bailOuts);
     astComponent.optimized = true;
     astComponent.optimizedReplacement = optimizedAstComponent;
+    await handleBailouts(bailOuts, ast, moduleEnv, moduleScope);
   } catch (e) {
     console.warn(`\nPrepack component bail-out on "${astComponent.id.name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component

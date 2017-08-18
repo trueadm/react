@@ -318,9 +318,9 @@ function traverse(node, action, scope) {
       break;
     }
     case "ConditionalExpression": {
-      traverse(node.alternate, action, scope);
-      traverse(node.consequent, action, scope);
       traverse(node.test, action, scope);
+      traverse(node.consequent, action, scope);
+      traverse(node.alternate, action, scope);
       break;
     }
     case "ObjectPattern": {
@@ -828,7 +828,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
       param.properties.forEach(property => {
         if (property.type === "ObjectProperty") {
           const propertyAssignKey = getNameFromAst(property.value);
-          const identifier = createIdentifier();
+          const identifier = createObject();
           assign(newScope, "assignments", propertyAssignKey, identifier);
           assign(paramObject, "accessors", propertyAssignKey, identifier);
         } else {

@@ -25,7 +25,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue) {
+async function resolveFragment(arrayValue, bailOuts) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -41,12 +41,12 @@ async function resolveFragment(arrayValue) {
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
-      elementProperty.descriptor.value = await resolveDeeply(elementValue);
+      elementProperty.descriptor.value = await resolveDeeply(elementValue, bailOuts);
     }
   }
 }
 
-async function resolveDeeply(value) {
+async function resolveDeeply(value, bailOuts) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -59,13 +59,15 @@ async function resolveDeeply(value) {
   } else if (value instanceof AbstractValue) {
     if (value.kind === 'conditional') {
       for (let i = 0; i < value.args.length; i++) {
-        value.args[i] = await resolveDeeply(value.args[i]);
+        value.args[i] = await resolveDeeply(value.args[i], bailOuts);
       }
+    } else {
+      // debugger;
     }
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value);
+    await resolveFragment(value, bailOuts);
     return value;
   }
   if (isReactElement(value)) {
@@ -75,14 +77,15 @@ async function resolveDeeply(value) {
       // Terminal host component. Start evaluating its children.
       let childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
-        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value);
+        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value, bailOuts);
         childrenProperty.descriptor.value = resolvedChildren;
       }
       return value;
     }
     try {
-      return await renderAsDeepAsPossible(type, props);
+      return await renderAsDeepAsPossible(type, props, bailOuts);
     } catch (x) {
+      bailOuts.push(type.__originalName);
       // If something went wrong, just bail out and return the value we had.
       return value;
     }
@@ -102,9 +105,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-async function renderAsDeepAsPossible(componentType, props) {
+async function renderAsDeepAsPossible(componentType, props, bailOuts) {
   let result = renderOneLevel(componentType, props);
-  return await resolveDeeply(result);
+  return await resolveDeeply(result, bailOuts);
 }
 
 exports.renderOneLevel = renderOneLevel;

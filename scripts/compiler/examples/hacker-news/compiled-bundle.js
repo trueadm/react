@@ -59,25 +59,13 @@ function Story({ story, rank }) {
   }} className="spacer" />];
 }
 
-function StoryList({ stories }) {
-  return <tr>
-      <td>
-        <table cellPadding="0" cellSpacing="0" className="itemlist">
-          <tbody>
-            {stories.map((story, i) => <Story story={story} rank={++i} key={story.id} />)}
-          </tbody>
-        </table>
-      </td>
-    </tr>;
-}
-
 function App(props) {
   return <center>
       <table id="hnmain" border="0" cellPadding="0" cellSpacing="0" width="85%" style={{
       "backgroundColor": "#f6f6ef"
     }}>
         <tbody>
-          {props.stories ? [<tr style={{
+          {props.stories.length > 0 ? [<tr style={{
           "backgroundColor": "#222"
         }}>
       <table style={{
@@ -116,7 +104,15 @@ function App(props) {
           </tr>
         </tbody>
       </table>
-    </tr>, <tr height="10" />, <StoryList stories={props.stories} limit={10} />] : null}
+    </tr>, <tr height="10" />, <tr>
+      <td>
+        <table cellPadding="0" cellSpacing="0" className="itemlist">
+          <tbody>
+            {props.stories.map(Unknown)}
+          </tbody>
+        </table>
+      </td>
+    </tr>] : null}
         </tbody>
       </table>
     </center>;
