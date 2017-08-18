@@ -76,7 +76,7 @@ function evaluateJSXMemberExpression(ast, strictCode, env, realm) {
 function evaluateJSXIdentifier(ast, strictCode, env, realm) {
   let isTagName =
     ast.type === "JSXIdentifier" &&
-    (ast.name.indexOf("-") > -1 || ast.name[0].toLowerCase() === ast.name[0]);
+    /^[a-z]|\-/.test(ast.name);
   if (isTagName) {
     // Special cased lower-case and custom elements
     return new StringValue(realm, ast.name);
