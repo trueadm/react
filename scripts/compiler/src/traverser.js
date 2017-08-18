@@ -1,6 +1,6 @@
 "use strict";
 
-const Types = require("./types").Types;
+const PropTypes = require("./types").Types;
 
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
@@ -24,16 +24,16 @@ const Types = {
 };
 
 const propTypes = createObject(null, {
-  string: Types.STRING,
-  array: Types.ARRAY,
-  object: Types.OBJECT,
-  number: Types.NUMBER,
-  bool: Types.BOOL,
-  func: Types.FUNC,
-  symbol: Types.SYMBOL,
-  any: Types.ANY,
-  element: Types.ELEMENT,
-  node: Types.NODE
+  string: PropTypes.STRING,
+  array: PropTypes.ARRAY,
+  object: PropTypes.OBJECT,
+  number: PropTypes.NUMBER,
+  bool: PropTypes.BOOL,
+  func: PropTypes.FUNC,
+  symbol: PropTypes.SYMBOL,
+  any: PropTypes.ANY,
+  element: PropTypes.ELEMENT,
+  node: PropTypes.NODE
 });
 
 function createMathExpression(left, right, operator) {
@@ -233,7 +233,10 @@ function traverse(node, action, scope) {
     }
     case "JSXExpressionContainer":
     case "ExpressionStatement": {
-      traverse(node.expression, action, scope);
+      const expressionNode = traverse(node.expression, action, scope);
+      if (expressionNode !== undefined) {
+        node.expression = expressionNode;
+      }
       break;
     }
     case "MemberExpression": {
@@ -419,6 +422,9 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         assignExpression(node.left, node.right, action, scope);
+      } else if (action === Actions.ReplaceWithOptimized &&
+        node.right.optimized === true) {
+        return node.right.optimizedReplacement;
       }
       break;
     }

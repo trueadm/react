@@ -1,7 +1,7 @@
 'use strict';
 
 require('React');
-var PropTypes = require('PropTypes');
+require('PropTypes');
 
 function timeAge(time) {
   const now = new Date().getTime() / 1000;
@@ -109,7 +109,9 @@ function App(props) {
       <td>
         <table cellPadding="0" cellSpacing="0" className="itemlist">
           <tbody>
-            {props.stories.map(Unknown)}
+            {props.stories.map((story, i) => {
+                  return <Story story={story} rank={++i} key={story.id} />;
+                })}
           </tbody>
         </table>
       </td>
@@ -119,9 +121,7 @@ function App(props) {
     </center>;
 }
 
-App.propTypes = {
-  stories: PropTypes.array
-};
+
 
 var App_1 = App;
 

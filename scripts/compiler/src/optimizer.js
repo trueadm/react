@@ -151,7 +151,11 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
     if (propsInScope !== undefined) {
       let propTypes = null;
       if (astComponent.func.properties.properties.has('propTypes')) {
-        propTypes = astComponent.func.properties.properties.get('propTypes').properties;
+        const propTypesObject = astComponent.func.properties.properties.get('propTypes');
+        propTypes = propTypesObject.properties;
+        // so the propTypes gets removed
+        propTypesObject.astNode.optimized = true;
+        propTypesObject.astNode.optimizedReplacement = null;
       }
       propsShape = convertAccessorsToNestedObject(propsInScope.accessors, propTypes);
     }

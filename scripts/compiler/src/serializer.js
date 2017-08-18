@@ -11,12 +11,14 @@ let {
 let t = require("babel-types");
 
 function getFunctionReferenceName(functionValue) {
+  if (functionValue.__originalName) {
+    return functionValue.__originalName;
+  }
   const namer = functionValue.properties.get("name");
-  return (
-    functionValue.__originalName ||
-    (namer && namer.descriptor.value.value) ||
-    'Unknown'
-  );
+  if (namer && namer.descriptor.value.value) {
+    return namer.descriptor.value.value;
+  }
+  return null;
 }
 
 function convertExpressionToJSXIdentifier(expr) {
@@ -155,7 +157,16 @@ function convertValueToExpression(value) {
   }
   if (value instanceof FunctionValue) {
     // TODO: Get a proper reference from a lexical map of names instead.
-    return t.identifier(getFunctionReferenceName(value));
+    const name = getFunctionReferenceName(value);
+    if (name !== null) {
+      return t.identifier(name);
+    } else {
+      // TODO: assume an arrow function for now?
+      return t.arrowFunctionExpression(
+        value.$FormalParameters,
+        value.$ECMAScriptCode
+      );
+    }
   }
   if (value instanceof ObjectValue) {
     if (value.properties.has("$$typeof")) {
