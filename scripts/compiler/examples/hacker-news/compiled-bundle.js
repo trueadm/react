@@ -71,28 +71,33 @@ function StoryList({ stories }) {
     </tr>;
 }
 
-function AppBody(props) {
-  return [<tr style={{
-    "backgroundColor": "#222"
-  }}>
+function App(props) {
+  return <center>
+      <table id="hnmain" border="0" cellPadding="0" cellSpacing="0" width="85%" style={{
+      "backgroundColor": "#f6f6ef"
+    }}>
+        <tbody>
+          {props.stories !== "foo" ? [<tr style={{
+          "backgroundColor": "#222"
+        }}>
       <table style={{
-      "padding": 4
-    }} width="100%" cellSpacing="0" cellPadding="0">
+            "padding": 4
+          }} width="100%" cellSpacing="0" cellPadding="0">
         <tbody>
           <tr>
             <td style={{
-            "width": 18,
-            "paddingRight": 4
-          }}>
+                  "width": 18,
+                  "paddingRight": 4
+                }}>
               <a href="#">
                 <img src="logo.png" width="16" height="16" style={{
-                "border": "1px solid #00d8ff"
-              }} />
+                      "border": "1px solid #00d8ff"
+                    }} />
               </a>
             </td>
             <td style={{
-            "lineHeight": "12pt"
-          }} height="10">
+                  "lineHeight": "12pt"
+                }} height="10">
               <span className="pagetop">
                 <b className="hnname">React HN Benchmark</b>
                 <a href="#">new</a>
@@ -111,16 +116,7 @@ function AppBody(props) {
           </tr>
         </tbody>
       </table>
-    </tr>, <tr height="10" />, <StoryList stories={props.stories} />];
-}
-
-function App({ stories }) {
-  return <center>
-      <table id="hnmain" border="0" cellPadding="0" cellSpacing="0" width="85%" style={{
-      backgroundColor: '#f6f6ef'
-    }}>
-        <tbody>
-          {stories.length > 0 ? <AppBody stories={stories} /> : null}
+    </tr>, <tr height="10" />, <StoryList stories={props.stories} />] : null}
         </tbody>
       </table>
     </center>;

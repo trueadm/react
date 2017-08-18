@@ -18,8 +18,7 @@ const Types = {
   Null: "Null",
   AbstractObject: "AbstractObject",
   AbstractFunction: "AbstractFunction",
-  AbstractUnknown: "AbstractUnknown",
-  Param: "Param"
+  AbstractUnknown: "AbstractUnknown"
 };
 
 function createMathExpression(left, right, operator) {
@@ -95,7 +94,8 @@ function createClass(name, astNode, superIdentifier) {
     type: Types.Class,
     astNode: astNode,
     name: name,
-    superIdentifier: superIdentifier
+    superIdentifier: superIdentifier,
+    thisObject: createObject(null),
   };
 }
 
@@ -127,18 +127,9 @@ function createScope(assignments) {
   return scope;
 }
 
-
-function createParam(astNode) {
-  return {
-    action: null,
-    astNode: astNode,
-    type: Types.Param,
-    accessors: new Map()
-  };
-}
-
 function createObject(astNode, properties) {
   const object = {
+    accessors: new Map(),
     action: null,
     astNode: astNode,
     type: Types.Object,
@@ -202,18 +193,13 @@ function traverse(node, action, scope) {
       if (isReactComponent === true) {
         scope.jsxElementIdentifiers.set(name, getOrSetValueFromAst(astName, scope, action))
       }
-      // TODO deal with attributes?
+      const astAttributes = astOpeningElement.attributes;
+      for (let i = 0; i < astAttributes.length; i++) {
+        traverse(astAttributes[i], action, scope);
+      }
       const children = node.children;
       for (let i = 0; i < children.length; i++) {
         traverse(children[i], action, scope);
-      }
-      break;
-    }
-    case "JSXOpeningElement": {
-      traverse(node.name, action, scope);
-      const attributes = node.attributes;
-      for (let i = 0; i < attributes.length; i++) {
-        traverse(attributes[i], action, scope);
       }
       break;
     }
@@ -237,7 +223,7 @@ function traverse(node, action, scope) {
         const astProperty = node.property;
         // we don't actually need to get or set anything, we just need to register the accesor
         // in case the member is a param
-        getOrSetValueFromAst(astProperty, getOrSetValueFromAst(astObject, scope, action), action)
+        getOrSetValueFromAst(astProperty, getOrSetValueFromAst(astObject, scope, action), action);
       } else {
         traverse(node.object, action, scope);
         traverse(node.property, action, scope);
@@ -590,9 +576,17 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           }
           assign(subject, "properties", key, newValue);
         } else {
+          let accesorObject;
+          if (subject.accessors.has(key)) {
+            accesorObject = subject.accessors.get(key);
+          } else {
+            accesorObject = createObject();
+            subject.accessors.set(key, accesorObject);
+          }
           if (subject.properties.has(key)) {
             return handleMultipleValues(subject.properties.get(key));
           }
+          return accesorObject;
         }
       } else if (subject.type === Types.FunctionCall) {
         // who knows what it could be?
@@ -608,10 +602,6 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         return createAbstractUnknown(false);
       } else if (subject.type === Types.Identifier) {
         // NO OP
-      } else if (subject.type === Types.Param) {
-        if (newValue === undefined) {
-          assign(subject, "accessors", key, true);
-        }
       } else {
         debugger;
       }
@@ -803,10 +793,11 @@ function declareClass(node, id, superId, body, action, scope) {
   const theClass = createClass(classAssignKey, node, superAssignKey);
   const astClassBody = body.body;
   const thisAssignment = {
-    this: createObject(null)
+    this: theClass.thisObject,
   };
   node.optimized = false;
-  node.optimizedReplacement = null;  
+  node.optimizedReplacement = null;
+  node.class = theClass;
   // TODO, work out the "this" variables etc
   astClassBody.forEach(bodyPart => {
     if (bodyPart.type === "ClassMethod") {
@@ -830,13 +821,13 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
     const param = params[i];
 
     if (param.type === "ObjectPattern") {
-      const paramObject = createParam(null);
+      const paramObject = createObject(null);
       param.properties.forEach(property => {
         if (property.type === "ObjectProperty") {
           const propertyAssignKey = getNameFromAst(property.value);
           const identifier = createIdentifier();
           assign(newScope, "assignments", propertyAssignKey, identifier);
-          assign(paramObject, "properties", propertyAssignKey, identifier);
+          assign(paramObject, "accessors", propertyAssignKey, identifier);
         } else {
           debugger;
         }
@@ -844,7 +835,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
       func.params.push(paramObject);
     } else if (param.type === "Identifier") {
       const propertyAssignKey = param.name;
-      const paramObject = createParam();
+      const paramObject = createObject();
       assign(newScope, "assignments", propertyAssignKey, paramObject);
       func.params.push(paramObject);
     } else {

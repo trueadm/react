@@ -12,11 +12,23 @@ function convertToExpression(node) {
   return node;
 }
 
-function createAbstractPropsObject(scope, func, moduleEnv) {
+function createAbstractPropsObject(scope, astComponent, moduleEnv) {
+  const type = astComponent.type;
+  let propsShape = null;
+
   // props is the first param of the function component
-  const propsInScope = func.params[0];
-  if (propsInScope !== undefined) {
-    const propsShape = Array.from(propsInScope.accessors.keys());
+  if (type === 'FunctionExpression' || type === 'FunctionDeclaration') {
+    const propsInScope = astComponent.func.params[0];
+    if (propsInScope !== undefined) {
+      propsShape = Array.from(propsInScope.accessors.keys());
+    }
+  } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
+    const propsOnClass = astComponent.class.thisObject.accessors.get('props');
+    if (propsOnClass !== undefined) {
+      propsShape = Array.from(propsOnClass.accessors.keys());
+    }
+  }
+  if (propsShape !== null) {
     // TODO
     // first we create some AST and convert it... need to do this properly later
     const astProps = t.objectExpression(
@@ -39,7 +51,7 @@ async function optimizeComponentWithPrepack(
   moduleScope
 ) {
   // create an abstract props object
-  const initialProps = createAbstractPropsObject(astComponent.scope, astComponent.func, moduleEnv);
+  const initialProps = createAbstractPropsObject(astComponent.scope, astComponent, moduleEnv);
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   const resolvedResult = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
