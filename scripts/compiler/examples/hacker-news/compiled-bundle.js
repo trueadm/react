@@ -1,17 +1,63 @@
 'use strict';
 
 require('React');
+var PropTypes = require('PropTypes');
 
-function StoryList(props) {
-  return <tr>
-      <td>
-        <table cellPadding="0" cellSpacing="0" className="itemlist">
-          <tbody>
-            {props.stories.map(Unknown)}
-          </tbody>
-        </table>
+function timeAge(time) {
+  const now = new Date().getTime() / 1000;
+  const minutes = (now - time) / 60;
+
+  if (minutes < 60) {
+    return Math.round(minutes) + ' minutes ago';
+  }
+  return Math.round(minutes / 60) + ' hours ago';
+}
+
+function getHostUrl(url) {
+  return (url + '').replace('https://', '').replace('http://', '').split('/')[0];
+}
+
+function Story({ story, rank }) {
+  return [<tr className="athing">
+      <td style={{
+      verticalAlign: 'top',
+      textAlign: 'right'
+    }} className="title">
+        <span className="rank">{`${rank}.`}</span>
       </td>
-    </tr>;
+      <td className="votelinks" style={{
+      verticalAlign: 'top'
+    }}>
+        <center>
+          <a href="#">
+            <div className="votearrow" titl="upvote" />
+          </a>
+        </center>
+      </td>
+      <td className="title">
+        <a href="#" className="storylink">{story.title}</a>
+        {story.url ? <span className="sitebit comhead">
+              {' ('}<a href="#">{getHostUrl(story.url)}</a>)
+            </span> : null}
+      </td>
+    </tr>, <tr>
+      <td colSpan="2" />
+      <td className="subtext">
+        <span className="score">{`${story.score} points`}</span>
+        {' by '} 
+        <a href="#" className="hnuser">{story.by}</a>
+        {' '}
+        <span className="age">
+          <a href="#">{timeAge(story.time)}</a>
+        </span>
+        {' | '} 
+        <a href="#">hide</a>
+        {' | '} 
+        <a href="#">{`${story.descendants || 0} comments`}</a>
+      </td>
+    </tr>, <tr style={{
+    height: 5
+  }} className="spacer" />];
 }
 
 function App(props) {
@@ -20,7 +66,7 @@ function App(props) {
       "backgroundColor": "#f6f6ef"
     }}>
         <tbody>
-          {props.stories.foo.length > 0 ? [<tr style={{
+          {props.stories.length > 0 ? [<tr style={{
           "backgroundColor": "#222"
         }}>
       <table style={{
@@ -59,13 +105,23 @@ function App(props) {
           </tr>
         </tbody>
       </table>
-    </tr>, <tr height="10" />, <StoryList stories={{
-          "foo": props.stories.foo
-        }} limit={10} />] : null}
+    </tr>, <tr height="10" />, <tr>
+      <td>
+        <table cellPadding="0" cellSpacing="0" className="itemlist">
+          <tbody>
+            {props.stories.map(Unknown)}
+          </tbody>
+        </table>
+      </td>
+    </tr>] : null}
         </tbody>
       </table>
     </center>;
 }
+
+App.propTypes = {
+  stories: PropTypes.array
+};
 
 var App_1 = App;
 

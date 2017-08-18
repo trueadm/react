@@ -3,6 +3,7 @@
 const React = require('React');
 const HeaderBar = require('HeaderBar');
 const StoryList = require('StoryList');
+const PropTypes = require('PropTypes');
 
 class AppBody extends React.Component {
   getDefaultProps() {
@@ -32,11 +33,15 @@ function App({stories}) {
           backgroundColor: '#f6f6ef',
         }}>
         <tbody>
-          {stories.foo.length > 0 ? <AppBody stories={stories} /> : null}
+          {stories.length > 0 ? <AppBody stories={stories} /> : null}
         </tbody>
       </table>
     </center>
   );
 }
+
+App.propTypes = {
+  stories: PropTypes.array,
+};
 
 module.exports = App;

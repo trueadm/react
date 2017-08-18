@@ -11,6 +11,7 @@ let {
 } = require("prepack/lib/methods");
 let { AbruptCompletion } = require("prepack/lib/completions");
 let {
+  ArrayValue,
   AbstractValue,
   ObjectValue,
   NumberValue,
@@ -81,6 +82,26 @@ function createAbstractString(nameString) {
     undefined,
     nameString
   );
+  return result;
+}
+
+function createAbstractArray(nameString) {
+  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
+  let template = ObjectCreate(realm, realm.intrinsics.ArrayPrototype);
+  let types = new TypesDomain(ArrayValue);
+  let values = new ValuesDomain(new Set([template]));
+  let result = realm.createAbstract(
+    types,
+    values,
+    [],
+    buildNode,
+    undefined,
+    nameString
+  );
+  template.makePartial();
+  if (nameString) realm.rebuildNestedProperties(result, nameString);
+  result.makeSimple();
+  result.makePartial();
   return result;
 }
 
@@ -316,6 +337,8 @@ function set(object, propertyName, value) {
 exports.get = get;
 
 exports.set = set;
+
+exports.createAbstractArray = createAbstractArray;
 
 exports.createAbstractNumber = createAbstractNumber;
 

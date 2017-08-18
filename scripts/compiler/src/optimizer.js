@@ -14,21 +14,29 @@ function convertToExpression(node) {
 
 const PROP_ABSTRACT_UNKNOWN = 1;
 const PROP_ABSTRACT_OBJECT = 2;
+const PROP_ABSTRACT_ARRAY = 3;
 
-function convertAccessorsToNestedObject(accessors) {
+function convertAccessorsToNestedObject(accessors, propTypes) {
   const keys = Array.from(accessors.keys());
   
   if (keys.length > 0) {
     const object = {};
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      const value = accessors.get(key).accessors;
+      if (propTypes !== undefined && propTypes.has(key)) {
+        const typeInfo = propTypes.get(key);
 
-      if (value.size === 0) {
-        object[key] = PROP_ABSTRACT_UNKNOWN;
-        return PROP_ABSTRACT_OBJECT;
+        switch (typeInfo) {
+          case 'array': {
+            object[key] = PROP_ABSTRACT_ARRAY;
+            break;
+          }
+          default: {
+            debugger;
+          }
+        }
       } else {
-        object[key] = convertAccessorsToNestedObject(value);
+        object[key] = PROP_ABSTRACT_UNKNOWN;
       }
     }
     return object;
@@ -40,10 +48,8 @@ function convertNestedObjectToAst(object) {
   return t.objectExpression(
     Object.keys(object).map(key => {
       const value = object[key];
-      if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_OBJECT) {
+      if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_ARRAY) {
         return t.objectProperty(t.identifier(key), t.nullLiteral());
-      } else {
-        return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
       }
     })
   );
@@ -57,18 +63,91 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
 
     if (value === PROP_ABSTRACT_UNKNOWN) {
       properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-    } else if (value === PROP_ABSTRACT_OBJECT) {
-      properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
-    } else {
-      setAbstractPropsUsingNestedObject(
-        properties.get(key).descriptor.value,
-        value,
-        newPrefix,
-        false
-      );
+    } else if (value === PROP_ABSTRACT_ARRAY) {
+      properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
     }
   });
 }
+
+// function convertAccessorsToNestedObject(accessors) {
+//   const keys = Array.from(accessors.keys());
+  
+//   if (keys.length > 0) {
+//     const object = {};
+//     for (let i = 0; i < keys.length; i++) {
+//       const key = keys[i];
+//       const value = accessors.get(key).accessors;
+
+//       if (value.size === 0) {
+//         object[key] = PROP_ABSTRACT_UNKNOWN;
+//         return PROP_ABSTRACT_OBJECT;
+//       } else {
+//         object[key] = convertAccessorsToNestedObject(value);
+//       }
+//     }
+//     return object;
+//   }
+//   return PROP_ABSTRACT_UNKNOWN;
+// }
+
+// The below doesn't work for falsey/truthy nature of abstractObject
+// const PROP_ABSTRACT_UNKNOWN = 1;
+// const PROP_ABSTRACT_OBJECT = 2;
+
+// function convertAccessorsToNestedObject(accessors) {
+//   const keys = Array.from(accessors.keys());
+  
+//   if (keys.length > 0) {
+//     const object = {};
+//     for (let i = 0; i < keys.length; i++) {
+//       const key = keys[i];
+//       const value = accessors.get(key).accessors;
+
+//       if (value.size === 0) {
+//         object[key] = PROP_ABSTRACT_UNKNOWN;
+//         return PROP_ABSTRACT_OBJECT;
+//       } else {
+//         object[key] = convertAccessorsToNestedObject(value);
+//       }
+//     }
+//     return object;
+//   }
+//   return PROP_ABSTRACT_UNKNOWN;
+// }
+
+// function convertNestedObjectToAst(object) {
+//   return t.objectExpression(
+//     Object.keys(object).map(key => {
+//       const value = object[key];
+//       if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_OBJECT) {
+//         return t.objectProperty(t.identifier(key), t.nullLiteral());
+//       } else {
+//         return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
+//       }
+//     })
+//   );
+// }
+
+// function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
+//   const properties = ast.properties;
+//   Object.keys(object).forEach(key => {
+//     const value = object[key];
+//     const newPrefix = `${prefix}.${key}`;
+
+//     if (value === PROP_ABSTRACT_UNKNOWN) {
+//       properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
+//     } else if (value === PROP_ABSTRACT_OBJECT) {
+//       properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+//     } else {
+//       setAbstractPropsUsingNestedObject(
+//         properties.get(key).descriptor.value,
+//         value,
+//         newPrefix,
+//         false
+//       );
+//     }
+//   });
+// }
 
 function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   const type = astComponent.type;
@@ -78,7 +157,11 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   if (type === 'FunctionExpression' || type === 'FunctionDeclaration') {
     const propsInScope = astComponent.func.params[0];
     if (propsInScope !== undefined) {
-      propsShape = convertAccessorsToNestedObject(propsInScope.accessors);
+      let propTypes = null;
+      if (astComponent.func.properties.properties.has('propTypes')) {
+        propTypes = astComponent.func.properties.properties.get('propTypes').properties;
+      }
+      propsShape = convertAccessorsToNestedObject(propsInScope.accessors, propTypes);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const propsOnClass = astComponent.class.thisObject.accessors.get('props');

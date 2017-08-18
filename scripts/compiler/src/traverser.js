@@ -21,6 +21,13 @@ const Types = {
   AbstractUnknown: "AbstractUnknown"
 };
 
+const propTypes = createObject(null, {
+  string: 'string',
+  array: 'array',
+  object: 'object',
+  number: 'number',
+});
+
 function createMathExpression(left, right, operator) {
   return {
     action: null,
@@ -151,7 +158,7 @@ function createModuleScope() {
     }),
     require: createAbstractFunction("require"),
     window: createAbstractObject(),
-    document: createAbstractObject()
+    document: createAbstractObject(),
   });
 }
 
@@ -590,6 +597,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           return accesorObject;
         }
       } else if (subject.type === Types.FunctionCall) {
+        if (subject.identifier.name === 'require' && subject.args.length === 1 && subject.args[0] === 'PropTypes') {
+          return getOrSetValueFromAst(astNode, propTypes, action, newValue);
+        }
         // who knows what it could be?
         return createAbstractUnknown(false);
       } else if (subject.type === Types.AbstractFunction) {
