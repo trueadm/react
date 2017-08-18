@@ -20,7 +20,7 @@ function convertAccessorsToNestedObject(accessors, propTypes) {
     const object = {};
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      if (propTypes !== undefined && propTypes.has(key)) {
+      if (propTypes != null && propTypes.has(key)) {
         object[key] = propTypes.get(key);
       } else {
         object[key] = Types.ANY;

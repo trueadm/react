@@ -13,7 +13,7 @@ var Benchmark = function Benchmark(props) {
             <div className="_34_k"><div><a className="_387r _55pi _2agf _4jy0 _4jy4 _517h _51sy _42ft" style={{
                     "width": 250,
                     "maxWidth": "250px"
-                  }} disabled={null} label={null} href="#" rel={undefined} onClick={Unknown}>
+                  }} disabled={null} label={null} href="#" rel={undefined} onClick={() => {}}>
         {null}
         <span className="_55pe" style={{
                       "maxWidth": "236px"
@@ -34,14 +34,14 @@ var Benchmark = function Benchmark(props) {
         <div key="right" className="_ohf rfloat">
           <div className="_34_m">
             <div key="0" className="_5ju2"><div className="_5533">
-        <div className="_3ut-" onClick={Unknown}>
+        <div className="_3ut-" onClick={() => {}}>
         <span className="_3uu0"><i className="_3ut_ img sp_i534r85sjIn sx_e8ac93" src={null} alt="" /></span>
       </div>
         {null}
-        <button className="_5n7z _4jy0 _4jy4 _517h _51sy _42ft" onClick={Unknown} label={null} type="submit" value="1">
+        <button className="_5n7z _4jy0 _4jy4 _517h _51sy _42ft" onClick={() => {}} label={null} type="submit" value="1">
         Discard Changes
       </button>
-        <button className="_5n7z _2yak _4lj- _4jy0 _4jy4 _517h _51sy _42ft _42fr" disabled={true} onClick={Unknown} data-tooltip-content="You have no changes to publish" data-hover="tooltip" label={null} type="submit" value="1">
+        <button className="_5n7z _2yak _4lj- _4jy0 _4jy4 _517h _51sy _42ft _42fr" disabled={true} onClick={() => {}} data-tooltip-content="You have no changes to publish" data-hover="tooltip" label={null} type="submit" value="1">
         <i alt="" className="_3-8_ img sp_i534r85sjIn sx_7b15bc" src={null} />Review Changes
       </button>
       </div></div>
@@ -63,13 +63,13 @@ var Benchmark = function Benchmark(props) {
         <i alt="Warning" className="_585p img sp_i534r85sjIn sx_20273d" src={null}>
         <u>Warning</u>
       </i>
-        <a className="_585q _50zy _50-0 _50z- _5upp _42ft" size="medium" type={null} title="Remove" data-hover={undefined} data-tooltip-alignh={undefined} data-tooltip-content={undefined} disabled={null} label={null} href="#" rel={undefined} onClick={Unknown}>
+        <a className="_585q _50zy _50-0 _50z- _5upp _42ft" size="medium" type={null} title="Remove" data-hover={undefined} data-tooltip-alignh={undefined} data-tooltip-content={undefined} disabled={null} label={null} href="#" rel={undefined} onClick={() => {}}>
         Remove
       </a>
         <div className="_585r _2i-a _50f4">
           Please go to
            
-          <a target="_blank" href="/ads/manage/billing.php?act=10149999073643408" rel={undefined} onClick={Unknown}>
+          <a target="_blank" href="/ads/manage/billing.php?act=10149999073643408" rel={undefined} onClick={() => {}}>
         <span display="inline" className=" _50f7">Ads Manager</span>
       </a>
            
@@ -90,7 +90,7 @@ var Benchmark = function Benchmark(props) {
         <span className="_3c5e">
           <span>
             <div className="_5n7z _51xa">
-        <button className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" onClick={Unknown} label={null} type="submit" value="1">
+        <button className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" onClick={() => {}} label={null} type="submit" value="1">
         <i alt="" className="_3-8_ img sp_i534r85sjIn sx_b5d079" src={null} />Create Campaign
       </button><div className="uiPopover _6a _6b" disabled={null}>
         <button className="_u_k _3qx6 _p _4jy0 _4jy4 _517h _51sy _42ft" label={null} type="submit" value="1">
@@ -99,7 +99,7 @@ var Benchmark = function Benchmark(props) {
       </div>
       </div>
             <div className="_5n7z _51xa">
-        <button aria-label="Edit" data-tooltip-content="Edit Campaigns (Ctrl+U)" data-hover="tooltip" className="_d2_ _u_k noMargin _4jy0 _4jy4 _517h _51sy _42ft" disabled={false} onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Edit" data-tooltip-content="Edit Campaigns (Ctrl+U)" data-hover="tooltip" className="_d2_ _u_k noMargin _4jy0 _4jy4 _517h _51sy _42ft" disabled={false} onClick={() => {}} label={null} type="submit" value="1">
         <i alt="" className="_3-8_ img sp_i534r85sjIn sx_ef6a9c" src={null} />Edit
       </button>
         <div className="_1nwm uiPopover _6a _6b" disabled={null}>
@@ -109,13 +109,13 @@ var Benchmark = function Benchmark(props) {
       </div>
       </div>
             <div className="_5n7z _51xa">
-        <button aria-label="Revert" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft _42fr" data-hover="tooltip" data-tooltip-content="Revert" disabled={true} onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Revert" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft _42fr" data-hover="tooltip" data-tooltip-content="Revert" disabled={true} onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_e94a2d" />
       </button>
-        <button aria-label="Delete" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Delete" disabled={false} onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Delete" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Delete" disabled={false} onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_7ed7d4" />
       </button>
-        <button aria-label="Duplicate" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Duplicate" disabled={false} onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Duplicate" className="_u_k _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Duplicate" disabled={false} onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_930440" />
       </button>
       </div>
@@ -123,7 +123,7 @@ var Benchmark = function Benchmark(props) {
           <div className="_5n7z _51xa">
         <span>
         <div size="large" className="uiPopover _6a _6b" disabled={null}>
-        <button aria-label="Export & Import" className="_u_k noMargin _p _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Export & Import" onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Export & Import" className="_u_k noMargin _p _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Export & Import" onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_750c83" />
       </button>
       </div>
@@ -134,11 +134,11 @@ var Benchmark = function Benchmark(props) {
                       "boxSizing": "border-box",
                       "height": "28px",
                       "width": "48px"
-                    }} onClick={Unknown} label={null} type="submit" value="1">
+                    }} onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_73c1bb" />
       </button>
         <span className=" _3d6e">
-        <button aria-label="Campaign Tags" className=" _5uy7 _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Campaign Tags" disabled={false} onClick={Unknown} label={null} type="submit" value="1">
+        <button aria-label="Campaign Tags" className=" _5uy7 _4jy0 _4jy4 _517h _51sy _42ft" data-hover="tooltip" data-tooltip-content="Campaign Tags" disabled={false} onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_29f28d" />
       </button>{null}
       </span>
@@ -153,7 +153,7 @@ var Benchmark = function Benchmark(props) {
         <span className="_5b-l  _5bbe">
         <a className=" _5bbf _55pi _2agf _4jy0 _4jy4 _517h _51sy _42ft" style={{
                 "maxWidth": "200px"
-              }} disabled={null} label={null} href="#" rel={undefined} onClick={Unknown}>
+              }} disabled={null} label={null} href="#" rel={undefined} onClick={() => {}}>
         <span className="_55pe" style={{
                   "maxWidth": "186px"
                 }}>
@@ -163,7 +163,7 @@ var Benchmark = function Benchmark(props) {
       </a>
         <a className=" _5bbf _55pi _2agf _4jy0 _4jy4 _517h _51sy _42ft" style={{
                 "maxWidth": "200px"
-              }} disabled={null} label={null} href="#" rel={undefined} onClick={Unknown}>
+              }} disabled={null} label={null} href="#" rel={undefined} onClick={() => {}}>
         <span className="_55pe" style={{
                   "maxWidth": "186px"
                 }}>
@@ -175,7 +175,7 @@ var Benchmark = function Benchmark(props) {
       </span>
         <div className="_1eo"><div display="block" className="uiInputLabel clearfix">
         <label className="uiInputLabelInput _55sg _kv1">
-        <input checked={true} disabled={true} name="filterUnpublished" value="on" onClick={Unknown} className={null} id="js_input_label_21" type="checkbox" />
+        <input checked={true} disabled={true} name="filterUnpublished" value="on" onClick={() => {}} className={null} id="js_input_label_21" type="checkbox" />
         <span data-hover={null} data-tooltip-content={undefined} />
       </label>
         <label className="uiInputLabelLabel" htmlFor="js_input_label_21">
@@ -186,14 +186,14 @@ var Benchmark = function Benchmark(props) {
         {[]}
         <div className="_3yz1 _3yz2 _3dad">
         <div className="_3yz4" aria-hidden={false}>
-          <div onClick={Unknown} className="_3yz5">
+          <div onClick={() => {}} className="_3yz5">
             <i className="_3yz6 _5whs img sp_i534r85sjIn sx_896996" src={null} alt="" />
             <div className="_3yz7">Campaigns:</div>
             <div className="ellipsis _3yz8" data-hover="tooltip" data-tooltip-display="overflow">
               (1)
             </div>
           </div>
-          <button className="_3yz9 _1t-2 _50z- _50zy _50zz _50z- _5upp _42ft" size="small" onClick={Unknown} type="button" title="Remove" data-hover={undefined} data-tooltip-alignh={undefined} data-tooltip-content={undefined} label={null}>
+          <button className="_3yz9 _1t-2 _50z- _50zy _50zz _50z- _5upp _42ft" size="small" onClick={() => {}} type="button" title="Remove" data-hover={undefined} data-tooltip-alignh={undefined} data-tooltip-content={undefined} label={null}>
         Remove
       </button>
         </div>
@@ -201,17 +201,17 @@ var Benchmark = function Benchmark(props) {
         <div className="_5b5t _2d2k">
           <i className="_5b5p _4gem img sp_i534r85sjIn sx_896996" src={null} alt="" />
           <div className="_5b5r">Campaigns: (1)<span>
-        <span onMouseEnter={Unknown} onMouseLeave={Unknown} onMouseUp={undefined}>
+        <span onMouseEnter={() => {}} onMouseLeave={() => {}} onMouseUp={undefined}>
           <span className="_3o_j" /><i className="_541d img sp_i534r85sjIn sx_2f396a" src={null} alt="" />
         </span>
       </span></div>
         </div>
-        <button className="_5b5u _5b5v _4jy0 _4jy3 _517h _51sy _42ft" onClick={Unknown} label={null} type="submit" value="1">
+        <button className="_5b5u _5b5v _4jy0 _4jy3 _517h _51sy _42ft" onClick={() => {}} label={null} type="submit" value="1">
         Apply
       </button>
       </div>
       </div>
-        <div className="_1tc"><button className="_1wdf _4jy0 _517i _517h _51sy _42ft" onClick={Unknown} label={null} type="submit" value="1">
+        <div className="_1tc"><button className="_1wdf _4jy0 _517i _517h _51sy _42ft" onClick={() => {}} label={null} type="submit" value="1">
         <i src={null} alt="" className="img sp_i534r85sjIn sx_31d9b0" />
       </button></div>
         <div className="_49u3" />
@@ -228,13 +228,13 @@ var Benchmark = function Benchmark(props) {
         }}>
           <div className="_2kev _2kex">
         <div className="_5yno">
-          <div className="_1-ly _59j9 _d9a" onClick={Unknown}>
+          <div className="_1-ly _59j9 _d9a" onClick={() => {}}>
         <i className="_1-lx img sp_OkER5ktbEyg sx_b369b4" src={null} alt="" />
         <div className="_vf7" />
         <div className="_vf8" />
       </div>
           <span>
-        <div className=" _1-lz _d9a" onClick={Unknown}>
+        <div className=" _1-lz _d9a" onClick={() => {}}>
         <i className="_1-lx img sp_i534r85sjIn sx_96948e" src={null} alt="" />
         <div className="_vf7" />
         <div className="_vf8" />
@@ -255,7 +255,7 @@ var Benchmark = function Benchmark(props) {
           <div className="_3a-b"><span display="inline" className=" _50f5 _50f7">Test Campaign</span></div>
         </div>
         <div className="_3ywr">
-        <a href="#" rel={undefined} onClick={Unknown}>Create Ad Set</a><span className="_3ywq">|</span><a href="#" rel={undefined} onClick={Unknown}>View Ad Set</a>
+        <a href="#" rel={undefined} onClick={() => {}}>Create Ad Set</a><span className="_3ywq">|</span><a href="#" rel={undefined} onClick={() => {}}>View Ad Set</a>
       </div>
       </div>
         <div className="_psh">
@@ -282,7 +282,7 @@ var Benchmark = function Benchmark(props) {
                                               }}>
           <div className="_2vla _1h1g">
             <div>
-              <textarea className="_2vli _2vlj _1h26 _1h27" dir="auto" disabled={undefined} id={undefined} maxLength={null} value="Test Campaign" onBlur={Unknown} onChange={Unknown} onFocus={Unknown} onKeyDown={Unknown} />
+              <textarea className="_2vli _2vlj _1h26 _1h27" dir="auto" disabled={undefined} id={undefined} maxLength={null} value="Test Campaign" onBlur={() => {}} onChange={() => {}} onFocus={() => {}} onKeyDown={() => {}} />
             </div>
             <div aria-hidden="true" className="_2vlk" />
           </div>
@@ -335,7 +335,7 @@ var Benchmark = function Benchmark(props) {
           Campaign Spending Limit 
         </label>
         <span>
-        <span onMouseEnter={Unknown} onMouseLeave={Unknown} onMouseUp={undefined}>
+        <span onMouseEnter={() => {}} onMouseLeave={() => {}} onMouseUp={undefined}>
           <span className="_3o_j" /><i className="_541d img sp_i534r85sjIn sx_2f396a" src={null} alt="" />
         </span>
       </span>
@@ -344,7 +344,7 @@ var Benchmark = function Benchmark(props) {
         </div>
         <div key="right" className="">
           <div className="_42ef">
-            <div className="_33dv"><a href="#" rel={undefined} onClick={Unknown}>Set a Limit</a> (optional)</div>
+            <div className="_33dv"><a href="#" rel={undefined} onClick={() => {}}>Set a Limit</a> (optional)</div>
           </div>
         </div>
       </div>
@@ -354,7 +354,7 @@ var Benchmark = function Benchmark(props) {
           </div>, <div key="campaign_group_topline_section98010048849317">
             {null}
           </div>]}
-        <div><div onWheel={Unknown} /></div>
+        <div><div onWheel={() => {}} /></div>
       </div>
               </div>
               <div className="_3pvg">
@@ -365,8 +365,8 @@ var Benchmark = function Benchmark(props) {
         <div key="left" className="_ohe lfloat">
           <span className="_38my">
         {[<span key="1">Campaign ID: 98010048849317</span>, <div key="2" className="_5lh9">
-            <div data-hover="tooltip" data-tooltip-content="Currently active. Click this switch to deactivate it." data-tooltip-position="below" disabled={false} value={true} onToggle={Unknown} className="_128j _128k _128n" role="checkbox" aria-checked="true">
-        <div className="_128o" onClick={Unknown} onKeyDown={Unknown} onMouseDown={Unknown} tabIndex="0">
+            <div data-hover="tooltip" data-tooltip-content="Currently active. Click this switch to deactivate it." data-tooltip-position="below" disabled={false} value={true} onToggle={() => {}} className="_128j _128k _128n" role="checkbox" aria-checked="true">
+        <div className="_128o" onClick={() => {}} onKeyDown={() => {}} onMouseDown={() => {}} tabIndex="0">
           <div className="_128p" />
         </div>
       </div>
@@ -380,7 +380,7 @@ var Benchmark = function Benchmark(props) {
                                         }} disabled={null}>
         <a className="_p _55pi _2agf _4jy0 _4jy3 _517h _51sy _42ft" style={{
                                             "maxWidth": "200px"
-                                          }} disabled={null} label={null} href="#" rel={undefined} onClick={Unknown}>
+                                          }} disabled={null} label={null} href="#" rel={undefined} onClick={() => {}}>
         <span className="_55pe" style={{
                                               "maxWidth": "186px"
                                             }}>Links</span>
@@ -392,7 +392,7 @@ var Benchmark = function Benchmark(props) {
       </div>
           </div>]}
         <div>
-        <div onWheel={Unknown}>
+        <div onWheel={() => {}}>
           {[<div key="campaign_group_errors_section98010048849317">
               {null}
             </div>]}
@@ -410,19 +410,19 @@ var Benchmark = function Benchmark(props) {
       </div>
           <div className="_2ut-">
             <div><div className="_tm2">
-        <button className="_tm3 _tm6 _tm7 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Campaigns" data-hover="tooltip" onClick={Unknown} label={null} type="submit" value="1">
+        <button className="_tm3 _tm6 _tm7 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Campaigns" data-hover="tooltip" onClick={() => {}} label={null} type="submit" value="1">
         <div>
           <div className="_tma" />
           <div className="_tm8" />
           <div className="_tm9">{1}</div>
         </div>
-      </button><button className="_tm4 _tm6 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Ad Sets" data-hover="tooltip" onClick={Unknown} label={null} type="submit" value="1">
+      </button><button className="_tm4 _tm6 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Ad Sets" data-hover="tooltip" onClick={() => {}} label={null} type="submit" value="1">
         <div>
           <div className="_tma" />
           <div className="_tm8" />
           <div className="_tm9">{1}</div>
         </div>
-      </button><button className="_tm5 _tm6 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Ads" data-hover="tooltip" onClick={Unknown} label={null} type="submit" value="1">
+      </button><button className="_tm5 _tm6 _4jy0 _4jy6 _517h _51sy _42ft" data-tooltip-position="right" data-tooltip-content="Ads" data-hover="tooltip" onClick={() => {}} label={null} type="submit" value="1">
         <div>
           <div className="_tma" />
           <div className="_tm8" />
@@ -434,9 +434,9 @@ var Benchmark = function Benchmark(props) {
           <div className="_2ut_">
             <div className="_4u-c">
         <div className="_35l_ _1hr clearfix">
-        <div onCopy={Unknown}>
-        <div className="_5d6f" tabIndex="0" onKeyDown={Unknown}>
-        <div className="_5hht"><div className="_3h1i _1mie" onWheel={Unknown} style={{
+        <div onCopy={() => {}}>
+        <div className="_5d6f" tabIndex="0" onKeyDown={() => {}}>
+        <div className="_5hht"><div className="_3h1i _1mie" onWheel={() => {}} style={{
                         "height": 25,
                         "width": 1209
                       }}>
@@ -613,7 +613,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x"><label className="_4h2r _55sg _kv1">
-        <input checked={undefined} onChange={Unknown} className={null} type="checkbox" />
+        <input checked={undefined} onChange={() => {}} className={null} type="checkbox" />
         <span data-hover={null} data-tooltip-content={undefined} />
       </label></div>
         </div>
@@ -626,7 +626,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -637,7 +637,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Campaign Name</span>
       </div></div>
@@ -657,7 +657,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _1kst _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _1kst _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined} data-tooltip-content="Changed" data-hover="tooltip">
         <i className="_1cie img sp_i534r85sjIn sx_e896cf" src={null} alt="" />
       </div></div>
@@ -677,7 +677,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _1kst _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _1kst _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id="ads_pe_table_error_header" data-tooltip-content="Errors" data-hover="tooltip">
         <i className="_1cie img sp_i534r85sjIn sx_38fed8" src={null} alt="" />
       </div></div>
@@ -697,7 +697,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Status</span>
       </div></div>
@@ -713,7 +713,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -724,7 +724,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _54_9 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _54_9 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Delivery</span>
       </div></div>
@@ -754,7 +754,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -765,7 +765,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Results</span>
       </div></div>
@@ -781,7 +781,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -792,7 +792,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Cost</span>
       </div></div>
@@ -808,7 +808,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -819,7 +819,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Reach</span>
       </div></div>
@@ -835,7 +835,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -846,7 +846,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Impressions</span>
       </div></div>
@@ -862,7 +862,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -873,7 +873,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Clicks</span>
       </div></div>
@@ -889,7 +889,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -900,7 +900,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Avg. CPM</span>
       </div></div>
@@ -916,7 +916,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -927,7 +927,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Avg. CPC</span>
       </div></div>
@@ -943,7 +943,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -954,7 +954,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">CTR %</span>
       </div></div>
@@ -970,7 +970,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -981,7 +981,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Spent</span>
       </div></div>
@@ -997,7 +997,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1008,7 +1008,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Objective</span>
       </div></div>
@@ -1024,7 +1024,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1035,7 +1035,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Buying Type</span>
       </div></div>
@@ -1051,7 +1051,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1062,7 +1062,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Campaign ID</span>
       </div></div>
@@ -1078,7 +1078,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1089,7 +1089,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Start</span>
       </div></div>
@@ -1105,7 +1105,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1116,7 +1116,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">End</span>
       </div></div>
@@ -1132,7 +1132,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1143,7 +1143,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Date created</span>
       </div></div>
@@ -1159,7 +1159,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1170,7 +1170,7 @@ var Benchmark = function Benchmark(props) {
                                       }}>
         <div className="_4lgd _4h2w">
           <div className="_4lge _4h2x">
-            <div onClick={Unknown} className="_54_8 _4h2r _2wzx">
+            <div onClick={() => {}} className="_54_8 _4h2r _2wzx">
         <div className="_2eq6"><div className="_1cig _25fg" id={undefined}>
         <span className="_1cid">Date last edited</span>
       </div></div>
@@ -1186,7 +1186,7 @@ var Benchmark = function Benchmark(props) {
                                     }}>
         <div className="_4lg9" style={{
                                         "height": 25
-                                      }} onMouseDown={Unknown}>
+                                      }} onMouseDown={() => {}}>
           <div className="_4lga _4lgb" style={{
                                           "height": 25
                                         }} />
@@ -1248,7 +1248,7 @@ var Benchmark = function Benchmark(props) {
                             "transform": "translate3d(0px,0px,0)",
                             "backfaceVisibility": "hidden"
                           }}>
-          <div onFocus={Unknown} onBlur={Unknown} onKeyDown={Unknown} onMouseDown={Unknown} onWheel={Unknown} className="_1t0r _1t0t _4jdr _1t0u" style={{
+          <div onFocus={() => {}} onBlur={() => {}} onKeyDown={() => {}} onMouseDown={() => {}} onWheel={() => {}} className="_1t0r _1t0t _4jdr _1t0u" style={{
                               "width": 1209,
                               "zIndex": 99
                             }} tabIndex={0}>
