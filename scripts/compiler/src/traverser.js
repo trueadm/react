@@ -1056,7 +1056,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope) {
       const paramObject = createObject(null);
       param.properties.forEach(property => {
         if (property.type === "ObjectProperty") {
-          if (property.type === 'ObjectProperty') {
+          if (property.value.type === 'ObjectProperty') {
             throw new Error('Cannot yet handle deeply nested object destructuring');
           }
           const propertyAssignKey = getNameFromAst(property.value);
