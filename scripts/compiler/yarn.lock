@@ -2,6 +2,23 @@
 # yarn lockfile v1
 
 
+"@trueadm/rollup-plugin-commonjs@^8.1.0":
+  version "8.1.0"
+  resolved "https://registry.yarnpkg.com/@trueadm/rollup-plugin-commonjs/-/rollup-plugin-commonjs-8.1.0.tgz#f04cdb62893cc77a7fb775a21a944ac5717a4d81"
+  dependencies:
+    acorn "^5.1.1"
+    acorn-jsx "^4.0.1"
+    estree-walker "^0.3.0"
+    magic-string "^0.19.0"
+    resolve "^1.1.7"
+    rollup-pluginutils "^2.0.1"
+
+"@trueadm/rollup@^0.47.4":
+  version "0.47.4"
+  resolved "https://registry.yarnpkg.com/@trueadm/rollup/-/rollup-0.47.4.tgz#ebcd2c26af9daf5616487dd1d92efcc315c0dfff"
+  dependencies:
+    estree-walker "^0.5.0"
+
 acorn-jsx@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/acorn-jsx/-/acorn-jsx-4.0.1.tgz#ada5a01573727a237774ce625564d079ec9de12a"
@@ -629,17 +646,6 @@ rollup-plugin-alias@^1.3.1:
   dependencies:
     slash "^1.0.0"
 
-"rollup-plugin-commonjs@git://github.com/trueadm/rollup-plugin-commonjs#jsx-support":
-  version "8.1.0"
-  resolved "git://github.com/trueadm/rollup-plugin-commonjs#272246f232c9b3f87edc35698d40d0ec8bbc1083"
-  dependencies:
-    acorn "^5.1.1"
-    acorn-jsx "^4.0.1"
-    estree-walker "^0.3.0"
-    magic-string "^0.19.0"
-    resolve "^1.1.7"
-    rollup-pluginutils "^2.0.1"
-
 rollup-plugin-flow@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/rollup-plugin-flow/-/rollup-plugin-flow-1.1.1.tgz#6ce568f1dd559666b77ab76b4bae251407528db6"
@@ -660,12 +666,6 @@ rollup-pluginutils@^2.0.1:
   dependencies:
     estree-walker "^0.3.0"
     micromatch "^2.3.11"
-
-"rollup@git://github.com/trueadm/rollup#jsx-support":
-  version "0.47.4"
-  resolved "git://github.com/trueadm/rollup#59b589c6c6bffa4c3d89c0a2c91025163f765468"
-  dependencies:
-    estree-walker "^0.5.0"
 
 seedrandom@^2.4.2:
   version "2.4.3"

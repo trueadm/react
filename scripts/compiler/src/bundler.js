@@ -1,7 +1,7 @@
 "use strict";
 
-const rollup = require('rollup').rollup;
-const commonjs = require('rollup-plugin-commonjs');
+const rollup = require('@trueadm/rollup').rollup;
+const commonjs = require('@trueadm/rollup-plugin-commonjs');
 const alias = require('rollup-plugin-alias');
 
 function createBundle(result) {
