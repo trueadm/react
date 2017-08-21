@@ -15,6 +15,8 @@ const whitelist = {
 function toAst(node) {
   if (typeof node === "string") {
     return t.stringLiteral(node);
+  } else if (node.astNode !== undefined) {
+    return node.astNode;
   } else {
     debugger;
   }
@@ -76,9 +78,8 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          declarations[assignmentKey] = t.callExpression(
-            t.identifier(identifier.name),
-            assignmentValue.args.map(arg => toAst(arg))
+          declarations[assignmentKey] = evaluator.createAbstractUnknown(
+            t.identifier(identifier.name)
           );
         }
         break;
@@ -109,8 +110,20 @@ function handleAssignmentValue(
         );
         break;
       }
+      case "LogicExpression": {
+        declarations[assignmentKey] = evaluator.createAbstractFunction(
+          assignmentKey
+        );
+        break;
+      }
       case "Object": {
         declarations[assignmentKey] = assignmentValue.astNode;
+        break;
+      }
+      case "MathExpression": {
+        declarations[assignmentKey] = evaluator.createAbstractUnknown(
+          assignmentKey
+        );
         break;
       }
       default: {

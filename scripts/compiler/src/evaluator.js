@@ -213,6 +213,7 @@ class ModuleEnvironment {
       if (completion instanceof AbruptCompletion) {
         res = completion;
       } else {
+        debugger;
         throw completion;
       }
     } finally {

@@ -1,11 +1,11 @@
 (function() {
   'use strict';
 
-  const e = React.createElement;
+  var e = React.createElement;
 
   function timeAge(time) {
-    const now = new Date().getTime() / 1000;
-    const minutes = (now - time) / 60;
+    var now = new Date().getTime() / 1000;
+    var minutes = (now - time) / 60;
 
     if (minutes < 60) {
       return Math.round(minutes) + ' minutes ago';

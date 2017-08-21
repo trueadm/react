@@ -230,6 +230,17 @@ async function optimizeComponentTree(
   astComponent,
   moduleScope
 ) {
+  if (astComponent.type === 'CallExpression') {
+    const astArguments = astComponent.arguments;
+    for (let i = 0; i < astArguments.length; i++) {
+      await optimizeComponentTree(ast, moduleEnv, astArguments[i], moduleScope);
+    }
+  } else if (astComponent.type === 'Identifier') {
+    const obj = moduleScope.assignments.get(astComponent.name);
+    debugger;
+  } else {
+    debugger;
+  }
   try {
     const bailOuts = [];
     const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope, bailOuts);
