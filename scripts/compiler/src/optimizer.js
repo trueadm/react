@@ -238,6 +238,13 @@ async function optimizeComponentTree(
   } else if (astComponent.type === 'Identifier') {
     const obj = moduleScope.assignments.get(astComponent.name);
     debugger;
+  } else if (astComponent.type === 'FunctionExpression') {
+    const func = astComponent.func;
+    if (func.return === null) {
+      throw new Error('Cannot find exported React component to optimize. Try simplifiying the exports.');
+    }
+    // check the return is JSX
+    debugger;
   } else {
     debugger;
   }
@@ -248,7 +255,8 @@ async function optimizeComponentTree(
     astComponent.optimizedReplacement = optimizedAstComponent;
     await handleBailouts(bailOuts, ast, moduleEnv, moduleScope);
   } catch (e) {
-    console.warn(`\nPrepack component bail-out on "${astComponent.id.name}" due to:\n${e.stack}\n`);
+    const name = astComponent.id ? astComponent.id.name : 'anonymous function';
+    console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component
     if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
       await scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
