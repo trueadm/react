@@ -23,13 +23,15 @@ function createBundle(result) {
           "syntax-jsx",
           require("./plugins/babel-plugin-fbt"),
           "transform-class-properties",
-          "transform-flow-strip-types",
+          "flow-react-proptypes",
           "syntax-object-rest-spread",
           ["transform-object-rest-spread", { useBuiltIns: true }]
         ]
       }),
       flow(),
-      commonjs()
+      commonjs({
+        noWrap: true,
+      })
     ]
   };
   if (hasteMap !== null) {

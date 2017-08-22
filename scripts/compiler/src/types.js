@@ -12,6 +12,7 @@ const Types = {
   FUNC: 'func',
   SYMBOL: 'symbol',
   ONE_OF: 'one_of',
+  INSTANCE_OF: 'instance_of',
 };
 
 module.exports = {

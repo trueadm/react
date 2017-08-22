@@ -27,7 +27,7 @@ const Types = {
   AbstractFunction: "AbstractFunction",
   AbstractUnknown: "AbstractUnknown",
   SequenceExpression: "SequenceExpression",
-  JSXElement: "JSXElement"
+  JSXElement: "JSXElement",
 };
 
 const propTypes = createObject(null, {
@@ -41,7 +41,8 @@ const propTypes = createObject(null, {
   any: PropTypes.ANY,
   element: PropTypes.ELEMENT,
   node: PropTypes.NODE,
-  oneOf: PropTypes.ONE_OF
+  oneOf: PropTypes.ONE_OF,
+  instanceOf: PropTypes.INSTANCE_OF
 });
 
 function createJSXElement(astNode) {
@@ -260,6 +261,10 @@ function createModuleScope() {
     Number: createAbstractFunction(),
     Element: createAbstractFunction(),
     Node: createAbstractFunction(),
+    // type stuff
+    ReactElement: 'ReactElement',
+    ReactClass: 'ReactClass',
+    ReactNode: 'ReactNode'
   });
 }
 
@@ -806,10 +811,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
               return handleMultipleValues(subject.assignments.get(key));
             }
           } else {
+            if (subject.parentScope === null) {
+              debugger;
+            }
             subject = subject.parentScope;
           }
         }
-        debugger;
       } else if (subject.type === Types.Object || subject.type === Types.Array) {
         if (newValue !== undefined) {
           if (newValue.action !== undefined) {
@@ -884,6 +891,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         } else {
           return createAbstractUnknown();
         }
+      } else if (typeof subject === 'string') {
+        // this is probably from PropTypes?
+        return subject;
       } else {
         debugger;
       }
