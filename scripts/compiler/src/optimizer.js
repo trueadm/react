@@ -15,33 +15,55 @@ function convertToExpression(node) {
 
 function convertAccessorsToNestedObject(accessors, propTypes) {
   const keys = Array.from(accessors.keys());
+  const propKeys = propTypes ? Array.from(propTypes.keys()) : [];
   
-  if (keys.length > 0) {
+  if (keys.length > 0 || propKeys.length > 0) {
     const object = {};
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      if (propTypes != null && propTypes.has(key)) {
-        object[key] = propTypes.get(key);
-      } else {
-        object[key] = Types.ANY;
+      object[key] = Types.ANY;
+    }
+    for (let i = 0; i < propKeys.length; i++) {
+      const key = propKeys[i];
+      let value = propTypes.get(key);
+
+      if (value.type === 'FunctionCall') {
+        switch (value.identifier) {
+          case Types.ONE_OF:
+            const newObj = {};
+            Array.from(value.args[0].properties.values()).forEach(val => {
+              newObj[val] = Types.ANY;
+            });
+            value = newObj;
+            break;
+          default:
+            debugger;
+        }
       }
+      object[key] = value;
     }
     return object;
   }
-  return Types.ANY;
+  return null;
 }
 
 function convertNestedObjectToAst(object) {
   return t.objectExpression(
     Object.keys(object).map(key => {
       const value = object[key];
-      switch (value) {
-        case Types.ANY:
-        case Types.ARRAY:
-        case Types.OBJECT:
-          return t.objectProperty(t.identifier(key), t.nullLiteral());
-        default:
-          debugger;
+      if (typeof value === 'object') {
+        return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
+      } else {
+        switch (value) {
+          case Types.ARRAY:
+          case Types.OBJECT:
+          case Types.ANY:
+            return t.objectProperty(t.identifier(key), t.nullLiteral());
+
+          default: {
+            debugger;
+          }
+        }
       }
     })
   );
@@ -53,93 +75,26 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
     const value = object[key];
     const newPrefix = `${prefix}.${key}`;
 
-    if (value === Types.ANY) {
-      properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-    } else if (value === Types.ARRAY) {
-      properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
+    if (typeof value === 'object') {
+      setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
+    } else {
+      switch (value) {
+        case Types.ARRAY:
+          properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
+          break;
+        case Types.OBJECT:
+          properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+          break;
+        case Types.ANY:
+          properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
+          break;
+        default: {
+          debugger;
+        }
+      }
     }
   });
 }
-
-// function convertAccessorsToNestedObject(accessors) {
-//   const keys = Array.from(accessors.keys());
-  
-//   if (keys.length > 0) {
-//     const object = {};
-//     for (let i = 0; i < keys.length; i++) {
-//       const key = keys[i];
-//       const value = accessors.get(key).accessors;
-
-//       if (value.size === 0) {
-//         object[key] = PROP_ABSTRACT_UNKNOWN;
-//         return PROP_ABSTRACT_OBJECT;
-//       } else {
-//         object[key] = convertAccessorsToNestedObject(value);
-//       }
-//     }
-//     return object;
-//   }
-//   return PROP_ABSTRACT_UNKNOWN;
-// }
-
-// The below doesn't work for falsey/truthy nature of abstractObject
-// const PROP_ABSTRACT_UNKNOWN = 1;
-// const PROP_ABSTRACT_OBJECT = 2;
-
-// function convertAccessorsToNestedObject(accessors) {
-//   const keys = Array.from(accessors.keys());
-  
-//   if (keys.length > 0) {
-//     const object = {};
-//     for (let i = 0; i < keys.length; i++) {
-//       const key = keys[i];
-//       const value = accessors.get(key).accessors;
-
-//       if (value.size === 0) {
-//         object[key] = PROP_ABSTRACT_UNKNOWN;
-//         return PROP_ABSTRACT_OBJECT;
-//       } else {
-//         object[key] = convertAccessorsToNestedObject(value);
-//       }
-//     }
-//     return object;
-//   }
-//   return PROP_ABSTRACT_UNKNOWN;
-// }
-
-// function convertNestedObjectToAst(object) {
-//   return t.objectExpression(
-//     Object.keys(object).map(key => {
-//       const value = object[key];
-//       if (value === PROP_ABSTRACT_UNKNOWN || value === PROP_ABSTRACT_OBJECT) {
-//         return t.objectProperty(t.identifier(key), t.nullLiteral());
-//       } else {
-//         return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
-//       }
-//     })
-//   );
-// }
-
-// function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
-//   const properties = ast.properties;
-//   Object.keys(object).forEach(key => {
-//     const value = object[key];
-//     const newPrefix = `${prefix}.${key}`;
-
-//     if (value === PROP_ABSTRACT_UNKNOWN) {
-//       properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-//     } else if (value === PROP_ABSTRACT_OBJECT) {
-//       properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
-//     } else {
-//       setAbstractPropsUsingNestedObject(
-//         properties.get(key).descriptor.value,
-//         value,
-//         newPrefix,
-//         false
-//       );
-//     }
-//   });
-// }
 
 function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   const type = astComponent.type;
@@ -160,9 +115,10 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
       propsShape = convertAccessorsToNestedObject(propsInScope.accessors, propTypes);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
-    const propsOnClass = astComponent.class.thisObject.accessors.get('props');
+    const theClass = astComponent.class;
+    const propsOnClass = theClass.thisObject.accessors.get('props');
     if (propsOnClass !== undefined) {
-      propsShape = convertAccessorsToNestedObject(propsOnClass.accessors);
+      propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null);
     }
   }
   if (propsShape !== null) {
@@ -224,35 +180,56 @@ async function handleBailouts(bailOuts, ast, moduleEnv, moduleScope) {
   }
 }
 
+let optimizedTrees = 0;
+let processedCount = 0;
+
 async function optimizeComponentTree(
   ast,
   moduleEnv,
   astComponent,
   moduleScope
 ) {
+  if (astComponent == null || astComponent.type === undefined) {
+    return;
+  }
   if (astComponent.type === 'CallExpression') {
     const astArguments = astComponent.arguments;
     for (let i = 0; i < astArguments.length; i++) {
       await optimizeComponentTree(ast, moduleEnv, astArguments[i], moduleScope);
     }
+    return;
   } else if (astComponent.type === 'Identifier') {
     const obj = moduleScope.assignments.get(astComponent.name);
-    debugger;
-  } else if (astComponent.type === 'FunctionExpression') {
+    if (obj.astNode !== undefined) {
+      await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope);
+    } else {
+      debugger;
+    }
+    return;
+  } else if (astComponent.type === 'FunctionExpression' || astComponent.type === 'ArrowFunctionExpression') {
     const func = astComponent.func;
     if (func.return === null) {
-      throw new Error('Cannot find exported React component to optimize. Try simplifiying the exports.');
+      if (processedCount === 0) {
+        throw new Error('Cannot find exported React component to optimize. Try simplifiying the exports.');
+      }
+      return;
     }
-    // check the return is JSX
-    debugger;
+    // TODO: check the return is JSX ?
+    if (func.return.type !== 'JSXElement') {
+      debugger;
+    }
+  } else if (astComponent.type === 'ClassExpression' || astComponent.type === 'ClassDeclaration') {
+    // TODO: check if it has render?
   } else {
-    debugger;
+    return;
   }
+  processedCount++;
   try {
     const bailOuts = [];
     const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope, bailOuts);
     astComponent.optimized = true;
     astComponent.optimizedReplacement = optimizedAstComponent;
+    optimizedTrees++;
     await handleBailouts(bailOuts, ast, moduleEnv, moduleScope);
   } catch (e) {
     const name = astComponent.id ? astComponent.id.name : 'anonymous function';

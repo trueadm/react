@@ -40,7 +40,8 @@ const propTypes = createObject(null, {
   symbol: PropTypes.SYMBOL,
   any: PropTypes.ANY,
   element: PropTypes.ELEMENT,
-  node: PropTypes.NODE
+  node: PropTypes.NODE,
+  oneOf: PropTypes.ONE_OF
 });
 
 function createJSXElement(astNode) {
@@ -166,6 +167,7 @@ function createClass(name, astNode, superIdentifier, scope) {
     type: Types.Class,
     astNode: astNode,
     name: name,
+    propTypes: null,
     scope: scope,
     superIdentifier: superIdentifier,
     thisObject: createObject(null, {
@@ -290,10 +292,17 @@ function traverse(node, action, scope) {
     }
     case "ReturnStatement": {
       const argument = node.argument;
-      if (argument !== null) {
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
+        if (argument !== null) {
+          traverse(argument, action, scope);
+          const object = getOrSetValueFromAst(argument, scope, action);
+          scope.func.return = object;
+        }
+      } else {
         traverse(argument, action, scope);
-        const object = getOrSetValueFromAst(argument, scope, action);
-        scope.func.return = object;
       }
       break;
     }
@@ -867,32 +876,14 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           newValue
         );
       } else if (subject.type === Types.Class) {
-        const parentScope = subject.scope;
-        parentScope.deferredScopes.push({
-          name: key,
-          scopeFunc() {
-            // if we have an object, we wrap it in a class method and put it in
-            // TODO: make this static
-            if (newValue.astNode.type === 'ObjectExpression') {
-              declareClassMethod(
-                t.classMethod(
-                  'method',
-                  t.identifier(key),
-                  [],
-                  t.blockStatement([
-                    t.returnStatement(newValue.astNode),
-                  ])
-                ),
-                subject.thisObject,
-                parentScope,
-                action
-              );
-            } else {
-              debugger;
-            }
-          },
-        });
-        return newValue;
+        if (newValue !== undefined) {
+          if (newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
+            subject.propTypes = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          }
+          return subject;
+        } else {
+          return createAbstractUnknown();
+        }
       } else {
         debugger;
       }

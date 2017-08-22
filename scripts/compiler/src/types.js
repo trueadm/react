@@ -11,6 +11,7 @@ const Types = {
   BOOL: 'bool',
   FUNC: 'func',
   SYMBOL: 'symbol',
+  ONE_OF: 'one_of',
 };
 
 module.exports = {
