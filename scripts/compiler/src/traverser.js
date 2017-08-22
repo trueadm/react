@@ -261,6 +261,9 @@ function createModuleScope() {
     Number: createAbstractFunction(),
     Element: createAbstractFunction(),
     Node: createAbstractFunction(),
+    fbt: createObject(null, {
+      _: createAbstractFunction('_'),
+    }),
     // type stuff
     ReactElement: 'ReactElement',
     ReactClass: 'ReactClass',
@@ -792,10 +795,6 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "Identifier": {
       const key = getNameFromAst(astNode);
 
-      if (!subject) {
-        debugger;
-      }
-
       if (key === "undefined") {
         return createUndefined();
       } else if (subject.type === Types.Scope) {
@@ -811,9 +810,6 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
               return handleMultipleValues(subject.assignments.get(key));
             }
           } else {
-            if (subject.parentScope === null) {
-              debugger;
-            }
             subject = subject.parentScope;
           }
         }
@@ -897,7 +893,6 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else {
         debugger;
       }
-      debugger;
       return null;
     }
     case "ArrayExpression": {

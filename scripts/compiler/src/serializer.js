@@ -35,6 +35,8 @@ function convertExpressionToJSXIdentifier(expr) {
         convertExpressionToJSXIdentifier(expr.object),
         convertExpressionToJSXIdentifier(expr.property)
       );
+    case "ArrowFunctionExpression":
+      return expr;
     default:
       throw new Error("Invalid JSX Type: " + expr.type);
   }

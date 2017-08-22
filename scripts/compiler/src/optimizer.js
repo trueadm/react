@@ -39,6 +39,12 @@ function convertAccessorsToNestedObject(accessors, propTypes) {
           default:
             debugger;
         }
+      } else if (value.type === 'ConditionalExpression') {
+        // TODO
+        // as we are inlikely to know this statically, let's assume any
+        value = Types.ANY;
+      } else if (value.type !== undefined) {
+        debugger;
       }
       object[key] = value;
     }
@@ -57,9 +63,12 @@ function convertNestedObjectToAst(object) {
         switch (value) {
           case Types.ARRAY:
           case Types.OBJECT:
+          case Types.STRING:
+          case Types.NUMBER:
+          case Types.FUNC:
+          case Types.BOOL:
           case Types.ANY:
             return t.objectProperty(t.identifier(key), t.nullLiteral());
-
           default: {
             debugger;
           }
@@ -84,6 +93,18 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
           break;
         case Types.OBJECT:
           properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+          break;
+        case Types.NUMBER:
+          properties.get(key).descriptor.value = evaluator.createAbstractNumber(newPrefix);
+          break;
+        case Types.STRING:
+          properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
+          break;
+        case Types.FUNC:
+          properties.get(key).descriptor.value = evaluator.createAbstractFunction(newPrefix);
+          break;
+        case Types.BOOL:
+          properties.get(key).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
           break;
         case Types.ANY:
           properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);

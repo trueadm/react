@@ -22,8 +22,8 @@ function createBundle(result) {
           "syntax-flow",
           "syntax-jsx",
           require("./plugins/babel-plugin-fbt"),
-          "transform-class-properties",
           "flow-react-proptypes",
+          "transform-class-properties",
           "syntax-object-rest-spread",
           ["transform-object-rest-spread", { useBuiltIns: true }]
         ]

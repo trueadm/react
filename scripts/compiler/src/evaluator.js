@@ -16,7 +16,8 @@ let {
   ObjectValue,
   NumberValue,
   StringValue,
-  FunctionValue
+  FunctionValue,
+  BooleanValue
 } = require("prepack/lib/values");
 let { TypesDomain, ValuesDomain } = require("prepack/lib/domains");
 let { Generator } = require("prepack/lib/utils/generator");
@@ -73,6 +74,21 @@ function createAbstractNumber(nameString) {
 function createAbstractString(nameString) {
   let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
   let types = new TypesDomain(StringValue);
+  let values = ValuesDomain.topVal;
+  let result = realm.createAbstract(
+    types,
+    values,
+    [],
+    buildNode,
+    undefined,
+    nameString
+  );
+  return result;
+}
+
+function createAbstractBoolean(nameString) {
+  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
+  let types = new TypesDomain(BooleanValue);
   let values = ValuesDomain.topVal;
   let result = realm.createAbstract(
     types,
@@ -213,7 +229,6 @@ class ModuleEnvironment {
       if (completion instanceof AbruptCompletion) {
         res = completion;
       } else {
-        debugger;
         throw completion;
       }
     } finally {
@@ -338,6 +353,8 @@ function set(object, propertyName, value) {
 exports.get = get;
 
 exports.set = set;
+
+exports.createAbstractBoolean = createAbstractBoolean;
 
 exports.createAbstractArray = createAbstractArray;
 

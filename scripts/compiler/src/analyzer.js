@@ -15,7 +15,7 @@ const whitelist = {
 function toAst(node) {
   if (typeof node === "string") {
     return t.stringLiteral(node);
-  } else if (node.astNode !== undefined) {
+  } else if (node.astNode != null) {
     return node.astNode;
   } else {
     debugger;
@@ -117,7 +117,12 @@ function handleAssignmentValue(
         break;
       }
       case "Object": {
-        declarations[assignmentKey] = assignmentValue.astNode;
+        const astNode = assignmentValue.astNode;
+        if (astNode !== null) {
+          declarations[assignmentKey] = astNode;
+        } else {
+          declarations[assignmentKey] = evaluator.createAbstractObject(assignmentKey);
+        }
         break;
       }
       case "MathExpression": {
@@ -153,7 +158,10 @@ function createPrepackMetadata(moduleScope) {
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
-    if (assignmentKey === 'React' && moduleScope.parentScope === null) {
+    if (assignmentKey === 'fbt') {
+      const fbt = Array.isArray(assignmentValue) ? assignmentValue[0] : assignmentValue;
+      handleAssignmentValue(fbt, 'fbt', declarations);
+    } else if (assignmentKey === 'React') {
       declarations.React = createMockReact();
     } else if (whitelist[assignmentKey] === true && moduleScope.parentScope === null) {
       // skip whitelist items
