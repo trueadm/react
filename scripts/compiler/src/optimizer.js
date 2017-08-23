@@ -124,7 +124,14 @@ async function optimizeComponentTree(
   } else {
     return;
   }
-  const name = astComponent.id ? astComponent.id.name : 'anonymous function';
+  let name = astComponent.id ? astComponent.id.name : null;
+  if (name === null) {
+    if (astComponent.func.name) {
+      name = astComponent.func.name;
+    } else {
+      name = 'unknown name';
+    }
+  }
   processedCount++;
   try {
     const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);

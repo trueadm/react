@@ -176,7 +176,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           const propsShape = Object.assign({
             // we auto-add "children" as it can be used implicility in React
             children: 'any',
-          }, convertAccessorsToNestedObject(null, propTypes.properties));
+          }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null) || {});
           const spreadName = traverser.getNameFromAst(astAttribute.argument);
           Object.keys(propsShape).forEach(key => {
             if (!attributeUsed.has(key)) {

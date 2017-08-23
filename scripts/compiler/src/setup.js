@@ -201,7 +201,9 @@ function createPrepackMetadata(moduleScope) {
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
-    if (assignmentKey === 'fbt') {
+    if (assignmentKey === '_objectWithoutProperties') {
+      declarations._objectWithoutProperties = evaluator.createAbstractFunction('_objectWithoutProperties');
+    } else if (assignmentKey === 'fbt') {
       const fbt = Array.isArray(assignmentValue) ? assignmentValue[0] : assignmentValue;
       handleAssignmentValue(moduleScope, fbt, 'fbt', declarations, env);
     } else if (assignmentKey === 'React') {
