@@ -83,6 +83,7 @@ async function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEn
 
 let optimizedTrees = 0;
 let processedCount = 0;
+const alreadyTried = new Map();
 
 async function optimizeComponentTree(
   ast,
@@ -132,40 +133,47 @@ async function optimizeComponentTree(
       name = 'unknown name';
     }
   }
-  processedCount++;
-  try {
-    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
-    astComponent.optimized = true;
-    astComponent.optimizedReplacement = optimizedAstComponent;
-    optimizedTrees++;
-    // scan the optimized component for further components
-    const componentScope = {
-      deferredScopes: [],
-      components: new Map(),
-    };
-    traverser.traverse(optimizedAstComponent, traverser.Actions.FindComponents, componentScope);
-    const potentialBailOuts = Array.from(componentScope.components.keys());
-    for (let i = 0; i < potentialBailOuts.length; i++) {
-      const potentialBailOut = potentialBailOuts[i];
-      const component = moduleScope.assignments.get(potentialBailOut);
+  if (!alreadyTried.has(name)) {
+    processedCount++;
+    try {
+      alreadyTried.set(name, true);
+      const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
+      astComponent.optimized = true;
+      astComponent.optimizedReplacement = optimizedAstComponent;
+      optimizedTrees++;
+      // scan the optimized component for further components
+      const componentScope = {
+        deferredScopes: [],
+        components: new Map(),
+      };
+      traverser.traverse(optimizedAstComponent, traverser.Actions.FindComponents, componentScope);
+      const potentialBailOuts = Array.from(componentScope.components.keys());
+      for (let i = 0; i < potentialBailOuts.length; i++) {
+        const potentialBailOut = potentialBailOuts[i];
+        const component = moduleScope.assignments.get(potentialBailOut);
 
-      if (component !== undefined) {
-        await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+        if (component !== undefined) {
+          await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+        }
       }
-    }
-    console.log(`Optimized component "${name}"\n`);
-  } catch (e) {
-    console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
-    // find all direct child components in the tree of this component
-    if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
-      await scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
-    } else if (astComponent.type === 'ClassExpression') {
-      // scan all class methods for now
-      const bodyParts = astComponent.body.body;
-      for (let i = 0; i < bodyParts.length; i++) {
-        const bodyPart = bodyParts[i];
-        if (bodyPart.type === 'ClassMethod' && bodyPart.scope !== undefined) {
-          await scanAllJsxElementIdentifiers(bodyPart.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
+      console.log(`Optimized component "${name}"\n`);
+    } catch (e) {
+      if (e.stack.indexOf('not yet supported on abstract value props') !== -1) {
+        console.warn(`\nPrepack component bail-out on "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`);
+      } else {
+        console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
+      }
+      // find all direct child components in the tree of this component
+      if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
+        await scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
+      } else if (astComponent.type === 'ClassExpression') {
+        // scan all class methods for now
+        const bodyParts = astComponent.body.body;
+        for (let i = 0; i < bodyParts.length; i++) {
+          const bodyPart = bodyParts[i];
+          if (bodyPart.type === 'ClassMethod' && bodyPart.scope !== undefined) {
+            await scanAllJsxElementIdentifiers(bodyPart.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
+          }
         }
       }
     }
