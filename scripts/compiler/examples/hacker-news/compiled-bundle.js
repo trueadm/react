@@ -23,7 +23,7 @@ function Story({ story, rank }) {
       verticalAlign: 'top',
       textAlign: 'right'
     }} className="title">
-        <span className="rank">{`${rank}.`}</span>
+        <span className="rank">{rank}.</span>
       </td>
       <td className="votelinks" style={{
       verticalAlign: 'top'
@@ -59,6 +59,8 @@ function Story({ story, rank }) {
     height: 5
   }} className="spacer" />];
 }
+
+
 
 function App(props) {
   return <center>

@@ -19,13 +19,13 @@ function createBundle(result) {
         runtimeHelpers: false,
         externalHelpers: false,
         plugins: [
-          "syntax-flow",
-          "syntax-jsx",
+          require("../node_modules/babel-plugin-syntax-flow"),
+          require("../node_modules/babel-plugin-syntax-jsx"),
           require("./plugins/babel-plugin-fbt"),
-          "flow-react-proptypes",
-          "transform-class-properties",
-          "syntax-object-rest-spread",
-          ["transform-object-rest-spread", { useBuiltIns: true }]
+          require("../node_modules/babel-plugin-flow-react-proptypes"),
+          require("../node_modules/babel-plugin-transform-class-properties"),
+          require("../node_modules/babel-plugin-syntax-object-rest-spread"),
+          [require("../node_modules/babel-plugin-transform-object-rest-spread"), { useBuiltIns: true }]
         ]
       }),
       flow(),

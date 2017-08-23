@@ -62,7 +62,13 @@ async function resolveDeeply(value, bailOuts) {
         value.args[i] = await resolveDeeply(value.args[i], bailOuts);
       }
     } else {
-      // debugger;
+      for (let i = 0; i < value.args.length; i++) {
+        const val = value.args[i];
+
+        if (val.$ECMAScriptCode) {
+          bailOuts.push(val.$ECMAScriptCode);
+        }
+      }
     }
     return value;
   }

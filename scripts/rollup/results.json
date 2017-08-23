@@ -25,39 +25,24 @@
       "gzip": 6703
     },
     "react-dom.development.js (UMD_DEV)": {
-<<<<<<< HEAD
       "size": 634516,
       "gzip": 144644
-=======
-      "size": 635358,
-      "gzip": 144868
->>>>>>> upstream/master
     },
     "react-dom.production.min.js (UMD_PROD)": {
       "size": 108806,
       "gzip": 34152
     },
     "react-dom.development.js (NODE_DEV)": {
-<<<<<<< HEAD
       "size": 593927,
       "gzip": 135069
-=======
-      "size": 594767,
-      "gzip": 135242
->>>>>>> upstream/master
     },
     "react-dom.production.min.js (NODE_PROD)": {
       "size": 112503,
       "gzip": 35538
     },
     "ReactDOMFiber-dev.js (FB_DEV)": {
-<<<<<<< HEAD
       "size": 590747,
       "gzip": 134529
-=======
-      "size": 591587,
-      "gzip": 134688
->>>>>>> upstream/master
     },
     "ReactDOMFiber-prod.js (FB_PROD)": {
       "size": 425507,
@@ -96,52 +81,32 @@
       "gzip": 15736
     },
     "react-dom-server.browser.development.js (UMD_DEV)": {
-<<<<<<< HEAD
       "size": 122889,
       "gzip": 31043
-=======
-      "size": 123203,
-      "gzip": 31145
->>>>>>> upstream/master
     },
     "react-dom-server.browser.production.min.js (UMD_PROD)": {
       "size": 19874,
       "gzip": 7592
     },
     "react-dom-server.browser.development.js (NODE_DEV)": {
-<<<<<<< HEAD
       "size": 92065,
       "gzip": 23633
-=======
-      "size": 92379,
-      "gzip": 23736
->>>>>>> upstream/master
     },
     "react-dom-server.browser.production.min.js (NODE_PROD)": {
       "size": 18930,
       "gzip": 7264
     },
     "ReactDOMServer-dev.js (FB_DEV)": {
-<<<<<<< HEAD
       "size": 91258,
       "gzip": 23560
-=======
-      "size": 91572,
-      "gzip": 23660
->>>>>>> upstream/master
     },
     "ReactDOMServer-prod.js (FB_PROD)": {
       "size": 49652,
       "gzip": 13866
     },
     "react-dom-server.node.development.js (NODE_DEV)": {
-<<<<<<< HEAD
       "size": 94842,
       "gzip": 24200
-=======
-      "size": 95156,
-      "gzip": 24301
->>>>>>> upstream/master
     },
     "react-dom-server.node.production.min.js (NODE_PROD)": {
       "size": 19986,

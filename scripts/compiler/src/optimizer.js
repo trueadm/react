@@ -4,6 +4,7 @@ const t = require("babel-types");
 const evaluator = require("./evaluator");
 const reconciler = require("./reconciler");
 const serializer = require("./serializer");
+const traverser = require("./traverser");
 const Types = require("./types").Types;
 
 function convertToExpression(node) {
@@ -29,13 +30,30 @@ function convertAccessorsToNestedObject(accessors, propTypes) {
 
       if (value.type === 'FunctionCall') {
         switch (value.identifier) {
-          case Types.ONE_OF:
+          case Types.ONE_OF: {
+            const properties = value.args[0].properties;
             const newObj = {};
-            Array.from(value.args[0].properties.values()).forEach(val => {
+            Array.from(properties.values()).forEach(val => {
               newObj[val] = Types.ANY;
             });
             value = newObj;
             break;
+          }
+          case Types.SHAPE: {
+            const properties = value.args[0].properties;
+            const newObj = {};
+            Array.from(properties.keys()).forEach(key => {
+              const subValue = properties.get(key);
+              if (typeof subValue === 'string') {
+                newObj[key] = subValue;
+              } else {
+                // TODO
+                throw new Error('A complex deeply nested shape() PropType was used. No support yet!');
+              }
+            });
+            value = newObj;
+            break;
+          }
           default:
             debugger;
         }
@@ -192,10 +210,21 @@ async function handleBailouts(bailOuts, ast, moduleEnv, moduleScope) {
   if (bailOuts.length > 0) {
     for (let i = 0; i < bailOuts.length; i++) {
       const bailOut = bailOuts[i];
-      const component = moduleScope.assignments.get(bailOut);
-
-      if (component !== undefined) {
-        await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+      if (typeof bailOut === 'string') {
+        const component = moduleScope.assignments.get(bailOut);
+        
+        if (component !== undefined) {
+          await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+        }
+      } else {
+        // deal with ast
+        const componentScope = {
+          deferredScopes: [],
+          components: new Map(),
+        };
+        traverser.traverse(bailOut, traverser.Actions.FindComponents, componentScope);
+        const newBailOuts = Array.from(componentScope.components.keys());
+        handleBailouts(newBailOuts, ast, moduleEnv, moduleScope);
       }
     }
   }
@@ -227,7 +256,7 @@ async function optimizeComponentTree(
       debugger;
     }
     return;
-  } else if (astComponent.type === 'FunctionExpression' || astComponent.type === 'ArrowFunctionExpression') {
+  } else if (astComponent.type === 'FunctionExpression' || astComponent.type === 'FunctionDeclaration' || astComponent.type === 'ArrowFunctionExpression') {
     const func = astComponent.func;
     if (func.return === null) {
       if (processedCount === 0) {
@@ -236,7 +265,7 @@ async function optimizeComponentTree(
       return;
     }
     // TODO: check the return is JSX ?
-    if (func.return.type !== 'JSXElement') {
+    if (func.return.type !== 'JSXElement' && func.return.type !== 'Array' && func.return.type !== 'String' && func.return.type !== 'Number') {
       debugger;
     }
   } else if (astComponent.type === 'ClassExpression' || astComponent.type === 'ClassDeclaration') {

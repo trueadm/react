@@ -6,7 +6,8 @@ const t = require("babel-types");
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
   ScanInnerScope: "ScanInnerScope",
-  ReplaceWithOptimized: "ReplaceWithOptimized"
+  ReplaceWithOptimized: "ReplaceWithOptimized",
+  FindComponents: "FindComponents",
 };
 
 const Types = {
@@ -42,7 +43,8 @@ const propTypes = createObject(null, {
   element: PropTypes.ELEMENT,
   node: PropTypes.NODE,
   oneOf: PropTypes.ONE_OF,
-  instanceOf: PropTypes.INSTANCE_OF
+  instanceOf: PropTypes.INSTANCE_OF,
+  shape: PropTypes.SHAPE,
 });
 
 function createJSXElement(astNode) {
@@ -318,12 +320,21 @@ function traverse(node, action, scope) {
       const astOpeningElement = node.openingElement;
       const astName = astOpeningElement.name;
       const name = getNameFromAst(astName);
-      const isReactComponent = name[0].toUpperCase() === name[0];
-      if (isReactComponent === true) {
-        scope.jsxElementIdentifiers.set(
-          name,
-          getOrSetValueFromAst(astName, scope, action)
-        );
+      const isReactComponent = name[0].toUpperCase() === name[0];      
+      if (
+        action === Actions.ScanInnerScope ||
+        action === Actions.ScanTopLevelScope
+      ) {
+        if (isReactComponent === true) {
+          scope.jsxElementIdentifiers.set(
+            name,
+            getOrSetValueFromAst(astName, scope, action)
+          );
+        }
+      } else if (action === Actions.FindComponents) {
+        if (isReactComponent) {
+          scope.components.set(name, true);
+        }
       }
       const astAttributes = astOpeningElement.attributes;
       for (let i = 0; i < astAttributes.length; i++) {

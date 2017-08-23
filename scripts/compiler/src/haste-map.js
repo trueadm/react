@@ -8,6 +8,10 @@ const fs = require("fs");
 const sha256 = require("js-sha256");
 
 const cacheDirectory = path.join(__dirname, "..", "_cache");
+const ignore = {
+  'React': true,
+  'PropTypes': true,
+};
 
 function getCache(pathKey) {
   if (fs.existsSync(cacheDirectory)) {
@@ -48,7 +52,10 @@ function createHasteMap(entryFilePath, destinationBundlePath) {
         (er, files) => {
           for (let i = 0, length = files.length; i < length; i++) {
             const filename = files[i];
-            hasteMap[path.basename(filename, ".js")] = filename;
+            const file = path.basename(filename, ".js");
+            if (!ignore[file]) {
+              hasteMap[file] = filename;
+            }
           }
           updateCache(processCwd, hasteMap);
           resolve({

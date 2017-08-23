@@ -13,6 +13,7 @@ const Types = {
   SYMBOL: 'symbol',
   ONE_OF: 'one_of',
   INSTANCE_OF: 'instance_of',
+  SHAPE: 'shape',
 };
 
 module.exports = {

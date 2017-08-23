@@ -1,6 +1,7 @@
 "use strict";
 
 const React = require('React');
+const PropTypes = require('PropTypes');
 
 function timeAge(time) {
   const now = new Date().getTime() / 1000;
@@ -28,7 +29,7 @@ function Story({ story, rank }) {
           textAlign: 'right',
         }}
         className="title">
-        <span className="rank">{`${rank}.`}</span>
+        <span className="rank">{rank}.</span>
       </td>
       <td
         className="votelinks"
@@ -75,5 +76,17 @@ function Story({ story, rank }) {
       className="spacer" />,
   ];
 }
+
+Story.propTypes = {
+  story: PropTypes.shape({
+    title: PropTypes.string,
+    url: PropTypes.string,
+    score: PropTypes.number,
+    descendants: PropTypes.number,
+    by: PropTypes.string,
+    time: PropTypes.number,
+  }),
+  rank: PropTypes.number,
+};
 
 module.exports = Story;
