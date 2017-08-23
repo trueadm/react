@@ -81,30 +81,6 @@ async function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEn
   }
 }
 
-async function handleBailouts(bailOuts, ast, moduleEnv, moduleScope) {
-  if (bailOuts.length > 0) {
-    for (let i = 0; i < bailOuts.length; i++) {
-      const bailOut = bailOuts[i];
-      if (typeof bailOut === 'string') {
-        const component = moduleScope.assignments.get(bailOut);
-        
-        if (component !== undefined) {
-          await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
-        }
-      } else {
-        // deal with ast
-        const componentScope = {
-          deferredScopes: [],
-          components: new Map(),
-        };
-        traverser.traverse(bailOut, traverser.Actions.FindComponents, componentScope);
-        const newBailOuts = Array.from(componentScope.components.keys());
-        handleBailouts(newBailOuts, ast, moduleEnv, moduleScope);
-      }
-    }
-  }
-}
-
 let optimizedTrees = 0;
 let processedCount = 0;
 
@@ -151,13 +127,25 @@ async function optimizeComponentTree(
   const name = astComponent.id ? astComponent.id.name : 'anonymous function';
   processedCount++;
   try {
-    const bailOuts = [];
-    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope, bailOuts);
+    const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
     astComponent.optimized = true;
     astComponent.optimizedReplacement = optimizedAstComponent;
     optimizedTrees++;
-    console.log(`\nPrepack component successfully optimized "${name}"\n`);
-    await handleBailouts(bailOuts, ast, moduleEnv, moduleScope);
+    // scan the optimized component for further components
+    const componentScope = {
+      deferredScopes: [],
+      components: new Map(),
+    };
+    traverser.traverse(optimizedAstComponent, traverser.Actions.FindComponents, componentScope);
+    const potentialBailOuts = Array.from(componentScope.components.keys());
+    for (let i = 0; i < potentialBailOuts.length; i++) {
+      const potentialBailOut = potentialBailOuts[i];
+      const component = moduleScope.assignments.get(potentialBailOut);
+
+      if (component !== undefined) {
+        await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+      }
+    }
   } catch (e) {
     console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component

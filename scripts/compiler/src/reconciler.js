@@ -25,7 +25,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue, bailOuts) {
+async function resolveFragment(arrayValue) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -41,12 +41,12 @@ async function resolveFragment(arrayValue, bailOuts) {
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
-      elementProperty.descriptor.value = await resolveDeeply(elementValue, bailOuts);
+      elementProperty.descriptor.value = await resolveDeeply(elementValue);
     }
   }
 }
 
-async function resolveDeeply(value, bailOuts) {
+async function resolveDeeply(value) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -59,21 +59,13 @@ async function resolveDeeply(value, bailOuts) {
   } else if (value instanceof AbstractValue) {
     if (value.kind === 'conditional') {
       for (let i = 0; i < value.args.length; i++) {
-        value.args[i] = await resolveDeeply(value.args[i], bailOuts);
-      }
-    } else {
-      for (let i = 0; i < value.args.length; i++) {
-        const val = value.args[i];
-
-        if (val.$ECMAScriptCode !== undefined) {
-          bailOuts.push(val.$ECMAScriptCode);
-        }
+        value.args[i] = await resolveDeeply(value.args[i]);
       }
     }
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value, bailOuts);
+    await resolveFragment(value);
     return value;
   }
   if (isReactElement(value)) {
@@ -83,24 +75,14 @@ async function resolveDeeply(value, bailOuts) {
       // Terminal host component. Start evaluating its children.
       let childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
-        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value, bailOuts);
+        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value);
         childrenProperty.descriptor.value = resolvedChildren;
       }
       return value;
     }
     try {
-      return await renderAsDeepAsPossible(type, props, bailOuts);
+      return await renderAsDeepAsPossible(type, props);
     } catch (x) {
-      // TODO we need to bail out everything else too
-      if (type.__originalName || type.intrinsicName) {
-        bailOuts.push(type.__originalName || type.intrinsicName);
-      } else if (type.properties !== undefined && type.properties.has('name')) {
-        bailOuts.push(type.properties.get('name').descriptor.value.value);
-      } else if (type.$ECMAScriptCode !== undefined) {
-        bailOuts.push(type.$ECMAScriptCode);
-      } else {
-        debugger;
-      }
       // If something went wrong, just bail out and return the value we had.
       return value;
     }
@@ -120,9 +102,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-async function renderAsDeepAsPossible(componentType, props, bailOuts) {
+async function renderAsDeepAsPossible(componentType, props) {
   let result = renderOneLevel(componentType, props);
-  return await resolveDeeply(result, bailOuts);
+  return await resolveDeeply(result);
 }
 
 exports.renderOneLevel = renderOneLevel;
