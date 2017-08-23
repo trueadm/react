@@ -15,6 +15,8 @@
 import type {Fiber} from 'ReactFiber';
 import type {ReactNodeList} from 'ReactTypes';
 
+require('checkReact');
+var DOMNamespaces = require('DOMNamespaces');
 var ExecutionEnvironment = require('fbjs/lib/ExecutionEnvironment');
 var ReactBrowserEventEmitter = require('ReactBrowserEventEmitter');
 var ReactControlledComponent = require('ReactControlledComponent');
@@ -43,9 +45,9 @@ var {ROOT_ATTRIBUTE_NAME} = require('DOMProperty');
 var findDOMNode = require('findDOMNode');
 var invariant = require('fbjs/lib/invariant');
 
+var {getChildNamespace} = DOMNamespaces;
 var {
   createElement,
-  getChildNamespace,
   setInitialProperties,
   diffProperties,
   updateProperties,
@@ -811,6 +813,7 @@ const foundDevTools = injectInternals({
   // This is an enum because we may add more (e.g. profiler build)
   bundleType: __DEV__ ? 1 : 0,
   version: ReactVersion,
+  rendererPackageName: 'react-dom',
 });
 
 if (__DEV__) {
