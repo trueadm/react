@@ -157,9 +157,11 @@ function createFunction(name, astNode, scope) {
     name: name,
     params: [],
     properties: createObject(),
+    propTypes: null,
     restParam: null,
     return: null,
     scope: scope,
+    theClass: null,
     type: Types.Function
   };
 }
@@ -320,7 +322,7 @@ function traverse(node, action, scope) {
       const astOpeningElement = node.openingElement;
       const astName = astOpeningElement.name;
       const name = getNameFromAst(astName);
-      const isReactComponent = name[0].toUpperCase() === name[0];      
+      const isReactComponent = name[0].toUpperCase() === name[0];
       if (
         action === Actions.ScanInnerScope ||
         action === Actions.ScanTopLevelScope
@@ -329,8 +331,9 @@ function traverse(node, action, scope) {
           scope.jsxElementIdentifiers.set(
             name,
             getOrSetValueFromAst(astName, scope, action)
-          );
+          );;
         }
+        node.scope = scope
       } else if (action === Actions.FindComponents) {
         if (isReactComponent) {
           scope.components.set(name, true);
@@ -853,7 +856,14 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           return getOrSetValueFromAst(astNode, propTypes, action, newValue);
         }
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        let accesorObject;
+        if (subject.accessors.has(key)) {
+          accesorObject = subject.accessors.get(key);
+        } else {
+          accesorObject = createAbstractUnknown();
+          subject.accessors.set(key, accesorObject);
+        }
+        return accesorObject;
       } else if (subject.type === Types.AbstractObject) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractObject();
@@ -883,12 +893,16 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else if (subject.type === Types.Identifier) {
         // NO OP
       } else if (subject.type === Types.Function) {
-        return getOrSetValueFromAst(
-          astNode,
-          subject.properties,
-          action,
-          newValue
-        );
+        if (key === 'propTypes') {
+          subject.propTypes = newValue;
+        } else {
+          return getOrSetValueFromAst(
+            astNode,
+            subject.properties,
+            action,
+            newValue
+          );
+        }
       } else if (subject.type === Types.Class) {
         if (newValue !== undefined) {
           if (newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
@@ -1136,12 +1150,14 @@ function declareVariable(id, init, action, scope) {
     const value = init === null
       ? createUndefined()
       : getOrSetValueFromAst(init, scope, action);
-
+    if (value.type === 'Function') {
+      value.name = assignKey;
+    }
     assign(scope, "assignments", assignKey, value);
   }
 }
 
-function declareClassMethod(bodyPart, thisAssignment, scope, action) {
+function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   const newScope = createScope(thisAssignment);
   const name = getNameFromAst(bodyPart.key);
   const func = createFunction(name, bodyPart, scope);
@@ -1149,6 +1165,7 @@ function declareClassMethod(bodyPart, thisAssignment, scope, action) {
   newScope.parentScope = scope;
   bodyPart.scope = newScope;
   newScope.func = func;
+  func.theClass = theClass;
   traverse(bodyPart, action, newScope);
   newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
@@ -1171,7 +1188,7 @@ function declareClass(node, id, superId, body, action, scope) {
     scopeFunc() {
       astClassBody.forEach(bodyPart => {
         if (bodyPart.type === "ClassMethod") {
-          declareClassMethod(bodyPart, thisAssignment, scope, action);
+          declareClassMethod(bodyPart, theClass, thisAssignment, scope, action);
         } else {
           debugger;
         }
@@ -1282,6 +1299,9 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
       newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
     }
   });
+  // a bit hacky, but we do this so we can find out the ref to func later on during serialization
+  body.func = func;
+  params.func = func;
   return func;
 }
 
@@ -1298,5 +1318,6 @@ module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
   traverse: traverse,
-  handleMultipleValues: handleMultipleValues
+  handleMultipleValues: handleMultipleValues,
+  getNameFromAst: getNameFromAst,
 };

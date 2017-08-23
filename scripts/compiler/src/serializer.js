@@ -1,4 +1,4 @@
-let {
+const {
   AbstractValue,
   ArrayValue,
   FunctionValue,
@@ -8,7 +8,8 @@ let {
   SymbolValue,
   UndefinedValue
 } = require("prepack/lib/values");
-let t = require("babel-types");
+const t = require("babel-types");
+const travser = require("./traverser");
 
 function getFunctionReferenceName(functionValue) {
   if (functionValue.__originalName) {
@@ -97,6 +98,21 @@ function convertReactElementToJSXExpression(objectValue) {
     }
 
     attributes.push(convertKeyValueToJSXAttribute(key, desc.value));
+  }
+
+  if (identifier.type === 'ArrowFunctionExpression') {
+    // we don't have the name here, so we have to find it
+    // luckily I hacked it on to the BlockStatement body of the arrow function
+    if (identifier.body.func !== undefined) {
+      identifier = t.JSXIdentifier(identifier.body.func.name);
+    } else if (identifier.params.func !== undefined) {
+      // if its not there, I also hacked it onto the arguments
+      identifier = t.JSXIdentifier(identifier.params.func.name);
+    } else {
+      // we need to do more hacking?
+      debugger;
+
+    }
   }
 
   let openingElement = t.jSXOpeningElement(

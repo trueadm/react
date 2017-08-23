@@ -65,7 +65,7 @@ async function resolveDeeply(value, bailOuts) {
       for (let i = 0; i < value.args.length; i++) {
         const val = value.args[i];
 
-        if (val.$ECMAScriptCode) {
+        if (val.$ECMAScriptCode !== undefined) {
           bailOuts.push(val.$ECMAScriptCode);
         }
       }
@@ -91,7 +91,16 @@ async function resolveDeeply(value, bailOuts) {
     try {
       return await renderAsDeepAsPossible(type, props, bailOuts);
     } catch (x) {
-      bailOuts.push(type.__originalName);
+      // TODO we need to bail out everything else too
+      if (type.__originalName || type.intrinsicName) {
+        bailOuts.push(type.__originalName || type.intrinsicName);
+      } else if (type.properties !== undefined && type.properties.has('name')) {
+        bailOuts.push(type.properties.get('name').descriptor.value.value);
+      } else if (type.$ECMAScriptCode !== undefined) {
+        bailOuts.push(type.$ECMAScriptCode);
+      } else {
+        debugger;
+      }
       // If something went wrong, just bail out and return the value we had.
       return value;
     }

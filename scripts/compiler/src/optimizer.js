@@ -6,133 +6,15 @@ const reconciler = require("./reconciler");
 const serializer = require("./serializer");
 const traverser = require("./traverser");
 const Types = require("./types").Types;
+const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
+const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
+const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
 
 function convertToExpression(node) {
   if (node.type === "FunctionDeclaration") {
     node.type = "FunctionExpression";
   }
   return node;
-}
-
-function convertAccessorsToNestedObject(accessors, propTypes) {
-  const keys = Array.from(accessors.keys());
-  const propKeys = propTypes ? Array.from(propTypes.keys()) : [];
-  
-  if (keys.length > 0 || propKeys.length > 0) {
-    const object = {};
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      object[key] = Types.ANY;
-    }
-    for (let i = 0; i < propKeys.length; i++) {
-      const key = propKeys[i];
-      let value = propTypes.get(key);
-
-      if (value.type === 'FunctionCall') {
-        switch (value.identifier) {
-          case Types.ONE_OF: {
-            const properties = value.args[0].properties;
-            const newObj = {};
-            Array.from(properties.values()).forEach(val => {
-              newObj[val] = Types.ANY;
-            });
-            value = newObj;
-            break;
-          }
-          case Types.SHAPE: {
-            const properties = value.args[0].properties;
-            const newObj = {};
-            Array.from(properties.keys()).forEach(key => {
-              const subValue = properties.get(key);
-              if (typeof subValue === 'string') {
-                newObj[key] = subValue;
-              } else {
-                // TODO
-                throw new Error('A complex deeply nested shape() PropType was used. No support yet!');
-              }
-            });
-            value = newObj;
-            break;
-          }
-          default:
-            debugger;
-        }
-      } else if (value.type === 'ConditionalExpression') {
-        // TODO
-        // as we are inlikely to know this statically, let's assume any
-        value = Types.ANY;
-      } else if (value.type !== undefined) {
-        debugger;
-      }
-      object[key] = value;
-    }
-    return object;
-  }
-  return null;
-}
-
-function convertNestedObjectToAst(object) {
-  return t.objectExpression(
-    Object.keys(object).map(key => {
-      const value = object[key];
-      if (typeof value === 'object') {
-        return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
-      } else {
-        switch (value) {
-          case Types.ARRAY:
-          case Types.OBJECT:
-          case Types.STRING:
-          case Types.NUMBER:
-          case Types.FUNC:
-          case Types.BOOL:
-          case Types.ANY:
-            return t.objectProperty(t.identifier(key), t.nullLiteral());
-          default: {
-            debugger;
-          }
-        }
-      }
-    })
-  );
-}
-
-function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
-  const properties = ast.properties;
-  Object.keys(object).forEach(key => {
-    const value = object[key];
-    const newPrefix = `${prefix}.${key}`;
-
-    if (typeof value === 'object') {
-      setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
-    } else {
-      switch (value) {
-        case Types.ARRAY:
-          properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
-          break;
-        case Types.OBJECT:
-          properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
-          break;
-        case Types.NUMBER:
-          properties.get(key).descriptor.value = evaluator.createAbstractNumber(newPrefix);
-          break;
-        case Types.STRING:
-          properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
-          break;
-        case Types.FUNC:
-          properties.get(key).descriptor.value = evaluator.createAbstractFunction(newPrefix);
-          break;
-        case Types.BOOL:
-          properties.get(key).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
-          break;
-        case Types.ANY:
-          properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-          break;
-        default: {
-          debugger;
-        }
-      }
-    }
-  });
 }
 
 function createAbstractPropsObject(scope, astComponent, moduleEnv) {
@@ -143,15 +25,8 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   if (type === 'FunctionExpression' || type === 'FunctionDeclaration') {
     const propsInScope = astComponent.func.params[0];
     if (propsInScope !== undefined) {
-      let propTypes = null;
-      if (astComponent.func.properties.properties.has('propTypes')) {
-        const propTypesObject = astComponent.func.properties.properties.get('propTypes');
-        propTypes = propTypesObject.properties;
-        // so the propTypes gets removed
-        propTypesObject.astNode.optimized = true;
-        propTypesObject.astNode.optimizedReplacement = null;
-      }
-      propsShape = convertAccessorsToNestedObject(propsInScope.accessors, propTypes);
+      const func = astComponent.func;
+      propsShape = convertAccessorsToNestedObject(propsInScope.accessors, func.propTypes ? func.propTypes.properties : null);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const theClass = astComponent.class;
@@ -273,6 +148,7 @@ async function optimizeComponentTree(
   } else {
     return;
   }
+  const name = astComponent.id ? astComponent.id.name : 'anonymous function';
   processedCount++;
   try {
     const bailOuts = [];
@@ -280,9 +156,9 @@ async function optimizeComponentTree(
     astComponent.optimized = true;
     astComponent.optimizedReplacement = optimizedAstComponent;
     optimizedTrees++;
+    console.log(`\nPrepack component successfully optimized "${name}"\n`);
     await handleBailouts(bailOuts, ast, moduleEnv, moduleScope);
   } catch (e) {
-    const name = astComponent.id ? astComponent.id.name : 'anonymous function';
     console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component
     if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {

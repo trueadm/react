@@ -10,6 +10,7 @@ const sha256 = require("js-sha256");
 const cacheDirectory = path.join(__dirname, "..", "_cache");
 const ignore = {
   'React': true,
+  'ReactDOM': true,
   'PropTypes': true,
 };
 

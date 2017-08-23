@@ -6,6 +6,9 @@ const fs = require("fs");
 const babylon = require("babylon");
 const traverser = require("./traverser");
 const createMockReact = require("./mocks").createMockReact;
+const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
+const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
+const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
 
 const whitelist = {
   window: true,
@@ -22,10 +25,31 @@ function toAst(node) {
   }
 }
 
+function setupPrepackEnvironment(moduleEnv, declarations) {
+  // eval and declare all declarations
+  Object.keys(declarations).forEach(declarationKey => {
+    const declaration = declarations[declarationKey];
+    // if the type is undefined, its most likely abstract
+    if (declaration.type === undefined) {
+      moduleEnv.declare(declarationKey, declaration);
+    } else {
+      const evaluation = moduleEnv.eval(declaration);
+      // copy over the original func so we can access it in Prepack later for defaultProps
+      if (declaration.func !== undefined) {
+        evaluation.func = declaration.func;
+      }
+      moduleEnv.declare(declarationKey, evaluation);
+    }
+  });
+  return moduleEnv;
+}
+
 function handleAssignmentValue(
+  moduleScope,
   assignmentValue,
   assignmentKey,
-  declarations
+  declarations,
+  env
 ) {
   if (assignmentValue === null) {
     declarations[assignmentKey] = t.identifier("undefined");
@@ -66,6 +90,22 @@ function handleAssignmentValue(
 
         if (identifier.type === "AbstractFunction") {
           if (identifier.name) {
+            // for requires, we can try and guess an abstract shape to help prepack
+            // we do this by using the accessors (all the references to properties in the scope)
+            // we can use our type conversion to work out the shape, conver to AST, then add values
+            if (identifier.name === 'require') {
+              const accessors = assignmentValue.accessors;
+
+              if (accessors !== undefined && accessors.size > 0) {
+                const estimatedShape = convertAccessorsToNestedObject(accessors, null, true);
+                const estimatedShapeAst = convertNestedObjectToAst(estimatedShape);
+                const estimatedValue = env.eval(estimatedShapeAst);
+                setAbstractPropsUsingNestedObject(estimatedValue, estimatedShape, assignmentKey, true);
+                estimatedValue.intrinsicName = assignmentKey;
+                declarations[assignmentKey] = estimatedValue;
+                break;
+              }
+            }
             console.warn(
               `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
             );
@@ -141,9 +181,11 @@ function handleAssignmentValue(
     // for now we can just use the last value
     const lastAssignmentValue = assignmentValue[assignmentValue.length - 1];
     handleAssignmentValue(
+      moduleScope,
       lastAssignmentValue,
       assignmentKey,
-      declarations
+      declarations,
+      env
     );
   } else {
     debugger;
@@ -154,13 +196,14 @@ function createPrepackMetadata(moduleScope) {
   let defaultExport;
   const declarations = {};
   const assignmentKeys = Array.from(moduleScope.assignments.keys());
+  const env = new evaluator.ModuleEnvironment();
 
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
     if (assignmentKey === 'fbt') {
       const fbt = Array.isArray(assignmentValue) ? assignmentValue[0] : assignmentValue;
-      handleAssignmentValue(fbt, 'fbt', declarations);
+      handleAssignmentValue(moduleScope, fbt, 'fbt', declarations, env);
     } else if (assignmentKey === 'React') {
       declarations.React = createMockReact();
     } else if (whitelist[assignmentKey] === true && moduleScope.parentScope === null) {
@@ -190,19 +233,22 @@ function createPrepackMetadata(moduleScope) {
       }
     } else {
       handleAssignmentValue(
+        moduleScope,
         assignmentValue,
         assignmentKey,
-        declarations
+        declarations,
+        env
       );
     }
   });
+  setupPrepackEnvironment(env, declarations);
   return {
     defaultExport: defaultExport,
-    declarations: declarations,
+    env: env,
   };
 }
 
-function analyzeBundle(destinationBundlePath) {
+function setupBundle(destinationBundlePath) {
   const content = fs.readFileSync(destinationBundlePath, "utf8");
   const ast = babylon.parse(content, {
     filename: destinationBundlePath,
@@ -220,5 +266,5 @@ function analyzeBundle(destinationBundlePath) {
 }
 
 module.exports = {
-  analyzeBundle: analyzeBundle,
+  setupBundle: setupBundle,
 };

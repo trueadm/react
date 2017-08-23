@@ -1,4 +1,4 @@
-const analyzeBundle = require('./src/analyzer').analyzeBundle;
+const setupBundle = require('./src/setup').setupBundle;
 const compileBundle = require('./src/compiler').compileBundle;
 const createHasteMap = require('./src/haste-map').createHasteMap;
 const createBundle = require('./src/bundler').createBundle;
@@ -23,7 +23,7 @@ console.log('Scanning for all JavaScript modules. This may take a while.');
 
 createHasteMap(resolveEntryFilePath, destinationBundlePath)
   .then(createBundle)
-  .then(analyzeBundle)
+  .then(setupBundle)
   .then(compileBundle)
   .then(code => {
     console.log('Compilation complete!');

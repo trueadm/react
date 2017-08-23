@@ -8,26 +8,6 @@ const traverser = require("./traverser");
 const babel = require('babel-core');
 const createBundle = require('./bundler').createBundle;
 
-function setupPrepackEnvironment(declarations) {
-  const moduleEnv = new evaluator.ModuleEnvironment();
-  // eval and declare all declarations
-  Object.keys(declarations).forEach(declarationKey => {
-    const declaration = declarations[declarationKey];
-    // if the type is undefined, its most likely abstract
-    if (declaration.type === undefined) {
-      moduleEnv.declare(declarationKey, declaration);
-    } else {
-      const evaluation = moduleEnv.eval(declaration);
-      // copy over the original func so we can access it in Prepack later for defaultProps
-      if (declaration.func !== undefined) {
-        evaluation.func = declaration.func;
-      }
-      moduleEnv.declare(declarationKey, evaluation);
-    }
-  });
-  return moduleEnv;
-}
-
 async function compileBundle(result) {
   const prepackMetadata = result.prepackMetadata;
   const destinationBundlePath = result.destinationBundlePath;
@@ -37,7 +17,7 @@ async function compileBundle(result) {
 
   await optimizeComponentTree(
     ast,
-    setupPrepackEnvironment(prepackMetadata.declarations),
+    prepackMetadata.env,
     defaultExportComponent,
     moduleScope
   );

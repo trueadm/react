@@ -1,5 +1,5 @@
-let { ConcreteValue, NumberValue, StringValue } = require("prepack/lib/values");
-let {
+const { ConcreteValue, NumberValue, StringValue } = require("prepack/lib/values");
+const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
   GetValue,
@@ -8,7 +8,10 @@ let {
   Set,
   ToString
 } = require("prepack/lib/methods");
-let evaluator = require("./evaluator");
+const evaluator = require("./evaluator");
+const traverser = require("./traverser");
+const t = require("babel-types");
+const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
 
 let reactElementSymbol = undefined;
 let reactElementSymbolKey = "react.element";
@@ -129,26 +132,85 @@ function evaluateJSXValue(value, strictCode, env, realm) {
   }
 }
 
-function evaluateJSXAttributes(attributes, strictCode, env, realm) {
-  let result = new Map();
-  for (let attribute of attributes) {
-    switch (attribute.type) {
+function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
+  let attributes = new Map();
+  let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
+  const attributeUsed = new Map();
+
+  for (let astAttribute of astAttributes) {
+    switch (astAttribute.type) {
       case "JSXAttribute":
-        let { name, value } = attribute;
+        let { name, value } = astAttribute;
         if (name.type !== "JSXIdentifier") {
           throw new Error(
-            "JSX attribute name type not supported: " + attribute.type
+            "JSX attribute name type not supported: " + astAttribute.type
           );
         }
-        result.set(name.name, evaluateJSXValue(value, strictCode, env, realm));
+        attributeUsed.set(name.name, true);
+        attributes.set(name.name, evaluateJSXValue(value, strictCode, env, realm));
         break;
       case "JSXSpreadAttribute":
-        throw new Error("spread attribute not yet implemented");
+        if (scope !== null) {
+          const componentData = scope.jsxElementIdentifiers.get(elementType.name);
+          let propTypes = null;
+
+          if (componentData !== undefined && componentData.propTypes !== null) {
+            propTypes = componentData.propTypes;
+          } else {
+            // for non component elements, like div and span, we need to find the parent function/class component
+            // and then get its proptypes that way
+            let currentScope = scope;
+            while (currentScope !== null) {
+              const func = currentScope.func;
+              if (func !== undefined) {
+                if (func.propTypes !== null) {
+                  debugger;
+                } else if (func.theClass !== null && func.theClass.propTypes !== undefined) {
+                  propTypes = func.theClass.propTypes;
+                  break;
+                }
+              }
+              currentScope = currentScope.parentScope;
+            }
+          }
+          const propsShape = Object.assign({
+            // we auto-add "children" as it can be used implicility in React
+            children: 'any',
+          }, convertAccessorsToNestedObject(null, propTypes.properties));
+          const spreadName = traverser.getNameFromAst(astAttribute.argument);
+          Object.keys(propsShape).forEach(key => {
+            if (!attributeUsed.has(key)) {
+              let val = null;
+              try {
+                val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
+              } catch (e) {
+                // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
+                val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+              }
+              if (val !== null) {
+                // try and get the value, if not, make it abstract
+                if (val.value === undefined) {
+                  val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+                }
+                if (key === 'children') {
+                  children = val;
+                } else {
+                  attributes.set(key, val);
+                }
+              }
+            }
+          });
+          break;
+        }
+        throw new Error("spread attribute not yet implemented for this case (not enough data)");
       default:
-        throw new Error("Unknown JSX attribute type: " + attribute.type);
+        throw new Error("Unknown JSX attribute type: " + astAttribute.type);
     }
   }
-  return result;
+  return {
+    attributes,
+    children,
+  };
 }
 
 function evaluateJSXChildren(children, strictCode, env, realm) {
@@ -170,16 +232,18 @@ function evaluateJSXChildren(children, strictCode, env, realm) {
 }
 
 module.exports = function(ast, strictCode, env, realm) {
-  let openingElement = ast.openingElement;
-
-  let type = evaluateJSXIdentifier(openingElement.name, strictCode, env, realm);
-  let attributes = evaluateJSXAttributes(
+  const openingElement = ast.openingElement;
+  const scope = ast.scope || null;
+  const type = evaluateJSXIdentifier(openingElement.name, strictCode, env, realm);
+  const {attributes, children} = evaluateJSXAttributes(
+    openingElement.name,
     openingElement.attributes,
+    ast.children,
     strictCode,
     env,
-    realm
+    realm,
+    scope
   );
-  let children = evaluateJSXChildren(ast.children, strictCode, env, realm);
 
   let key = attributes.get("key") || realm.intrinsics.null;
   let ref = attributes.get("ref") || realm.intrinsics.null;
