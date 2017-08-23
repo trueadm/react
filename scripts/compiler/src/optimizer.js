@@ -146,6 +146,7 @@ async function optimizeComponentTree(
         await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
       }
     }
+    console.log(`Optimized component "${name}"\n`);
   } catch (e) {
     console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
     // find all direct child components in the tree of this component
