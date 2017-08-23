@@ -17,6 +17,8 @@ function createBundle(result) {
     require("../node_modules/babel-plugin-flow-react-proptypes"),
     require("../node_modules/babel-plugin-transform-class-properties"),
     require("../node_modules/babel-plugin-syntax-object-rest-spread"),
+    require('../node_modules/babel-plugin-transform-es2015-constants'), // use this till Prepack supports const patterns
+    require('../node_modules/babel-plugin-transform-es2015-block-scoping'), // use this till Prepack supports let patterns
     [require("../node_modules/babel-plugin-transform-object-rest-spread"), { useBuiltIns: true }]
   ];
   const config = {
