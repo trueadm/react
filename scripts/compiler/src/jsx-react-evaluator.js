@@ -1,4 +1,4 @@
-const { ConcreteValue, NumberValue, StringValue } = require("prepack/lib/values");
+const { ConcreteValue, NumberValue, StringValue, UndefinedValue } = require("prepack/lib/values");
 const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
@@ -183,8 +183,10 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
               let val = null;
               try {
                 val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
-                // debugger;
-                // val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+
+                if (val instanceof UndefinedValue) {
+                  val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+                }
               } catch (e) {
                 // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
                 val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);

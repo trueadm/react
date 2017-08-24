@@ -66,7 +66,6 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
           }
           default:
             value = Types.ANY;
-            debugger;
         }
       } else if (value.type === 'ConditionalExpression' || value.type === 'AbstractUnknown') {
         // TODO
