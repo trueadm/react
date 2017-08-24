@@ -6,13 +6,15 @@ const fs = require("fs");
 const babylon = require("babylon");
 const traverser = require("./traverser");
 const createMockReact = require("./mocks").createMockReact;
-const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
-const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
-const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
+const convertAccessorsToNestedObject = require("./types")
+  .convertAccessorsToNestedObject;
+const convertNestedObjectToAst = require("./types").convertNestedObjectToAst;
+const setAbstractPropsUsingNestedObject = require("./types")
+  .setAbstractPropsUsingNestedObject;
 
 const whitelist = {
   window: true,
-  document: true,
+  document: true
 };
 
 function toAst(node) {
@@ -93,14 +95,25 @@ function handleAssignmentValue(
             // for requires, we can try and guess an abstract shape to help prepack
             // we do this by using the accessors (all the references to properties in the scope)
             // we can use our type conversion to work out the shape, conver to AST, then add values
-            if (identifier.name === 'require') {
+            if (identifier.name === "require") {
               const accessors = assignmentValue.accessors;
 
               if (accessors !== undefined && accessors.size > 0) {
-                const estimatedShape = convertAccessorsToNestedObject(accessors, null, true);
-                const estimatedShapeAst = convertNestedObjectToAst(estimatedShape);
+                const estimatedShape = convertAccessorsToNestedObject(
+                  accessors,
+                  null,
+                  true
+                );
+                const estimatedShapeAst = convertNestedObjectToAst(
+                  estimatedShape
+                );
                 const estimatedValue = env.eval(estimatedShapeAst);
-                setAbstractPropsUsingNestedObject(estimatedValue, estimatedShape, assignmentKey, true);
+                setAbstractPropsUsingNestedObject(
+                  estimatedValue,
+                  estimatedShape,
+                  assignmentKey,
+                  true
+                );
                 estimatedValue.intrinsicName = assignmentKey;
                 declarations[assignmentKey] = estimatedValue;
                 break;
@@ -118,10 +131,12 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          if (assignmentValue.identifier.type !== 'AbstractUnknown') {
+          if (assignmentValue.identifier.type !== "AbstractUnknown") {
             declarations[assignmentKey] = assignmentValue.astNode;
           } else {
-            declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
+            declarations[assignmentKey] = evaluator.createAbstractFunction(
+              assignmentKey
+            );
           }
         }
         break;
@@ -163,7 +178,9 @@ function handleAssignmentValue(
         if (astNode !== null) {
           declarations[assignmentKey] = astNode;
         } else {
-          declarations[assignmentKey] = evaluator.createAbstractObject(assignmentKey);
+          declarations[assignmentKey] = evaluator.createAbstractObject(
+            assignmentKey
+          );
         }
         break;
       }
@@ -203,14 +220,26 @@ function createPrepackMetadata(moduleScope) {
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
-    // if (assignmentKey === '_objectWithoutProperties') {
-    //   declarations._objectWithoutProperties = evaluator.createAbstractFunction('_objectWithoutProperties');
-    if (assignmentKey === 'fbt') {
-      const fbt = Array.isArray(assignmentValue) ? assignmentValue[0] : assignmentValue;
-      handleAssignmentValue(moduleScope, fbt, 'fbt', declarations, env);
-    } else if (assignmentKey === 'React') {
+    if (
+      assignmentKey === "Promise" ||
+      assignmentKey === "Date" ||
+      assignmentKey === "String" ||
+      assignmentKey === "Number" ||
+      assignmentKey === "parseInt" ||
+      assignmentKey === "parseFloat"
+    ) {
+      // NO-OP
+    } else if (assignmentKey === "fbt") {
+      const fbt = Array.isArray(assignmentValue)
+        ? assignmentValue[0]
+        : assignmentValue;
+      handleAssignmentValue(moduleScope, fbt, "fbt", declarations, env);
+    } else if (assignmentKey === "React") {
       declarations.React = createMockReact();
-    } else if (whitelist[assignmentKey] === true && moduleScope.parentScope === null) {
+    } else if (
+      whitelist[assignmentKey] === true &&
+      moduleScope.parentScope === null
+    ) {
       // skip whitelist items
     } else if (
       assignmentKey === "require" &&
@@ -248,7 +277,7 @@ function createPrepackMetadata(moduleScope) {
   setupPrepackEnvironment(env, declarations);
   return {
     defaultExport: defaultExport,
-    env: env,
+    env: env
   };
 }
 
@@ -259,16 +288,20 @@ function setupBundle(destinationBundlePath) {
     plugins: ["jsx", "flow"]
   });
   const moduleScope = traverser.createModuleScope();
-  traverser.traverse(ast.program, traverser.Actions.ScanTopLevelScope, moduleScope);
+  traverser.traverse(
+    ast.program,
+    traverser.Actions.ScanTopLevelScope,
+    moduleScope
+  );
 
   return Promise.resolve({
     ast: ast,
     prepackMetadata: createPrepackMetadata(moduleScope),
     destinationBundlePath: destinationBundlePath,
-    moduleScope,
+    moduleScope
   });
 }
 
 module.exports = {
-  setupBundle: setupBundle,
+  setupBundle: setupBundle
 };

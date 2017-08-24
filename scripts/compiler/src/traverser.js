@@ -255,6 +255,7 @@ function createModuleScope() {
     require: createAbstractFunction("require"),
     window: createAbstractObject(),
     document: createAbstractObject(),
+    Promise: createAbstractObject(),
     Object: createAbstractObject(),
     Math: createAbstractObject(),
     Date: createAbstractObject(),
@@ -841,7 +842,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
             if (newValue !== undefined) {
-              if (newValue !== undefined) {
+              if (newValue !== undefined && typeof newValue === 'object') {
                 newValue.action = action;
               }
               assign(subject, "assignments", key, newValue);
@@ -855,7 +856,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Object || subject.type === Types.Array) {
         if (newValue !== undefined) {
-          if (newValue.action !== undefined) {
+          if (newValue.action !== undefined && typeof newValue === 'object') {
             newValue.action = action;
           }
           assign(subject, "properties", key, newValue);
@@ -1128,6 +1129,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "ClassExpression": {
       return declareClass(astNode, astNode.id, astNode.superClass, astNode.body, action, subject);
+    }
+    case "RegExpLiteral": {
+      return createAbstractUnknown();
     }
     default: {
       debugger;
