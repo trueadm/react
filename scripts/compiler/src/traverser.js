@@ -768,7 +768,7 @@ function getNameFromAst(astNode) {
   if (astNode === null || astNode === undefined) {
     return null;
   }
-  if (typeof astNode === 'number') {
+  if (typeof astNode === 'number' || typeof astNode === 'string') {
     return astNode;
   }
   const type = astNode.type;
@@ -815,7 +815,7 @@ function handleMultipleValues(value, currentAction) {
 function getOrSetValueFromAst(astNode, subject, action, newValue) {
   let type;
   
-  if (typeof astNode === 'number') {
+  if (typeof astNode === 'number' || typeof astNode === 'string') {
     type = 'Identifier';
   } else {
     type = astNode.type;
@@ -1000,6 +1000,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (astProperty.type === "Identifier") {
           return getOrSetValueFromAst(astProperty, object, action, newValue);
         } else if (astProperty.type === "NumericLiteral") {
+          return getOrSetValueFromAst(astProperty.value, object, action, newValue);
+        } else if (astProperty.type === "StringLiteral") {
           return getOrSetValueFromAst(astProperty.value, object, action, newValue);
         } else {
           debugger;
