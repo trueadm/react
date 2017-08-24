@@ -171,10 +171,10 @@ function createFunction(name, astNode, scope) {
 function createClass(name, astNode, superIdentifier, scope) {
   return {
     action: null,
-    type: Types.Class,
     astNode: astNode,
+    defaultProps: null,
     name: name,
-    propTypes: null,
+    propTypes: null,  
     scope: scope,
     superIdentifier: superIdentifier,
     thisObject: createObject(null, {
@@ -182,6 +182,7 @@ function createClass(name, astNode, superIdentifier, scope) {
       state: createAbstractObject(null),
       refs: createAbstractObject(null),
     }),
+    type: Types.Class,
   };
 }
 
@@ -934,6 +935,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (newValue !== undefined) {
           if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
             subject.propTypes = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          }
+          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'defaultProps') {
+            subject.defaultProps = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
           }
           return subject;
         } else {
