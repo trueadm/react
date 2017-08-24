@@ -177,7 +177,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
             // we auto-add "children" as it can be used implicility in React
             children: 'any',
           }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null) || {});
-          const spreadName = traverser.getNameFromAst(astAttribute.argument);
+          const spreadName = traverser.getNameFromAst(astAttribute.argument).replace('this.', '');
           Object.keys(propsShape).forEach(key => {
             if (!attributeUsed.has(key)) {
               let val = null;
@@ -192,7 +192,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
                 val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
               }
               if (val !== null) {
-                if (key === 'children') {
+                if (key === 'children' && !children) {
                   children = val;
                 } else {
                   attributes.set(key, val);
