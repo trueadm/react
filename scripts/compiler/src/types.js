@@ -44,7 +44,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
             const properties = value.args[0].properties;
             const newObj = {};
             Array.from(properties.values()).forEach(val => {
-              newObj[val] = Types.ANY;
+                newObj[val] = Types.ANY;
             });
             value = newObj;
             break;
@@ -65,9 +65,10 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
             break;
           }
           default:
+            value = Types.ANY;
             debugger;
         }
-      } else if (value.type === 'ConditionalExpression') {
+      } else if (value.type === 'ConditionalExpression' || value.type === 'AbstractUnknown') {
         // TODO
         // as we are inlikely to know this statically, let's assume any
         value = Types.ANY;

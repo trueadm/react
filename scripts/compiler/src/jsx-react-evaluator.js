@@ -183,15 +183,13 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
               let val = null;
               try {
                 val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
+                // debugger;
+                // val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
               } catch (e) {
                 // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
                 val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
               }
               if (val !== null) {
-                // try and get the value, if not, make it abstract
-                if (val.value === undefined) {
-                  val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
-                }
                 if (key === 'children') {
                   children = val;
                 } else {

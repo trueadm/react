@@ -118,9 +118,11 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          declarations[assignmentKey] = evaluator.createAbstractUnknown(
-            t.identifier(identifier.name)
-          );
+          if (assignmentValue.identifier.type !== 'AbstractUnknown') {
+            declarations[assignmentKey] = assignmentValue.astNode;
+          } else {
+            declarations[assignmentKey] = evaluator.createAbstractFunction();
+          }
         }
         break;
       }

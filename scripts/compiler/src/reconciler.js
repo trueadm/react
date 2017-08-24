@@ -83,6 +83,7 @@ async function resolveDeeply(value) {
     try {
       return await renderAsDeepAsPossible(type, props);
     } catch (x) {
+      console.log(x.stack + '\n')
       // If something went wrong, just bail out and return the value we had.
       return value;
     }

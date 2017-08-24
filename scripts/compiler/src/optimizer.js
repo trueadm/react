@@ -104,8 +104,6 @@ async function optimizeComponentTree(
     const obj = moduleScope.assignments.get(astComponent.name);
     if (obj.astNode !== undefined) {
       await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope);
-    } else {
-      debugger;
     }
     return;
   } else if (astComponent.type === 'FunctionExpression' || astComponent.type === 'FunctionDeclaration' || astComponent.type === 'ArrowFunctionExpression') {

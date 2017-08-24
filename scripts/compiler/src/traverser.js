@@ -5,7 +5,9 @@ const t = require("babel-types");
 
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
-  ScanInnerScope: "ScanInnerScope",
+  ScanInnerScope1: "ScanInnerScope1",
+  ScanInnerScope2: "ScanInnerScope2",
+  ScanInnerScope3: "ScanInnerScope3",
   ReplaceWithOptimized: "ReplaceWithOptimized",
   FindComponents: "FindComponents",
 };
@@ -102,16 +104,16 @@ function createSequenceExpression(astNode, expressions) {
   };  
 }
 
-function createUndefined() {
+function createUndefined(action) {
   return {
-    action: null,
+    action: action,
     type: Types.Undefined
   };
 }
 
-function createNull() {
+function createNull(action) {
   return {
-    action: null,
+    action: action,
     type: Types.Null
   };
 }
@@ -305,7 +307,9 @@ function traverse(node, action, scope) {
     case "ReturnStatement": {
       const argument = node.argument;
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         if (argument !== null) {
@@ -324,7 +328,9 @@ function traverse(node, action, scope) {
       const name = getNameFromAst(astName);
       const isReactComponent = name[0].toUpperCase() === name[0];
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         if (isReactComponent === true) {
@@ -368,7 +374,9 @@ function traverse(node, action, scope) {
     }
     case "MemberExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         const astObject = node.object;
@@ -388,7 +396,9 @@ function traverse(node, action, scope) {
     }
     case "CallExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         callFunction(node, node.callee, node.arguments, action, scope);
@@ -404,7 +414,9 @@ function traverse(node, action, scope) {
     }
     case "VariableDeclarator": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareVariable(node.id, node.init, action, scope);
@@ -441,7 +453,9 @@ function traverse(node, action, scope) {
     }
     case "ArrowFunctionExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, true);
@@ -469,7 +483,9 @@ function traverse(node, action, scope) {
     }
     case "FunctionExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
@@ -563,7 +579,9 @@ function traverse(node, action, scope) {
     }
     case "AssignmentExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         assignExpression(node.left, node.right, action, scope);
@@ -598,7 +616,9 @@ function traverse(node, action, scope) {
     }
     case "ClassMethod": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
@@ -623,7 +643,9 @@ function traverse(node, action, scope) {
     }
     case "FunctionDeclaration": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         node.optimized = false;
@@ -665,7 +687,9 @@ function traverse(node, action, scope) {
     }
     case "ClassDeclaration": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
@@ -679,7 +703,9 @@ function traverse(node, action, scope) {
     }
     case "ClassExpression": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareClass(node, node.id, node.superClass, node.body, action, scope);
@@ -704,7 +730,9 @@ function traverse(node, action, scope) {
     }
     case "ObjectMethod": {
       if (
-        action === Actions.ScanInnerScope ||
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
@@ -767,20 +795,18 @@ function getNameFromAst(astNode) {
   }
 }
 
-function handleMultipleValues(value) {
+function handleMultipleValues(value, currentAction) {
   if (Array.isArray(value)) {
-    // return the last one in the array that is not innerScope
-    let i = 1;
-    let lastValue = value[value.length - i];
-    while (lastValue.action === Actions.ScanInnerScope) {
-      i++;
-      lastValue = value[value.length - i];
-      if (lastValue === undefined) {
-        // they are all innnerScope, so take last one just
-        return value[0];
+    let i = value.length - 1;
+
+    // get the last set value that wasn't null or undefined
+    while (value[i].type === Types.Null || value[i].type === Types.Undefined) {
+      i--;
+      if (value[i] === undefined) {
+        debugger;
       }
     }
-    return lastValue;
+    return value[i];
   } else {
     return value;
   }
@@ -810,7 +836,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const key = getNameFromAst(astNode);
 
       if (key === "undefined") {
-        return createUndefined();
+        return createUndefined(action);
       } else if (subject.type === Types.Scope) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
@@ -821,7 +847,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
               assign(subject, "assignments", key, newValue);
               return newValue;
             } else {
-              return handleMultipleValues(subject.assignments.get(key));
+              return handleMultipleValues(subject.assignments.get(key), action);
             }
           } else {
             subject = subject.parentScope;
@@ -843,7 +869,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
             subject.accessors.set(key, accesorObject);
           }
           if (subject.properties.has(key)) {
-            return handleMultipleValues(subject.properties.get(key));
+            return handleMultipleValues(subject.properties.get(key), action);
           }
           return accesorObject;
         }
@@ -905,7 +931,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Class) {
         if (newValue !== undefined) {
-          if (newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
+          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
             subject.propTypes = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
           }
           return subject;
@@ -1020,7 +1046,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       );
     }
     case "NullLiteral": {
-      return createNull();
+      return createNull(action);
     }
     case "ArrowFunctionExpression": {
       return declareFunction(
@@ -1074,7 +1100,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "AssignmentExpression": {
       if (astNode.operator === '=') {
         if (newValue === undefined) {
-          return getOrSetValueFromAst(astNode.right, subject, action);
+          const value = getOrSetValueFromAst(astNode.right, subject, action);
+          const obj = getOrSetValueFromAst(astNode.left, subject, action, value);
+          return value;
         } else {
           debugger;
         }
@@ -1095,6 +1123,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "TemplateLiteral": {
       // TODO
       return createAbstractUnknown();
+    }
+    case "ClassExpression": {
+      return declareClass(astNode, astNode.id, astNode.superClass, astNode.body, action, subject);
     }
     default: {
       debugger;
@@ -1148,7 +1179,7 @@ function declareVariable(id, init, action, scope) {
   } else {
     const assignKey = getNameFromAst(id);
     const value = init === null
-      ? createUndefined()
+      ? createUndefined(action)
       : getOrSetValueFromAst(init, scope, action);
     if (value.type === 'Function') {
       value.name = assignKey;
@@ -1166,7 +1197,7 @@ function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   bodyPart.scope = newScope;
   newScope.func = func;
   func.theClass = theClass;
-  traverse(bodyPart, action, newScope);
+  traverse(bodyPart, getNextAction(action), newScope);
   newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
 
@@ -1196,6 +1227,7 @@ function declareClass(node, id, superId, body, action, scope) {
     },
   });
   assign(scope, "assignments", classAssignKey, theClass);
+  return theClass;
 }
 
 function dealWithNestedObjectPattern(property, object, scope, deep, search) {
@@ -1277,6 +1309,19 @@ function declareFuctionParams(func, params, newScope, action) {
   }
 }
 
+function getNextAction(action) {
+  switch (action) {
+    case Actions.ScanTopLevelScope:
+      return Actions.ScanInnerScope1;
+    case Actions.ScanInnerScope1:
+      return Actions.ScanInnerScope2;
+    case Actions.ScanInnerScope2:
+      return Actions.ScanInnerScope3;
+    default:
+      return action;
+  }
+}
+
 function declareFunction(node, id, params, body, action, scope, assignToScope, isArrowFunction) {
   const assignKey = getNameFromAst(id);
   const newScope = createScope();
@@ -1295,7 +1340,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
   scope.deferredScopes.push({
     name: getNameFromAst(node.id),
     scopeFunc() {
-      traverse(body, Actions.ScanInnerScope, newScope);
+      traverse(body, getNextAction(action), newScope);
       newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
     }
   });
@@ -1318,6 +1363,5 @@ module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
   traverse: traverse,
-  handleMultipleValues: handleMultipleValues,
   getNameFromAst: getNameFromAst,
 };
