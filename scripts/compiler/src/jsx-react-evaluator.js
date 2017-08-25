@@ -130,9 +130,6 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         if (componentData.propTypes !== null) {
           propTypes = componentData.propTypes;
         }
-        if (componentData.defaultProps === undefined) {
-          debugger;
-        }
         if (componentData.defaultProps !== null) {
           defaultProps = componentData.defaultProps;
         }
