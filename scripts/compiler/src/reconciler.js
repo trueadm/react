@@ -9,7 +9,7 @@ let {
   SymbolValue,
   NullValue,
   UndefinedValue
-} = require("prepack/lib/values");
+} = require("@trueadm/prepack/lib/values");
 
 let evaluator = require("./evaluator");
 

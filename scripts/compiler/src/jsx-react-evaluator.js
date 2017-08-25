@@ -1,4 +1,4 @@
-const { ConcreteValue, NumberValue, StringValue, UndefinedValue } = require("prepack/lib/values");
+const { ConcreteValue, NumberValue, StringValue, UndefinedValue } = require("@trueadm/prepack/lib/values");
 const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
@@ -7,7 +7,7 @@ const {
   ResolveBinding,
   Set,
   ToString
-} = require("prepack/lib/methods");
+} = require("@trueadm/prepack/lib/methods");
 const evaluator = require("./evaluator");
 const traverser = require("./traverser");
 const t = require("babel-types");

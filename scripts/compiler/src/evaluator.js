@@ -1,5 +1,5 @@
-let construct_realm = require("prepack/lib/construct_realm").default;
-let { ExecutionContext } = require("prepack/lib/realm");
+let construct_realm = require("@trueadm/prepack/lib/construct_realm").default;
+let { ExecutionContext } = require("@trueadm/prepack/lib/realm");
 let {
   NewDeclarativeEnvironment,
   GetValue,
@@ -8,8 +8,8 @@ let {
   Set: $Set,
   ObjectCreate,
   Construct
-} = require("prepack/lib/methods");
-let { AbruptCompletion } = require("prepack/lib/completions");
+} = require("@trueadm/prepack/lib/methods");
+let { AbruptCompletion } = require("@trueadm/prepack/lib/completions");
 let {
   ArrayValue,
   AbstractValue,
@@ -18,10 +18,10 @@ let {
   StringValue,
   FunctionValue,
   BooleanValue
-} = require("prepack/lib/values");
-let { TypesDomain, ValuesDomain } = require("prepack/lib/domains");
-let { Generator } = require("prepack/lib/utils/generator");
-let buildExpressionTemplate = require("prepack/lib/utils/builder").default;
+} = require("@trueadm/prepack/lib/values");
+let { TypesDomain, ValuesDomain } = require("@trueadm/prepack/lib/domains");
+let { Generator } = require("@trueadm/prepack/lib/utils/generator");
+let buildExpressionTemplate = require("@trueadm/prepack/lib/utils/builder").default;
 let jsxEvaluator = require("./jsx-react-evaluator");
 
 class NoTempVariablesGenerator extends Generator {

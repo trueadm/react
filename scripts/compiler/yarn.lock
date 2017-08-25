@@ -2,6 +2,20 @@
 # yarn lockfile v1
 
 
+"@trueadm/prepack@0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@trueadm/prepack/-/prepack-0.2.7.tgz#672e108dd1d8db2f1eabcffdcdf6e3763f633c14"
+  dependencies:
+    babel-core "^6.8.0"
+    babel-generator "^6.8.0"
+    babel-template "^6.9.0"
+    babel-traverse "^6.9.0"
+    babel-types "^6.9.0"
+    babylon "^6.17.4"
+    base62 "^1.1.2"
+    seedrandom "^2.4.2"
+    source-map "^0.5.6"
+
 "@trueadm/rollup-plugin-commonjs@^8.2.0":
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/@trueadm/rollup-plugin-commonjs/-/rollup-plugin-commonjs-8.2.0.tgz#e2580665251259852129ce93e1d0d124e74bc98d"
@@ -365,7 +379,7 @@ babel-types@^6.25.0, babel-types@^6.9.0:
     lodash "^4.2.0"
     to-fast-properties "^1.0.1"
 
-babylon@^6.15.0, babylon@^6.17.2, babylon@^6.17.4, babylon@^6.18.0, babylon@^6.5.2:
+babylon@^6.15.0, babylon@^6.17.2, babylon@^6.17.4, babylon@^6.18.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
 
@@ -762,20 +776,6 @@ path-is-absolute@^1.0.0, path-is-absolute@^1.0.1:
 path-parse@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.5.tgz#3c1adf871ea9cd6c9431b6ea2bd74a0ff055c4c1"
-
-prepack@^0.2.5:
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/prepack/-/prepack-0.2.5.tgz#ab561b0bd6176c37d1ff6bc1b87e8b69a12af5ab"
-  dependencies:
-    babel-core "^6.8.0"
-    babel-generator "^6.8.0"
-    babel-template "^6.9.0"
-    babel-traverse "^6.9.0"
-    babel-types "^6.9.0"
-    babylon "^6.5.2"
-    base62 "^1.1.2"
-    seedrandom "^2.4.2"
-    source-map "^0.5.6"
 
 preserve@^0.2.0:
   version "0.2.0"

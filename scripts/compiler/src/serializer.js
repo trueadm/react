@@ -7,7 +7,7 @@ const {
   NumberValue,
   SymbolValue,
   UndefinedValue
-} = require("prepack/lib/values");
+} = require("@trueadm/prepack/lib/values");
 const t = require("babel-types");
 const travser = require("./traverser");
 
