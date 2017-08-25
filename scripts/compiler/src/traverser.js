@@ -156,6 +156,7 @@ function createFunction(name, astNode, scope) {
     action: null,
     astNode: astNode,
     callSites: [],
+    defaultProps: null,
     name: name,
     params: [],
     properties: createObject(),
@@ -923,6 +924,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else if (subject.type === Types.Function) {
         if (key === 'propTypes') {
           subject.propTypes = newValue;
+        } else if (key === 'defaultProps') {
+          subject.defaultProps = newValue;
         } else {
           return getOrSetValueFromAst(
             astNode,
@@ -944,8 +947,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           return createAbstractUnknown();
         }
       } else if (typeof subject === 'string') {
-        // this is probably from PropTypes?
-        return subject;
+        // this is probably from PropTypes? like isRequired, so we add it on the end
+        return `${subject}_${key}`;
       } else {
         debugger;
       }

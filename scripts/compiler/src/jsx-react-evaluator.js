@@ -12,6 +12,7 @@ const evaluator = require("./evaluator");
 const traverser = require("./traverser");
 const t = require("babel-types");
 const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
+const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
 
 let reactElementSymbol = undefined;
 let reactElementSymbolKey = "react.element";
@@ -59,38 +60,6 @@ function createReactProps(realm, type, attributes, children, env) {
     }
     CreateDataPropertyOrThrow(realm, obj, key, value);
   }
-  // handle defaultProps
-  let defaultProps = null;
-  if (type.$FunctionKind === "classConstructor") {
-    const classPrototype = type.properties.get("prototype").descriptor.value
-      .properties;
-    // check for a static property called defaultProps
-    if (classPrototype.has("defaultProps")) {
-      debugger;
-    } else if (classPrototype.has("getDefaultProps")) {
-      // check for a method called getDefaultProps
-      const getDefaultPropsFunction = classPrototype.get("getDefaultProps").descriptor.value;
-      defaultProps = GetValue(realm, evaluator.call(getDefaultPropsFunction));
-    }
-  } else if (type.$FunctionKind === "normal" && type.func !== undefined) {
-    const functionProperties = type.func.properties.properties;
-
-    if (functionProperties.has("defaultProps")) {
-      const defaultPropertiesObject = functionProperties.get("defaultProps").astNode;
-
-      if (defaultPropertiesObject !== undefined) {
-        defaultProps = env.evaluate(defaultPropertiesObject);
-      }
-    }
-  }
-  if (defaultProps !== null) {
-    for (let [key, value] of defaultProps.properties) {
-      if (RESERVED_PROPS.hasOwnProperty(key) || attributes.has(key)) {
-        continue;
-      }
-      CreateDataPropertyOrThrow(realm, obj, key, value.descriptor.value);
-    }
-  }
   if (children !== null) {
     CreateDataPropertyOrThrow(realm, obj, "children", children);
   }
@@ -135,8 +104,70 @@ function evaluateJSXValue(value, strictCode, env, realm) {
 function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
   let attributes = new Map();
   let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
+  let propTypes = null;
+  let defaultProps = null;
   const attributeUsed = new Map();
+  if (scope !== null) {
+    let componentData = scope.jsxElementIdentifiers.get(elementType.name);
 
+    if (componentData !== undefined) {
+      // the component is likely to be passed in as an argument
+      if (componentData.type === 'FunctionCall') {
+        // check if its a component
+        if (componentData.args.length === 1) {
+          if (componentData.args[0].propTypes !== undefined) {
+            componentData = componentData.args[0];
+          } else {
+            componentData = undefined;
+          }
+        } else {
+          debugger;
+        }
+      } else if (componentData.propTypes === undefined) {
+        componentData = undefined;
+      }
+      if (componentData !== undefined) {
+        if (componentData.propTypes !== null) {
+          propTypes = componentData.propTypes;
+        }
+        if (componentData.defaultProps === undefined) {
+          debugger;
+        }
+        if (componentData.defaultProps !== null) {
+          defaultProps = componentData.defaultProps;
+        }
+      }
+    } else {
+      // for non component elements, like div and span, we need to find the parent function/class component
+      // and then get its proptypes that way
+      let currentScope = scope;
+      while (currentScope !== null) {
+        const func = currentScope.func;
+        if (func !== undefined) {
+          if (func.propTypes !== null) {
+            propTypes = func.propTypes;
+          } else if (func.theClass !== null) {
+            if (func.theClass.propTypes !== undefined) {
+              propTypes = func.theClass.propTypes;
+            }
+            break;
+          }
+        }
+        currentScope = currentScope.parentScope;
+      }
+    }
+  }
+  // deal with defaultProps first
+  if (defaultProps !== null) {
+    const defaultPropsShape = convertAccessorsToNestedObject(null, defaultProps.properties);
+    const defaultPropsAst = convertNestedObjectToAst(defaultPropsShape);
+    for (let i = 0; i < defaultPropsAst.properties.length; i++) {
+      const defaultPropAst = defaultPropsAst.properties[i];
+      const name = defaultPropAst.key.name;
+      attributeUsed.set(name, true);
+      attributes.set(name, GetValue(realm, env.evaluate(defaultPropAst.value, strictCode)));
+    }
+  }
   for (let astAttribute of astAttributes) {
     switch (astAttribute.type) {
       case "JSXAttribute":
@@ -150,58 +181,34 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         attributes.set(name.name, evaluateJSXValue(value, strictCode, env, realm));
         break;
       case "JSXSpreadAttribute":
-        if (scope !== null) {
-          const componentData = scope.jsxElementIdentifiers.get(elementType.name);
-          let propTypes = null;
+        const propsShape = Object.assign({
+          // we auto-add "children" as it can be used implicility in React
+          children: 'any',
+        }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null) || {});
+        const spreadName = traverser.getNameFromAst(astAttribute.argument).replace('this.', '');
+        Object.keys(propsShape).forEach(key => {
+          if (!attributeUsed.has(key)) {
+            let val = null;
+            try {
+              val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
 
-          if (componentData !== undefined && componentData.propTypes !== null) {
-            propTypes = componentData.propTypes;
-          } else {
-            // for non component elements, like div and span, we need to find the parent function/class component
-            // and then get its proptypes that way
-            let currentScope = scope;
-            while (currentScope !== null) {
-              const func = currentScope.func;
-              if (func !== undefined) {
-                if (func.propTypes !== null) {
-                  debugger;
-                } else if (func.theClass !== null && func.theClass.propTypes !== undefined) {
-                  propTypes = func.theClass.propTypes;
-                  break;
-                }
-              }
-              currentScope = currentScope.parentScope;
-            }
-          }
-          const propsShape = Object.assign({
-            // we auto-add "children" as it can be used implicility in React
-            children: 'any',
-          }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null) || {});
-          const spreadName = traverser.getNameFromAst(astAttribute.argument).replace('this.', '');
-          Object.keys(propsShape).forEach(key => {
-            if (!attributeUsed.has(key)) {
-              let val = null;
-              try {
-                val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
-
-                if (val instanceof UndefinedValue) {
-                  val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
-                }
-              } catch (e) {
-                // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
+              if (val instanceof UndefinedValue) {
                 val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
               }
-              if (val !== null) {
-                if (key === 'children' && !children) {
-                  children = val;
-                } else {
-                  attributes.set(key, val);
-                }
+            } catch (e) {
+              // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
+              val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+            }
+            if (val !== null) {
+              if (key === 'children' && !children) {
+                children = val;
+              } else {
+                attributes.set(key, val);
               }
             }
-          });
-          break;
-        }
+          }
+        });
+        break;
         throw new Error("spread attribute not yet implemented for this case (not enough data)");
       default:
         throw new Error("Unknown JSX attribute type: " + astAttribute.type);

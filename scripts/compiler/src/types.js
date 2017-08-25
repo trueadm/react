@@ -5,14 +5,21 @@ const evaluator = require("./evaluator");
 
 const Types = {
   ANY: 'any',
+  ANY_REQUIRED: 'any_isRequired',
   OBJECT: 'object',
+  OBJECT_REQUIRED: 'object_isRequired',
   ARRAY: 'array',
+  ARRAY_REQUIRED: 'array_isRequired',
   STRING: 'string',
+  STRING_REQUIRED: 'string_isRequired',
   NUMBER: 'number',
+  NUMBER_REQUIRED: 'number_isRequired',
   NODE: 'node',
   ELEMENT: 'element',
   BOOL: 'bool',
+  BOOL_REQUIRED: 'bool_isRequired',
   FUNC: 'func',
+  FUNC_REQUIRED: 'func_isRequired',
   SYMBOL: 'symbol',
   ONE_OF: 'one_of',
   INSTANCE_OF: 'instance_of',
@@ -88,19 +95,17 @@ function convertNestedObjectToAst(object) {
       if (typeof value === 'object') {
         return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
       } else {
-        switch (value) {
-          case Types.ARRAY:
-          case Types.OBJECT:
-          case Types.STRING:
-          case Types.NUMBER:
-          case Types.FUNC:
-          case Types.BOOL:
-          case Types.ANY:
-            return t.objectProperty(t.identifier(key), t.nullLiteral());
-          default: {
-            debugger;
-          }
+        let valueAst = t.nullLiteral();
+        if (typeof value === 'string') {
+          valueAst = t.stringLiteral(value);
+        } else if (typeof value === 'number') {
+          valueAst = t.numericLiteral(value);
+        } else if (typeof value === 'boolean') {
+          valueAst = t.booleanLiteral(value);
+        } else {
+          debugger;
         }
+        return t.objectProperty(t.identifier(key), valueAst);
       }
     })
   );
@@ -116,29 +121,26 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
       setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
     } else {
       switch (value) {
-        case Types.ARRAY:
+        case Types.ARRAY_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
           break;
-        case Types.OBJECT:
+        case Types.OBJECT_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
           break;
-        case Types.NUMBER:
+        case Types.NUMBER_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractNumber(newPrefix);
           break;
-        case Types.STRING:
+        case Types.STRING_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
           break;
-        case Types.FUNC:
+        case Types.FUNC_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractFunction(newPrefix);
           break;
-        case Types.BOOL:
+        case Types.BOOL_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
           break;
-        case Types.ANY:
-          properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
-          break;
         default: {
-          debugger;
+          properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
         }
       }
     }
