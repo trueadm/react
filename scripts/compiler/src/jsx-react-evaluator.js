@@ -140,7 +140,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
       let currentScope = scope;
       while (currentScope !== null) {
         const func = currentScope.func;
-        if (func !== undefined) {
+        if (func != null) {
           if (func.propTypes !== null) {
             propTypes = func.propTypes;
           } else if (func.theClass !== null) {
@@ -156,7 +156,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
   }
   // deal with defaultProps first
   if (defaultProps !== null) {
-    const defaultPropsShape = convertAccessorsToNestedObject(null, defaultProps.properties);
+    const defaultPropsShape = convertAccessorsToNestedObject(null, defaultProps.properties, true);
     const defaultPropsAst = convertNestedObjectToAst(defaultPropsShape);
     for (let i = 0; i < defaultPropsAst.properties.length; i++) {
       const defaultPropAst = defaultPropsAst.properties[i];
@@ -181,7 +181,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         const propsShape = Object.assign({
           // we auto-add "children" as it can be used implicility in React
           children: 'any',
-        }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null) || {});
+        }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null, true) || {});
         const spreadName = traverser.getNameFromAst(astAttribute.argument).replace('this.', '');
         Object.keys(propsShape).forEach(key => {
           if (!attributeUsed.has(key)) {
@@ -197,8 +197,10 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
               val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
             }
             if (val !== null) {
-              if (key === 'children' && !children) {
-                children = val;
+              if (key === 'children') {
+                if (!children) {
+                  children = val;
+                }
               } else {
                 attributes.set(key, val);
               }

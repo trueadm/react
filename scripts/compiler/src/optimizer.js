@@ -26,21 +26,21 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
     const propsInScope = astComponent.func.params[0];
     if (propsInScope !== undefined) {
       const func = astComponent.func;
-      propsShape = convertAccessorsToNestedObject(propsInScope.accessors, func.propTypes ? func.propTypes.properties : null);
+      propsShape = convertAccessorsToNestedObject(propsInScope.accessors, func.propTypes ? func.propTypes.properties : null, false);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const theClass = astComponent.class;
     const propsOnClass = theClass.thisObject.accessors.get('props');
     if (propsOnClass !== undefined) {
-      propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null);
+      propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null, false);
     }
   }
   if (propsShape !== null) {
     // TODO
     // first we create some AST and convert it... need to do this properly later
     const astProps = convertNestedObjectToAst(propsShape);
-    const initialProps = moduleEnv.eval(astProps);
-    setAbstractPropsUsingNestedObject(initialProps, propsShape, 'props', true);
+    let initialProps = moduleEnv.eval(astProps);
+    initialProps = setAbstractPropsUsingNestedObject(initialProps, propsShape, 'props', true);
     initialProps.intrinsicName = 'props';
     return initialProps;
   }
@@ -116,7 +116,7 @@ async function optimizeComponentTree(
     }
     // TODO: check the return is JSX ?
     if (func.return.type !== 'JSXElement' && func.return.type !== 'Array' && func.return.type !== 'String' && func.return.type !== 'Number') {
-      debugger;
+      // debugger;
     }
   } else if (astComponent.type === 'ClassExpression' || astComponent.type === 'ClassDeclaration') {
     // TODO: check if it has render?

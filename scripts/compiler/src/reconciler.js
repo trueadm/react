@@ -57,10 +57,8 @@ async function resolveDeeply(value) {
     // Terminal values
     return value;
   } else if (value instanceof AbstractValue) {
-    if (value.kind === 'conditional') {
-      for (let i = 0; i < value.args.length; i++) {
-        value.args[i] = await resolveDeeply(value.args[i]);
-      }
+    for (let i = 0; i < value.args.length; i++) {
+      value.args[i] = await resolveDeeply(value.args[i]);
     }
     return value;
   }
@@ -83,6 +81,11 @@ async function resolveDeeply(value) {
     try {
       return await renderAsDeepAsPossible(type, props);
     } catch (x) {
+      // if (type.properties && type.properties.has('name')) {
+      //   console.log(type.properties.get('name').descriptor.value.value)
+      // } else if (type.func) {
+      //   console.log(type.func.name);
+      // }
       // console.log(x.stack + '\n')
       // If something went wrong, just bail out and return the value we had.
       return value;

@@ -165,7 +165,7 @@ function convertArrayValueToArrayLiteral(arrayValue) {
 
 function convertValueToExpression(value) {
   if (value instanceof AbstractValue) {
-    let serializedArgs = value.args.map(abstractArg =>
+    let serializedArgs = value.args.map(abstractArg => 
       convertValueToExpression(abstractArg)
     );
     return value.buildNode(serializedArgs);

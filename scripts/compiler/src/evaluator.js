@@ -171,7 +171,7 @@ function createAbstractFunction(nameString) {
   return result;
 }
 
-function createAbstractUnknown(nameString) {
+function createAbstractValue(nameString) {
   let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
   let types = new TypesDomain(AbstractValue);
   let values = ValuesDomain.topVal;
@@ -183,6 +183,15 @@ function createAbstractUnknown(nameString) {
     undefined,
     nameString
   );
+  return result;
+}
+
+function createAbstractUnknown(nameString) {
+  const result = createAbstractObject(nameString);
+  result.mightBeEmpty = true;
+  result.mightNotBeObject = () => {
+    return true;
+  }
   return result;
 }
 

@@ -107,8 +107,8 @@ function handleAssignmentValue(
                 const estimatedShapeAst = convertNestedObjectToAst(
                   estimatedShape
                 );
-                const estimatedValue = env.eval(estimatedShapeAst);
-                setAbstractPropsUsingNestedObject(
+                let estimatedValue = env.eval(estimatedShapeAst);
+                estimatedValue = setAbstractPropsUsingNestedObject(
                   estimatedValue,
                   estimatedShape,
                   assignmentKey,

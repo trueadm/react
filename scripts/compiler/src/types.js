@@ -36,7 +36,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
       const key = keys[i];
       const value = accessors.get(key);
       if (deepAccessors === true && value.accessors !== undefined && value.accessors.size > 0) {
-        object[key] = convertAccessorsToNestedObject(value.accessors, propTypes, deepAccessors);
+        object[key] = convertAccessorsToNestedObject(value.accessors, null, deepAccessors);
       } else {
         object[key] = Types.ANY;
       }
@@ -44,7 +44,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i];
       let value = propTypes.get(key);
-
+      
       if (value.type === 'FunctionCall') {
         switch (value.identifier) {
           case Types.ONE_OF: {
@@ -81,7 +81,11 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
       } else if (value.type !== undefined) {
         debugger;
       }
-      object[key] = value;
+      if (typeof object[key] !== 'object') {
+        object[key] = value;
+      } else {
+        debugger;
+      }
     }
     return object;
   }
@@ -111,14 +115,20 @@ function convertNestedObjectToAst(object) {
   );
 }
 
-function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
-  const properties = ast.properties;
+function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
+  const oldProperties = oldValue.properties;
+  let properties = oldProperties;
+  let value = oldValue;
+  if (!root) {
+    value = evaluator.createAbstractUnknown(prefix);
+    value.properties = properties;
+  }
   Object.keys(object).forEach(key => {
     const value = object[key];
     const newPrefix = `${prefix}.${key}`;
 
     if (typeof value === 'object') {
-      setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
+      properties.get(key).descriptor.value = setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
     } else {
       switch (value) {
         case Types.ARRAY_REQUIRED:
@@ -145,6 +155,7 @@ function setAbstractPropsUsingNestedObject(ast, object, prefix, root) {
       }
     }
   });
+  return value;
 }
 
 module.exports = {

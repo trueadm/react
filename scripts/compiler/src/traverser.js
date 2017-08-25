@@ -838,6 +838,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "Identifier": {
       const key = getNameFromAst(astNode);
 
+
       if (key === "undefined") {
         return createUndefined(action);
       } else if (subject.type === Types.Scope) {
@@ -907,6 +908,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractObject();
           subject.accessors.set(key, accesorObject);
+        } else {
+          return subject.accessors.get(key);
         }
         // who knows what it could be?
         return createAbstractUnknown(false);
@@ -1194,6 +1197,9 @@ function declareVariable(id, init, action, scope) {
     const value = init === null
       ? createUndefined(action)
       : getOrSetValueFromAst(init, scope, action);
+    if (value === null) {
+      throw new Error(`Compilation failed, could not find reference "${getNameFromAst(init)}"`);
+    }
     if (value.type === 'Function') {
       value.name = assignKey;
     }
