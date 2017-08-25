@@ -70,34 +70,37 @@ function convertReactElementToJSXExpression(objectValue) {
   if (!(refValue instanceof UndefinedValue || refValue instanceof NullValue)) {
     attributes.push(convertKeyValueToJSXAttribute("ref", refValue));
   }
+  if (propsValue.properties) {
+    for (let [key, propertyBinding] of propsValue.properties) {
+      let desc = propertyBinding.descriptor;
+      if (desc === undefined) continue; // deleted
 
-  for (let [key, propertyBinding] of propsValue.properties) {
-    let desc = propertyBinding.descriptor;
-    if (desc === undefined) continue; // deleted
+      if (key === "key" || key === "ref") {
+        throw new Error(key + " is a reserved prop name");
+      }
 
-    if (key === "key" || key === "ref") {
-      throw new Error(key + " is a reserved prop name");
+      if (key === "children") {
+        let expr = convertValueToExpression(desc.value);
+        let elements = expr.type === "ArrayExpression" && expr.elements.length > 1
+          ? expr.elements
+          : [expr];
+        children = elements.map(
+          expr =>
+            (expr === null
+              ? t.jSXExpressionContainer(t.jSXEmptyExpression())
+              : expr.type === "StringLiteral"
+                  ? t.jSXText(expr.value)
+                  : expr.type === "JSXElement"
+                      ? expr
+                      : t.jSXExpressionContainer(expr))
+        );
+        continue;
+      }
+
+      attributes.push(convertKeyValueToJSXAttribute(key, desc.value));
     }
-
-    if (key === "children") {
-      let expr = convertValueToExpression(desc.value);
-      let elements = expr.type === "ArrayExpression" && expr.elements.length > 1
-        ? expr.elements
-        : [expr];
-      children = elements.map(
-        expr =>
-          (expr === null
-            ? t.jSXExpressionContainer(t.jSXEmptyExpression())
-            : expr.type === "StringLiteral"
-                ? t.jSXText(expr.value)
-                : expr.type === "JSXElement"
-                    ? expr
-                    : t.jSXExpressionContainer(expr))
-      );
-      continue;
-    }
-
-    attributes.push(convertKeyValueToJSXAttribute(key, desc.value));
+  } else {
+    // TODO: this is abstract, probably from a createElement or cloneElement
   }
 
   if (identifier.type === 'ArrowFunctionExpression') {

@@ -5,6 +5,13 @@ const babylon = require("babylon");
 
 const cloneElementCode = `
 function cloneElement(element, config, children) {
+  var RESERVED_PROPS = {
+    key: true,
+    ref: true,
+    __self: true,
+    __source: true,
+  };
+  
   var propName;
 
   // Original props are copied
@@ -24,32 +31,8 @@ function cloneElement(element, config, children) {
   var owner = element._owner;
 
   if (config != null) {
-    if (hasValidRef(config)) {
-      // Silently steal the ref from the parent.
-      ref = config.ref;
-      owner = ReactCurrentOwner.current;
-    }
-    if (hasValidKey(config)) {
+    if (config.key !== null) {
       key = '' + config.key;
-    }
-
-    // Remaining properties override existing props
-    var defaultProps;
-    if (element.type && element.type.defaultProps) {
-      defaultProps = element.type.defaultProps;
-    }
-    for (propName in config) {
-      if (
-        hasOwnProperty.call(config, propName) &&
-        !RESERVED_PROPS.hasOwnProperty(propName)
-      ) {
-        if (config[propName] === undefined && defaultProps !== undefined) {
-          // Resolve default props
-          props[propName] = defaultProps[propName];
-        } else {
-          props[propName] = config[propName];
-        }
-      }
     }
   }
 
@@ -68,7 +51,7 @@ function cloneElement(element, config, children) {
 
   return {
     // This tag allow us to uniquely identify this as a React Element
-    $$typeof: Symbol.for('react.element'),
+    $$typeof: element.$$typeof,
 
     // Built-in properties that belong on the element
     type: element.type,
