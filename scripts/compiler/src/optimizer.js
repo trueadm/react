@@ -22,7 +22,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   let propsShape = null;
 
   // props is the first param of the function component
-  if (type === 'FunctionExpression' || type === 'FunctionDeclaration') {
+  if (type === 'ArrowFunctionExpression' || type === 'FunctionExpression' || type === 'FunctionDeclaration') {
     const propsInScope = astComponent.func.params[0];
     if (propsInScope !== undefined) {
       const func = astComponent.func;
