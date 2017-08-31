@@ -7,7 +7,7 @@ const {
   NumberValue,
   SymbolValue,
   UndefinedValue
-} = require("@trueadm/prepack/lib/values");
+} = require("prepack/lib/values");
 const t = require("babel-types");
 const travser = require("./traverser");
 
@@ -22,7 +22,7 @@ function getFunctionReferenceName(functionValue) {
   return null;
 }
 
-function convertExpressionToJSXIdentifier(expr) {
+function convertExpressionToJSXIdentifier(expr, rootConfig) {
   switch (expr.type) {
     case "Identifier":
       return t.jSXIdentifier(expr.name);
@@ -43,32 +43,32 @@ function convertExpressionToJSXIdentifier(expr) {
   }
 }
 
-function convertKeyValueToJSXAttribute(key, value) {
-  let expr = convertValueToExpression(value);
+function convertKeyValueToJSXAttribute(key, value, rootConfig) {
+  let expr = convertValueToExpression(value, rootConfig);
   return t.jSXAttribute(
     t.jSXIdentifier(key),
     expr.type === "StringLiteral" ? expr : t.jSXExpressionContainer(expr)
   );
 }
 
-function convertReactElementToJSXExpression(objectValue) {
+function convertReactElementToJSXExpression(objectValue, rootConfig) {
   let typeValue = objectValue.properties.get("type").descriptor.value;
   let keyValue = objectValue.properties.get("key").descriptor.value;
   let refValue = objectValue.properties.get("ref").descriptor.value;
   let propsValue = objectValue.properties.get("props").descriptor.value;
 
   let identifier = convertExpressionToJSXIdentifier(
-    convertValueToExpression(typeValue)
+    convertValueToExpression(typeValue, rootConfig), rootConfig
   );
   let attributes = [];
   let children = [];
 
   if (!(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)) {
-    attributes.push(convertKeyValueToJSXAttribute("key", keyValue));
+    attributes.push(convertKeyValueToJSXAttribute("key", keyValue, rootConfig));
   }
 
   if (!(refValue instanceof UndefinedValue || refValue instanceof NullValue)) {
-    attributes.push(convertKeyValueToJSXAttribute("ref", refValue));
+    attributes.push(convertKeyValueToJSXAttribute("ref", refValue, rootConfig));
   }
   if (propsValue.properties) {
     for (let [key, propertyBinding] of propsValue.properties) {
@@ -80,7 +80,7 @@ function convertReactElementToJSXExpression(objectValue) {
       }
 
       if (key === "children") {
-        let expr = convertValueToExpression(desc.value);
+        let expr = convertValueToExpression(desc.value, rootConfig);
         let elements = expr.type === "ArrayExpression" && expr.elements.length > 1
           ? expr.elements
           : [expr];
@@ -97,7 +97,7 @@ function convertReactElementToJSXExpression(objectValue) {
         continue;
       }
 
-      attributes.push(convertKeyValueToJSXAttribute(key, desc.value));
+      attributes.push(convertKeyValueToJSXAttribute(key, desc.value, rootConfig));
     }
   } else {
     // TODO: this is abstract, probably from a createElement or cloneElement
@@ -133,19 +133,19 @@ function convertReactElementToJSXExpression(objectValue) {
   );
 }
 
-function convertObjectValueToObjectLiteral(objectValue) {
+function convertObjectValueToObjectLiteral(objectValue, rootConfig) {
   let properties = [];
   for (let [key, propertyBinding] of objectValue.properties) {
     let desc = propertyBinding.descriptor;
     if (desc === undefined) continue; // deleted
-    let expr = convertValueToExpression(desc.value);
+    let expr = convertValueToExpression(desc.value, rootConfig);
     let property = t.objectProperty(t.stringLiteral(key), expr, false);
     properties.push(property);
   }
   return t.objectExpression(properties);
 }
 
-function convertArrayValueToArrayLiteral(arrayValue) {
+function convertArrayValueToArrayLiteral(arrayValue, rootConfig) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -161,16 +161,24 @@ function convertArrayValueToArrayLiteral(arrayValue) {
       elementProperty &&
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
-    elements.push(elementValue ? convertValueToExpression(elementValue) : null);
+    elements.push(elementValue ? convertValueToExpression(elementValue, rootConfig) : null);
   }
   return t.arrayExpression(elements);
 }
 
-function convertValueToExpression(value) {
+function convertValueToExpression(value, rootConfig) {
   if (value instanceof AbstractValue) {
     let serializedArgs = value.args.map(abstractArg => 
-      convertValueToExpression(abstractArg)
+      convertValueToExpression(abstractArg, rootConfig)
     );
+    if (value.isIntrinsic()) {
+      if (rootConfig.useClassComponent === false && value.intrinsicName.indexOf('this.props') !== -1) {
+        // hack for now
+        const node = value.buildNode(serializedArgs);
+        node.object = t.identifier('props');
+        return node;
+      }
+    }
     return value.buildNode(serializedArgs);
   }
   if (value.isIntrinsic()) {
@@ -192,13 +200,13 @@ function convertValueToExpression(value) {
   if (value instanceof ObjectValue) {
     if (value.properties.has("$$typeof")) {
       // TODO: Also compare the value to ensure it's the symbol
-      return convertReactElementToJSXExpression(value);
+      return convertReactElementToJSXExpression(value, rootConfig);
     }
     if (value instanceof ArrayValue) {
-      return convertArrayValueToArrayLiteral(value);
+      return convertArrayValueToArrayLiteral(value, rootConfig);
     }
     // TODO: Handle all the object special cases.
-    return convertObjectValueToObjectLiteral(value);
+    return convertObjectValueToObjectLiteral(value, rootConfig);
   }
   if (value instanceof SymbolValue) {
     return t.nullLiteral();
@@ -206,18 +214,27 @@ function convertValueToExpression(value) {
   return t.valueToNode(value.serialize());
 }
 
-function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue) {
-  let name = getFunctionReferenceName(functionValue);
-  let params = args.map(arg => {
-    let intrinsicName = arg.intrinsicName;
+function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue, rootConfig) {
+  const name = getFunctionReferenceName(functionValue);
+  const params = args.map(arg => {
+    const intrinsicName = arg.intrinsicName;
     if (!intrinsicName) {
       throw new Error("Expected arguments to have an intrinsic name");
     }
     return t.identifier(intrinsicName);
   });
-  let bodyExpr = convertValueToExpression(evaluatedReturnValue);
-  let returnStatement = t.returnStatement(bodyExpr);
-  let body = t.blockStatement([returnStatement]);
+  const bodyExpr = convertValueToExpression(evaluatedReturnValue, rootConfig);
+  const returnStatement = t.returnStatement(bodyExpr);
+  const body = t.blockStatement([returnStatement]);
+  if (rootConfig.useClassComponent === true) {
+    return t.classDeclaration(
+      t.identifier(name), t.memberExpression(t.identifier('React'), t.identifier('Component')),
+      t.classBody([
+        t.classMethod('method', t.identifier('render'), [], body)
+      ]),
+      []
+    );
+  }
   return t.functionDeclaration(t.identifier(name), params, body);
 }
 

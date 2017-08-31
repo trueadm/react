@@ -1,4 +1,4 @@
-const { ConcreteValue, NumberValue, StringValue, UndefinedValue } = require("@trueadm/prepack/lib/values");
+const { ConcreteValue, NumberValue, StringValue, UndefinedValue } = require("prepack/lib/values");
 const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
@@ -7,7 +7,7 @@ const {
   ResolveBinding,
   Set,
   ToString
-} = require("@trueadm/prepack/lib/methods");
+} = require("prepack/lib/methods");
 const evaluator = require("./evaluator");
 const traverser = require("./traverser");
 const t = require("babel-types");
@@ -101,6 +101,28 @@ function evaluateJSXValue(value, strictCode, env, realm) {
   }
 }
 
+function createSpreadName(astNode, scope) {
+  let astRoot = astNode;
+
+  while (astNode.type !== 'Identifier') {
+    if (astNode.type === 'MemberExpression') {
+      astNode = astNode.object;
+    } else if (astNode.type === 'ThisExpression') {
+      break;
+    } else {
+      debugger;
+    }
+  }
+  const name = astNode.name;
+  
+  if (scope !== null && scope.assignments.has(name)) {
+    if (scope.assignments.get(name).type === 'AbstractUnknown') {
+      return `this.${traverser.getNameFromAst(astNode)}`;
+    }
+  }
+  return traverser.getNameFromAst(astNode);
+}
+
 function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
   let attributes = new Map();
   let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
@@ -182,7 +204,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           // we auto-add "children" as it can be used implicility in React
           children: 'any',
         }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null, true) || {});
-        const spreadName = traverser.getNameFromAst(astAttribute.argument).replace('this.', '');
+        const spreadName = createSpreadName(astAttribute.argument, scope);
         Object.keys(propsShape).forEach(key => {
           if (!attributeUsed.has(key)) {
             let val = null;

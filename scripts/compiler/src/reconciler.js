@@ -9,7 +9,7 @@ let {
   SymbolValue,
   NullValue,
   UndefinedValue
-} = require("@trueadm/prepack/lib/values");
+} = require("prepack/lib/values");
 
 let evaluator = require("./evaluator");
 
@@ -101,7 +101,7 @@ function renderOneLevel(componentType, props, rootConfig) {
     // state and instance variables instead? otherwise it gets merged in our render
     // method, which isn't what we want
     const inst = evaluator.construct(componentType, [props]);
-    if (componentType.class) {
+    if (componentType.class !== undefined) {
       const thisObject = componentType.class.thisObject;
       // check if the state is being used
       if (thisObject.accessors.has('state')) {

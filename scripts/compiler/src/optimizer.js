@@ -17,7 +17,7 @@ function convertToExpression(node) {
   return node;
 }
 
-function createAbstractPropsObject(scope, astComponent, moduleEnv) {
+function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   const type = astComponent.type;
   let propsShape = null;
 
@@ -40,7 +40,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
     // first we create some AST and convert it... need to do this properly later
     const astProps = convertNestedObjectToAst(propsShape);
     let initialProps = moduleEnv.eval(astProps);
-    initialProps = setAbstractPropsUsingNestedObject(initialProps, propsShape, 'props', true);
+    initialProps = setAbstractPropsUsingNestedObject(initialProps, propsShape, 'this.props', true);
     initialProps.intrinsicName = 'props';
     return initialProps;
   }
@@ -78,24 +78,33 @@ async function optimizeComponentWithPrepack(
   const node = serializer.serializeEvaluatedFunction(
     prepackEvaluatedComponent,
     [initialProps],
-    resolvedResult
+    resolvedResult,
+    rootConfig
   );
   return convertToExpression(node);
-}
-
-async function scanAllJsxElementIdentifiers(jsxElementIdentifiers, ast, moduleEnv, moduleScope) {
-  const elementIdentifiers = Array.from(jsxElementIdentifiers.values());
-  for (let i = 0; i < elementIdentifiers.length; i++) {
-    const elementIdentifier = elementIdentifiers[i];
-    if (elementIdentifier !== null) {
-      await optimizeComponentTree(ast, moduleEnv, elementIdentifier.astNode, moduleScope);
-    }
-  }
 }
 
 let optimizedTrees = 0;
 let processedCount = 0;
 const alreadyTried = new Map();
+
+async function findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope) {
+  // scan the optimized component for further components
+  const componentScope = {
+    deferredScopes: [],
+    components: new Map(),
+  };
+  traverser.traverse(astComponent, traverser.Actions.FindComponents, componentScope);
+  const potentialBailOuts = Array.from(componentScope.components.keys());
+  for (let i = 0; i < potentialBailOuts.length; i++) {
+    const potentialBailOut = potentialBailOuts[i];
+    const component = moduleScope.assignments.get(potentialBailOut);
+
+    if (component !== undefined) {
+      await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
+    }
+  }
+}
 
 async function optimizeComponentTree(
   ast,
@@ -143,29 +152,15 @@ async function optimizeComponentTree(
       name = 'unknown name';
     }
   }
-  if (!alreadyTried.has(name)) {
+  if (alreadyTried.has(name) === false) {
+    alreadyTried.set(name, true);
     processedCount++;
     try {
-      alreadyTried.set(name, true);
       const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
       astComponent.optimized = true;
       astComponent.optimizedReplacement = optimizedAstComponent;
       optimizedTrees++;
-      // scan the optimized component for further components
-      const componentScope = {
-        deferredScopes: [],
-        components: new Map(),
-      };
-      traverser.traverse(optimizedAstComponent, traverser.Actions.FindComponents, componentScope);
-      const potentialBailOuts = Array.from(componentScope.components.keys());
-      for (let i = 0; i < potentialBailOuts.length; i++) {
-        const potentialBailOut = potentialBailOuts[i];
-        const component = moduleScope.assignments.get(potentialBailOut);
-
-        if (component !== undefined) {
-          await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
-        }
-      }
+      await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope);
       console.log(`Optimized component "${name}"\n`);
     } catch (e) {
       if (e.stack.indexOf('not yet supported on abstract value props') !== -1) {
@@ -174,22 +169,18 @@ async function optimizeComponentTree(
         console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
       }
       // find all direct child components in the tree of this component
-      if ((astComponent.type === 'FunctionDeclaration' || astComponent.type === 'FunctionExpression') && astComponent.scope !== undefined) {
-        await scanAllJsxElementIdentifiers(astComponent.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
-      } else if (astComponent.type === 'ClassExpression') {
-        // scan all class methods for now
-        const bodyParts = astComponent.body.body;
-        for (let i = 0; i < bodyParts.length; i++) {
-          const bodyPart = bodyParts[i];
-          if (bodyPart.type === 'ClassMethod' && bodyPart.scope !== undefined) {
-            await scanAllJsxElementIdentifiers(bodyPart.scope.jsxElementIdentifiers, ast, moduleEnv, moduleScope);
-          }
-        }
-      }
+      await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope);
     }
+  } else {
+    console.log(`Found component "${name}" but has already optimized this component before.`)
   }
 }
 
+function getOptimizedTrees() {
+  return optimizedTrees;
+}
+
 module.exports = {
-  optimizeComponentTree: optimizeComponentTree
+  optimizeComponentTree: optimizeComponentTree,
+  getOptimizedTrees: getOptimizedTrees,
 };

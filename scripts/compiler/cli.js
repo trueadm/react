@@ -2,6 +2,7 @@ const setupBundle = require('./src/setup').setupBundle;
 const compileBundle = require('./src/compiler').compileBundle;
 const createHasteMap = require('./src/haste-map').createHasteMap;
 const createBundle = require('./src/bundler').createBundle;
+const optimizer = require('./src/optimizer');
 const argv = require("minimist")(process.argv.slice(2));
 const path = require("path");
 const entryFilePath = argv._[0];
@@ -27,6 +28,7 @@ createHasteMap(resolveEntryFilePath, destinationBundlePath)
   .then(compileBundle)
   .then(code => {
     console.log('Compilation complete!');
+    console.log(`Optimized Trees: ${optimizer.getOptimizedTrees()}`)
   }).catch(e => {
     console.error(e.stack);
     process.exit(1);

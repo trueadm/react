@@ -701,6 +701,10 @@ function traverse(node, action, scope) {
         node.optimized === true
       ) {
         return node.optimizedReplacement;
+      } else {
+        traverse(node.id, action, scope);
+        traverse(node.superClass, action, scope);
+        traverse(node.body, action, scope);
       }
       break;
     }
@@ -717,6 +721,10 @@ function traverse(node, action, scope) {
         node.optimized === true
       ) {
         return node.optimizedReplacement;
+      } else {
+        traverse(node.id, action, scope);
+        traverse(node.superClass, action, scope);
+        traverse(node.body, action, scope);
       }
       break;
     }
@@ -742,6 +750,13 @@ function traverse(node, action, scope) {
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
+      }
+      break;
+    }
+    case "ClassBody": {
+      const body = node.body;
+      for (let i = 0; i < body.length; i++) {
+        traverse(body[i], action, scope);
       }
       break;
     }
@@ -787,7 +802,8 @@ function getNameFromAst(astNode) {
     case "CallExpression": {
       return `new ${getNameFromAst(astNode.callee)}()`;
     }
-    case "MemberExpression": {
+    case "MemberExpression":
+    case "JSXMemberExpression": {
       return `${getNameFromAst(astNode.object)}.${getNameFromAst(astNode.property)}`;
     }
     case "Super": {
