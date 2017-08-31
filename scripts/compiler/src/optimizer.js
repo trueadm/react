@@ -47,20 +47,32 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv) {
   return evaluator.createAbstractObject("props");
 }
 
+function createRootConfig() {
+  return {
+    useClassComponent: false,
+  };
+}
+
 async function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
   astComponent,
-  moduleScope,
-  bailOuts
+  moduleScope
 ) {
   // create an abstract props object
+  const rootConfig = createRootConfig();
   const initialProps = createAbstractPropsObject(astComponent.scope, astComponent, moduleEnv);
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
+  if (astComponent.func !== undefined) {
+    prepackEvaluatedComponent.func = astComponent.func;
+  }
+  if (astComponent.class !== undefined) {
+    prepackEvaluatedComponent.class = astComponent.class;
+  }  
   const resolvedResult = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
-    bailOuts
+    rootConfig
   );
 
   const node = serializer.serializeEvaluatedFunction(

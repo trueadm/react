@@ -36,9 +36,11 @@ function setupPrepackEnvironment(moduleEnv, declarations) {
       moduleEnv.declare(declarationKey, declaration);
     } else {
       const evaluation = moduleEnv.eval(declaration);
-      // copy over the original func so we can access it in Prepack later for defaultProps
       if (declaration.func !== undefined) {
         evaluation.func = declaration.func;
+      }
+      if (declaration.class !== undefined) {
+        evaluation.class = declaration.class;
       }
       moduleEnv.declare(declarationKey, evaluation);
     }

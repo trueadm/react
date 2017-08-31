@@ -25,7 +25,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue) {
+async function resolveFragment(arrayValue, rootConfig) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -41,12 +41,12 @@ async function resolveFragment(arrayValue) {
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
-      elementProperty.descriptor.value = await resolveDeeply(elementValue);
+      elementProperty.descriptor.value = await resolveDeeply(elementValue, rootConfig);
     }
   }
 }
 
-async function resolveDeeply(value) {
+async function resolveDeeply(value, rootConfig) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -58,28 +58,28 @@ async function resolveDeeply(value) {
     return value;
   } else if (value instanceof AbstractValue) {
     for (let i = 0; i < value.args.length; i++) {
-      value.args[i] = await resolveDeeply(value.args[i]);
+      value.args[i] = await resolveDeeply(value.args[i], rootConfig);
     }
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value);
+    await resolveFragment(value, rootConfig);
     return value;
   }
   if (isReactElement(value)) {
-    let type = value.properties.get("type").descriptor.value;
-    let props = value.properties.get("props").descriptor.value;
+    const type = value.properties.get("type").descriptor.value;
+    const props = value.properties.get("props").descriptor.value;
     if (type instanceof StringValue) {
       // Terminal host component. Start evaluating its children.
-      let childrenProperty = props.properties.get("children");
+      const childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
-        let resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value);
+        const resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value, rootConfig);
         childrenProperty.descriptor.value = resolvedChildren;
       }
       return value;
     }
     try {
-      return await renderAsDeepAsPossible(type, props);
+      return await renderAsDeepAsPossible(type, props, rootConfig);
     } catch (x) {
       // if (type.properties && type.properties.has('name')) {
       //   console.log(type.properties.get('name').descriptor.value.value)
@@ -94,11 +94,24 @@ async function resolveDeeply(value) {
   throw new Error("Unsupported return value from render or children.");
 }
 
-function renderOneLevel(componentType, props) {
+function renderOneLevel(componentType, props, rootConfig) {
   if (isReactClassComponent(componentType)) {
-    // Class Component
-    let inst = evaluator.construct(componentType, [props]);
-    let render = evaluator.get(inst, "render");
+    // Class Component 
+    // should we event construct the class? should we not pass in abstracts for
+    // state and instance variables instead? otherwise it gets merged in our render
+    // method, which isn't what we want
+    const inst = evaluator.construct(componentType, [props]);
+    if (componentType.class) {
+      const thisObject = componentType.class.thisObject;
+      // check if the state is being used
+      if (thisObject.accessors.has('state')) {
+        // TODO:
+        // we need to merge state and add prefixes on to avoid collisions
+        rootConfig.useClassComponent = true;
+        inst.properties.get('state').descriptor.value = evaluator.createAbstractObject('this.state');
+      }
+    }
+    const render = evaluator.get(inst, "render");
     return evaluator.call(render, inst, []);
   } else {
     // Stateless Functional Component
@@ -106,9 +119,9 @@ function renderOneLevel(componentType, props) {
   }
 }
 
-async function renderAsDeepAsPossible(componentType, props) {
-  let result = renderOneLevel(componentType, props);
-  return await resolveDeeply(result);
+async function renderAsDeepAsPossible(componentType, props, rootConfig) {
+  const result = renderOneLevel(componentType, props, rootConfig);
+  return await resolveDeeply(result, rootConfig);
 }
 
 exports.renderOneLevel = renderOneLevel;
