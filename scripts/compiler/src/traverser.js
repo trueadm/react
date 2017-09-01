@@ -1385,7 +1385,12 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
   scope.deferredScopes.push({
     name: getNameFromAst(node.id),
     scopeFunc() {
-      traverse(body, getNextAction(action), newScope);
+      const newAction = getNextAction(action);
+      traverse(body, newAction, newScope);
+      if (isArrowFunction && body.type !== 'BlockStatement') {
+        const object = getOrSetValueFromAst(body, newScope, newAction);
+        newScope.func.return = object;
+      }
       newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
     }
   });
