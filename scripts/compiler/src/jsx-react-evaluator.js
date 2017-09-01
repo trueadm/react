@@ -116,7 +116,7 @@ function createSpreadName(astNode, scope) {
   const name = astRoot.name;
   
   if (scope !== null && scope.assignments.has(name)) {
-    if (scope.assignments.get(name).type === 'AbstractUnknown') {
+    if (scope.assignments.get(name).type === 'AbstractValue') {
       return `this.${traverser.getNameFromAst(astNode)}`;
     }
   }
@@ -212,11 +212,11 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
               val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
 
               if (val instanceof UndefinedValue) {
-                val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+                val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
               }
             } catch (e) {
               // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
-              val = evaluator.createAbstractUnknown(`${spreadName}.${key}`);
+              val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
             }
             if (val !== null) {
               if (key === 'children') {

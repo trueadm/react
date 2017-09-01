@@ -63,7 +63,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
               const subValue = properties.get(key);
               if (typeof subValue === 'string') {
                 newObj[key] = subValue;
-              } else if (subValue.type === 'AbstractUnknown') {
+              } else if (subValue.type === 'AbstractValue') {
                 newObj[key] = Types.ANY;
               } else {
                 // TODO
@@ -76,7 +76,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
           default:
             value = Types.ANY;
         }
-      } else if (value.type === 'ConditionalExpression' || value.type === 'AbstractUnknown') {
+      } else if (value.type === 'ConditionalExpression' || value.type === 'AbstractValue') {
         // TODO
         // as we are inlikely to know this statically, let's assume any
         value = Types.ANY;
@@ -122,7 +122,8 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
   let properties = oldProperties;
   let value = oldValue;
   if (!root) {
-    value = evaluator.createAbstractUnknown(prefix);
+    // TODO this should be a partial?
+    value = evaluator.createAbstractObjectOrUndefined(prefix);
     value.properties = properties;
   }
   Object.keys(object).forEach(key => {
@@ -133,6 +134,7 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
       properties.get(key).descriptor.value = setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
     } else {
       switch (value) {
+        // simple abstract objects
         case Types.ARRAY_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
           break;
@@ -151,8 +153,13 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
         case Types.BOOL_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
           break;
+        // union objects
+        case Types.OBJECT:
+          properties.get(key).descriptor.value = evaluator.createAbstractObjectOrUndefined(newPrefix);
+          break;
+        // generic abstract value
         default: {
-          properties.get(key).descriptor.value = evaluator.createAbstractUnknown(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractValue(newPrefix);
         }
       }
     }

@@ -186,7 +186,8 @@ function createAbstractValue(nameString) {
   return result;
 }
 
-function createAbstractUnknown(nameString) {
+function createAbstractObjectOrUndefined(nameString) {
+  // this abstract is a union of Object and Undefined
   const result = createAbstractObject(nameString);
   result.mightBeEmpty = true;
   result.mightNotBeObject = () => {
@@ -375,7 +376,9 @@ exports.createAbstractObject = createAbstractObject;
 
 exports.createAbstractFunction = createAbstractFunction;
 
-exports.createAbstractUnknown = createAbstractUnknown;
+exports.createAbstractValue = createAbstractValue;
+
+exports.createAbstractObjectOrUndefined = createAbstractObjectOrUndefined;
 
 exports.createObject = createObject;
 

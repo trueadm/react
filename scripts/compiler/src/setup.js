@@ -70,7 +70,7 @@ function handleAssignmentValue(
         const astNode = assignmentValue.astNode;
         if (astNode === null) {
           // some mystery here, so return abstract unknown
-          declarations[assignmentKey] = evaluator.createAbstractUnknown(
+          declarations[assignmentKey] = evaluator.createAbstractValue(
             assignmentKey
           );
         } else {
@@ -133,7 +133,7 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          if (assignmentValue.identifier.type !== "AbstractUnknown") {
+          if (assignmentValue.identifier.type !== "AbstractValue") {
             declarations[assignmentKey] = assignmentValue.astNode;
           } else {
             declarations[assignmentKey] = evaluator.createAbstractFunction(
@@ -157,8 +157,14 @@ function handleAssignmentValue(
         );
         break;
       }
-      case "AbstractUnknown": {
-        declarations[assignmentKey] = evaluator.createAbstractUnknown(
+      case "AbstractValue": {
+        declarations[assignmentKey] = evaluator.createAbstractValue(
+          assignmentKey
+        );
+        break;
+      }
+      case "AbstractObjectOrUndefined": {
+        declarations[assignmentKey] = evaluator.createAbstractObjectOrUndefined(
           assignmentKey
         );
         break;
@@ -187,7 +193,7 @@ function handleAssignmentValue(
         break;
       }
       case "MathExpression": {
-        declarations[assignmentKey] = evaluator.createAbstractUnknown(
+        declarations[assignmentKey] = evaluator.createAbstractValue(
           assignmentKey
         );
         break;

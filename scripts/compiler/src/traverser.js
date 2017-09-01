@@ -27,8 +27,9 @@ const Types = {
   Undefined: "Undefined",
   Null: "Null",
   AbstractObject: "AbstractObject",
+  AbstractObjectOrUndefined: "AbstractObjectOrUndefined",
   AbstractFunction: "AbstractFunction",
-  AbstractUnknown: "AbstractUnknown",
+  AbstractValue: "AbstractValue",
   SequenceExpression: "SequenceExpression",
   JSXElement: "JSXElement",
 };
@@ -133,12 +134,21 @@ function createAbstractObject() {
   };
 }
 
-function createAbstractUnknown(crossModule) {
+function createAbstractObjectOrUndefined(crossModule) {
   return {
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
-    type: Types.AbstractUnknown
+    type: Types.AbstractObjectOrUndefined
+  };
+}
+
+function createAbstractValue(crossModule) {
+  return {
+    accessors: new Map(),
+    action: null,
+    crossModule: crossModule,
+    type: Types.AbstractValue
   };
 }
 
@@ -906,38 +916,38 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (subject.accessors.has(key)) {
           accesorObject = subject.accessors.get(key);
         } else {
-          accesorObject = createAbstractUnknown();
+          accesorObject = createAbstractValue();
           subject.accessors.set(key, accesorObject);
         }
         return accesorObject;
-      } else if (subject.type === Types.AbstractObject) {
+      } else if (subject.type === Types.AbstractObject || subject.type === Types.AbstractObjectOrUndefined) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractObject();
           subject.accessors.set(key, accesorObject);
         }
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        return createAbstractValue(false);
       } else if (subject.type === Types.AbstractFunction) {
         // who knows what it could be?
-        return createAbstractUnknown(false);
-      } else if (subject.type === Types.AbstractUnknown) {
+        return createAbstractValue(false);
+      } else if (subject.type === Types.AbstractValue) {
         if (!subject.accessors.has(key)) {
-          const accesorObject = createAbstractObject();
+          const accesorObject = createAbstractValue();
           subject.accessors.set(key, accesorObject);
         } else {
           return subject.accessors.get(key);
         }
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        return createAbstractValue(false);
       } else if (subject.type === Types.MathExpression) {
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        return createAbstractValue(false);
       } else if (subject.type === Types.ConditionalExpression) {
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        return createAbstractValue(false);
       } else if (subject.type === Types.LogicExpression) {
         // who knows what it could be?
-        return createAbstractUnknown(false);
+        return createAbstractValue(false);
       } else if (subject.type === Types.Identifier) {
         // NO OP
       } else if (subject.type === Types.Function) {
@@ -963,7 +973,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           }
           return subject;
         } else {
-          return createAbstractUnknown();
+          return createAbstractValue();
         }
       } else if (typeof subject === 'string') {
         // this is probably from PropTypes? like isRequired, so we add it on the end
@@ -1151,13 +1161,13 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "TemplateLiteral": {
       // TODO
-      return createAbstractUnknown();
+      return createAbstractValue();
     }
     case "ClassExpression": {
       return declareClass(astNode, astNode.id, astNode.superClass, astNode.body, action, subject);
     }
     case "RegExpLiteral": {
-      return createAbstractUnknown();
+      return createAbstractValue();
     }
     default: {
       debugger;
@@ -1172,9 +1182,9 @@ function callFunction(astNode, callee, args, action, scope) {
     console.warn(
       `Could not find an identifier for function call "${getNameFromAst(callee)}"`
     );
-    const abstractUnknown = createAbstractUnknown(false);
-    scope.calls.push(abstractUnknown);
-    return abstractUnknown;
+    const abstractValue = createAbstractValue(false);
+    scope.calls.push(abstractValue);
+    return abstractValue;
   } else if (functionRef.type === Types.Undefined) {
     throw new Error(
       `Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
@@ -1277,10 +1287,10 @@ function dealWithNestedObjectPattern(property, object, scope, deep, search) {
       if (object.type === Types.Object) {
         identifier = object.properties.get(name);
       } else {
-        identifier = createAbstractUnknown();
+        identifier = createAbstractValue();
       }
     } else {
-      identifier = createAbstractUnknown();
+      identifier = createAbstractValue();
     }
     if (deep === false) {
       assign(object, "accessors", name, identifier);
@@ -1322,7 +1332,7 @@ function declareFuctionParams(func, params, newScope, action) {
       func.params.push(paramObject);
     } else if (param.type === "Identifier") {
       const name = param.name;
-      const paramObject = createAbstractUnknown();
+      const paramObject = createAbstractValue();
       assign(newScope, "assignments", name, paramObject);
       func.params.push(paramObject);
     } else if (param.type === 'AssignmentPattern') {
@@ -1334,7 +1344,7 @@ function declareFuctionParams(func, params, newScope, action) {
       func.params.push(paramObject);
     } else if (param.type === "RestElement") {
       // TODO, need to properly handle this
-      const paramObject = createAbstractUnknown();
+      const paramObject = createAbstractValue();
       const name = getNameFromAst(param.argument);
       assign(newScope, "assignments", name, paramObject);
       func.restParam = paramObject;
