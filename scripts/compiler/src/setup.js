@@ -284,8 +284,8 @@ function createPrepackMetadata(moduleScope) {
 }
 
 function setupBundle(destinationBundlePath) {
-  const content = fs.readFileSync(destinationBundlePath, "utf8");
-  const ast = babylon.parse(content, {
+  const source = fs.readFileSync(destinationBundlePath, "utf8");
+  const ast = babylon.parse(source, {
     filename: destinationBundlePath,
     plugins: ["jsx", "flow"]
   });
@@ -300,7 +300,8 @@ function setupBundle(destinationBundlePath) {
     ast: ast,
     prepackMetadata: createPrepackMetadata(moduleScope),
     destinationBundlePath: destinationBundlePath,
-    moduleScope
+    moduleScope,
+    source
   });
 }
 

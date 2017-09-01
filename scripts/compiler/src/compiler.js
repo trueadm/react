@@ -14,12 +14,14 @@ async function compileBundle(result) {
   const defaultExportComponent = prepackMetadata.defaultExport.astNode;
   const moduleScope = result.moduleScope;
   const ast = result.ast;
+  const source = result.source;
 
   await optimizeComponentTree(
     ast,
     prepackMetadata.env,
     defaultExportComponent,
-    moduleScope
+    moduleScope,
+    source
   );
   // clear the deferredScopes, as we may have removed some scopes
   moduleScope.deferredScopes = [];

@@ -63,6 +63,8 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
               const subValue = properties.get(key);
               if (typeof subValue === 'string') {
                 newObj[key] = subValue;
+              } else if (subValue.type === 'AbstractUnknown') {
+                newObj[key] = Types.ANY;
               } else {
                 // TODO
                 throw new Error('A complex deeply nested shape() PropType was used. No support yet!');

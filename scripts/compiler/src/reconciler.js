@@ -107,7 +107,19 @@ function renderOneLevel(componentType, props, rootConfig) {
       if (thisObject.accessors.has('state')) {
         // TODO:
         // we need to merge state and add prefixes on to avoid collisions
+        const stateValue = inst.properties.get('state').descriptor.value;
         rootConfig.useClassComponent = true;
+        if (rootConfig.state === null) {
+          rootConfig.state = stateValue;
+        } else {
+          for (let [key, value] of stateValue.properties) {
+            if (rootConfig.state.properties.has(key) === false) {
+              rootConfig.state.properties.set(key, value);
+            } else {
+              debugger;
+            }
+          }
+        }
         inst.properties.get('state').descriptor.value = evaluator.createAbstractObject('this.state');
       }
     }

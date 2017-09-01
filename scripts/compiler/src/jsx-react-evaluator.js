@@ -104,16 +104,16 @@ function evaluateJSXValue(value, strictCode, env, realm) {
 function createSpreadName(astNode, scope) {
   let astRoot = astNode;
 
-  while (astNode.type !== 'Identifier') {
-    if (astNode.type === 'MemberExpression') {
-      astNode = astNode.object;
-    } else if (astNode.type === 'ThisExpression') {
+  while (astRoot.type !== 'Identifier') {
+    if (astRoot.type === 'MemberExpression') {
+      astRoot = astRoot.object;
+    } else if (astRoot.type === 'ThisExpression') {
       break;
     } else {
       debugger;
     }
   }
-  const name = astNode.name;
+  const name = astRoot.name;
   
   if (scope !== null && scope.assignments.has(name)) {
     if (scope.assignments.get(name).type === 'AbstractUnknown') {
@@ -235,6 +235,8 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         throw new Error("Unknown JSX attribute type: " + astAttribute.type);
     }
   }
+  // console.log(elementType.name)
+  // debugger;
   return {
     attributes,
     children,
