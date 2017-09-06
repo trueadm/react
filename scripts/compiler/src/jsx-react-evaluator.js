@@ -200,14 +200,40 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         attributes.set(name.name, evaluateJSXValue(value, strictCode, env, realm));
         break;
       case "JSXSpreadAttribute":
-        const propsShape = Object.assign({
-          // we auto-add "children" as it can be used implicility in React
-          children: 'any',
-        }, convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null, true) || {});
+        // can get the value from Prepack for the current this.props/props?
+        let alreadyKnownPropsValue = null;
+        let alreadyKnownProps = {};
+        try {
+          // try this.props first
+          alreadyKnownPropsValue = GetValue(realm, env.evaluate(t.memberExpression(t.identifier('this'), t.identifier('props')), strictCode));
+        } catch (e) {
+          // try props second
+          try {
+            alreadyKnownPropsValue = GetValue(realm, env.evaluate(t.identifier('props'), strictCode));
+          } catch (e2) {
+            // neither worked, so we have no known properties
+          }
+        }
+        if (alreadyKnownPropsValue !== null && alreadyKnownPropsValue.properties !== undefined) {
+          for (let [key] of alreadyKnownPropsValue.properties) {
+            // we just assign it as any, as we derive the value as part of the generic flow
+            alreadyKnownProps[key] = 'any';
+          }
+        }
+        // combine our known props together with information from PropTypes
+        // we also make children known even if its not used
+        const propsShape = Object.assign(
+          {
+            children: 'any',
+          },
+          alreadyKnownProps,
+          convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null, true) || {}
+        );
         const spreadName = createSpreadName(astAttribute.argument, scope);
         Object.keys(propsShape).forEach(key => {
           if (!attributeUsed.has(key)) {
             let val = null;
+            // try and get the value from Prepack (if it knows it)
             try {
               val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
 
@@ -215,7 +241,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
                 val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
               }
             } catch (e) {
-              // TODO maybe look at how to improve this? it will spam all the abstracts properties from the spread on even if they may never be used :/
+              // if Prepack doesn't know it, we put it back as an abstract
               val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
             }
             if (val !== null) {
@@ -230,7 +256,6 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           }
         });
         break;
-        throw new Error("spread attribute not yet implemented for this case (not enough data)");
       default:
         throw new Error("Unknown JSX attribute type: " + astAttribute.type);
     }
