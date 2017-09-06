@@ -121,13 +121,15 @@ function createNull(action) {
 
 function createIdentifier() {
   return {
+    accessedAsSpread: false,
     action: null,
-    type: Types.Identifier
+    type: Types.Identifier,
   };
 }
 
 function createAbstractObject() {
   return {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     type: Types.AbstractObject
@@ -136,6 +138,7 @@ function createAbstractObject() {
 
 function createAbstractObjectOrUndefined(crossModule) {
   return {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
@@ -145,6 +148,7 @@ function createAbstractObjectOrUndefined(crossModule) {
 
 function createAbstractValue(crossModule) {
   return {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
@@ -199,6 +203,7 @@ function createClass(name, astNode, superIdentifier, scope) {
 
 function createFunctionCall(identifier, astNode) {
   return {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -229,6 +234,7 @@ function createScope(assignments) {
 
 function createObject(astNode, properties) {
   const object = {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -245,6 +251,7 @@ function createObject(astNode, properties) {
 
 function createArray(astNode, properties) {
   const object = {
+    accessedAsSpread: false,
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -374,7 +381,17 @@ function traverse(node, action, scope) {
       break;
     }
     case "JSXSpreadAttribute": {
-      traverse(node.argument, action, scope);
+      if (
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
+        action === Actions.ScanTopLevelScope
+      ) {
+        const obj = getOrSetValueFromAst(node.argument, scope, action);
+        obj.accessedAsSpread = true;
+      } else {
+        traverse(node.argument, action, scope);
+      }
       break;
     }
     case "JSXExpressionContainer":
@@ -472,6 +489,11 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, true);
+      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        const optimizedNode = node.optimizedReplacement;
+
+        node.body = optimizedNode.body;
+        node.params = optimizedNode.params;
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
@@ -1150,6 +1172,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       }
     }
     case "JSXElement": {
+      // TODO build up attrs/children
+      // for now just traverse so accessors get touched
+      traverse(astNode, action, subject);
       return createJSXElement(astNode);
     }
     case "SpreadElement": {
@@ -1413,5 +1438,6 @@ module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
   traverse: traverse,
+  getOrSetValueFromAst: getOrSetValueFromAst,
   getNameFromAst: getNameFromAst,
 };

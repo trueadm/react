@@ -35,16 +35,14 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
       propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null, false);
     }
   }
-  if (propsShape !== null) {
-    // TODO
-    // first we create some AST and convert it... need to do this properly later
-    const astProps = convertNestedObjectToAst(propsShape);
-    let initialProps = moduleEnv.eval(astProps);
-    initialProps = setAbstractPropsUsingNestedObject(initialProps, propsShape, 'this.props', true);
-    initialProps.intrinsicName = 'props';
-    return initialProps;
-  }
-  return evaluator.createAbstractObject("props");
+  // add children to propsShape as we should assume it might always be there
+  propsShape = Object.assign({children: 'any'}, propsShape || {});
+  // first we create some AST and convert it... need to do this properly later
+  const astProps = convertNestedObjectToAst(propsShape);
+  let initialProps = moduleEnv.eval(astProps);
+  initialProps = setAbstractPropsUsingNestedObject(initialProps, propsShape, 'this.props', true);
+  initialProps.intrinsicName = 'props';
+  return initialProps;
 }
 
 function createRootConfig() {

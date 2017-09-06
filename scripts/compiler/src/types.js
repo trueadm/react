@@ -37,6 +37,8 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
       const value = accessors.get(key);
       if (deepAccessors === true && value.accessors !== undefined && value.accessors.size > 0) {
         object[key] = convertAccessorsToNestedObject(value.accessors, null, deepAccessors);
+      } else if (deepAccessors === true && value.accessors !== undefined && value.accessedAsSpread === true) {
+        object[key] = {};
       } else {
         object[key] = Types.ANY;
       }

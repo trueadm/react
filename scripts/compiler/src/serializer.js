@@ -52,10 +52,11 @@ function convertKeyValueToJSXAttribute(key, value, rootConfig, source) {
 }
 
 function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
-  let typeValue = objectValue.properties.get("type").descriptor.value;
-  let keyValue = objectValue.properties.get("key").descriptor.value;
-  let refValue = objectValue.properties.get("ref").descriptor.value;
-  let propsValue = objectValue.properties.get("props").descriptor.value;
+  const objectProps = objectValue.properties;
+  let typeValue = objectProps.get("type").descriptor.value;
+  let keyValue = objectProps.has("key") ? objectProps.get("key").descriptor.value : null;
+  let refValue = objectProps.has("ref") ? objectProps.get("ref").descriptor.value : null;
+  let propsValue = objectProps.get("props").descriptor.value;
 
   let identifier = convertExpressionToJSXIdentifier(
     convertValueToExpression(typeValue, rootConfig, source), rootConfig, source
@@ -63,11 +64,11 @@ function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
   let attributes = [];
   let children = [];
 
-  if (!(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)) {
+  if (keyValue !== null && !(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)) {
     attributes.push(convertKeyValueToJSXAttribute("key", keyValue, rootConfig, source));
   }
 
-  if (!(refValue instanceof UndefinedValue || refValue instanceof NullValue)) {
+  if (refValue !== null && !(refValue instanceof UndefinedValue || refValue instanceof NullValue)) {
     attributes.push(convertKeyValueToJSXAttribute("ref", refValue, rootConfig, source));
   }
   if (propsValue.properties) {
@@ -96,11 +97,11 @@ function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
         );
         continue;
       }
-
       attributes.push(convertKeyValueToJSXAttribute(key, desc.value, rootConfig, source));
     }
   } else {
-    // TODO: this is abstract, probably from a createElement or cloneElement
+    // spread
+    attributes.push(t.jSXSpreadAttribute(convertValueToExpression(propsValue, rootConfig, source)));
   }
 
   if (identifier.type === 'ArrowFunctionExpression') {
@@ -179,19 +180,40 @@ const isInvalid = {
   '\n': true,
   ')': true,
   '(': true,
+  ':': true,
+  '=': true,
 };
 
 function getExpressionFromSource(start, end, source) {
   const lines = source.split('\n');
+  let inString = false;
   if (start.line === end.line) {
     const line = lines[start.line - 1];
     let i = start.column;
     let char = line[i];
     let string = '';
-    while (char && !isInvalid[char]) {
+    while (char && (!isInvalid[char] || inString === true)) {
+      if (char === "'") {
+        if (inString === true) {
+          inString = false;
+        } else {
+          inString = true;
+        }
+      }
       string += char;
       i++;
       char = line[i];
+    }
+    if (string[0] === "'" && string[string.length - 1] === "'") {
+      // we are passing a string into a function call (hacky as hell)
+      // lets traverve back from start to find the call
+      let s = start.column - 2;
+      char = line[s];
+      while (char && !isInvalid[char]) {
+        s--;
+        char = line[s];
+      }
+      string = line.substring(s + 1, i + 1);
     }
     return string;
   } else {
@@ -216,6 +238,9 @@ function convertValueToExpression(value, rootConfig, source) {
         node.object = t.identifier('props');
         return node;
       }
+    } else if (serializedArgs.length === 0) {
+      console.log(getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source))
+      return t.identifier(getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source));
     }
     return value.buildNode(serializedArgs);
   }
@@ -224,8 +249,12 @@ function convertValueToExpression(value, rootConfig, source) {
   }
   if (value instanceof FunctionValue) {
     // TODO: Get a proper reference from a lexical map of names instead.
-    const name = getFunctionReferenceName(value);
+    let name = getFunctionReferenceName(value);
     if (name !== null) {
+      if (name.indexOf('bound') !== -1) {
+        // this is a temp hack
+        name = name.replace('bound ', '');
+      }
       return t.identifier(name);
     } else {
       // TODO: assume an arrow function for now?

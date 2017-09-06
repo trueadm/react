@@ -90,8 +90,9 @@ async function resolveDeeply(value, rootConfig) {
       // If something went wrong, just bail out and return the value we had.
       return value;
     }
+  } else {
+    return value;
   }
-  throw new Error("Unsupported return value from render or children.");
 }
 
 function renderOneLevel(componentType, props, rootConfig) {

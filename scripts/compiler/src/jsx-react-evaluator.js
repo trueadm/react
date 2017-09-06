@@ -3,6 +3,7 @@ const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
   GetValue,
+  SetValue,
   ObjectCreate,
   ResolveBinding,
   Set,
@@ -48,6 +49,20 @@ function createReactElement(realm, type, key, ref, props) {
   CreateDataPropertyOrThrow(realm, obj, "key", key);
   CreateDataPropertyOrThrow(realm, obj, "ref", ref);
   CreateDataPropertyOrThrow(realm, obj, "props", props);
+  CreateDataPropertyOrThrow(realm, obj, "_owner", realm.intrinsics.null);
+  return obj;
+}
+
+function createReactElementWithSpread(realm, type, spread) {
+  let obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
+  CreateDataPropertyOrThrow(
+    realm,
+    obj,
+    "$$typeof",
+    getReactElementSymbol(realm)
+  );
+  CreateDataPropertyOrThrow(realm, obj, "type", type);
+  CreateDataPropertyOrThrow(realm, obj, "props", spread);
   CreateDataPropertyOrThrow(realm, obj, "_owner", realm.intrinsics.null);
   return obj;
 }
@@ -101,34 +116,8 @@ function evaluateJSXValue(value, strictCode, env, realm) {
   }
 }
 
-function createSpreadName(astNode, scope) {
-  let astRoot = astNode;
-
-  while (astRoot.type !== 'Identifier') {
-    if (astRoot.type === 'MemberExpression') {
-      astRoot = astRoot.object;
-    } else if (astRoot.type === 'ThisExpression') {
-      break;
-    } else {
-      debugger;
-    }
-  }
-  const name = astRoot.name;
-  
-  if (scope !== null && scope.assignments.has(name)) {
-    if (scope.assignments.get(name).type === 'AbstractValue') {
-      return `this.${traverser.getNameFromAst(astNode)}`;
-    }
-  }
-  return traverser.getNameFromAst(astNode);
-}
-
-function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
-  let attributes = new Map();
-  let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
-  let propTypes = null;
+function getDefaultProps(elementType, scope) {
   let defaultProps = null;
-  const attributeUsed = new Map();
   if (scope !== null) {
     let componentData = scope.jsxElementIdentifiers.get(elementType.name);
 
@@ -137,21 +126,19 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
       if (componentData.type === 'FunctionCall') {
         // check if its a component
         if (componentData.args.length === 1) {
-          if (componentData.args[0].propTypes !== undefined) {
+          if (componentData.args[0].defaultProps !== undefined) {
             componentData = componentData.args[0];
           } else {
             componentData = undefined;
           }
         } else {
+          // TODO
           debugger;
         }
-      } else if (componentData.propTypes === undefined) {
+      } else if (componentData.defaultProps === undefined) {
         componentData = undefined;
       }
       if (componentData !== undefined) {
-        if (componentData.propTypes !== null) {
-          propTypes = componentData.propTypes;
-        }
         if (componentData.defaultProps !== null) {
           defaultProps = componentData.defaultProps;
         }
@@ -163,11 +150,11 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
       while (currentScope !== null) {
         const func = currentScope.func;
         if (func != null) {
-          if (func.propTypes !== null) {
-            propTypes = func.propTypes;
+          if (func.defaultProps !== null) {
+            defaultProps = func.defaultProps;
           } else if (func.theClass !== null) {
-            if (func.theClass.propTypes !== undefined) {
-              propTypes = func.theClass.propTypes;
+            if (func.theClass.defaultProps !== undefined) {
+              defaultProps = func.theClass.defaultProps;
             }
             break;
           }
@@ -176,14 +163,61 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
       }
     }
   }
-  // deal with defaultProps first
+  return defaultProps;
+}
+
+// because spread is so dynamic, there may be a property on the object that we're passing through
+// that we don't know at this point, but can be inferred from what what is used inside the component
+// that this JSXElement references
+//
+// For example:
+//
+// if we call <Foo {...props} />, where props is an abstract object
+// and the contents of component Foo makes usage of {...props.something}, we can infer
+// the spread props object contains a property called "something" that is also an abstract object
+//
+function addInferredSpreadProperties(spreadValue, spreadAstNode, elementType, scope) {
+  if (scope !== null) {
+    let componentData = scope.jsxElementIdentifiers.get(elementType.name);
+
+    if (componentData !== undefined) {
+      if (componentData.params !== undefined && componentData.params.length > 0) {
+        const componentProps = componentData.params[0];
+
+        for (let [key, value] of componentProps.accessors) {
+          if (!spreadValue.properties.has(key)) {
+            if (value.accessedAsSpread === true) {
+              spreadValue.properties.set(key, {
+                descriptor: {
+                  value: evaluator.createAbstractObjectOrUndefined(),
+                },
+              });
+            } else {
+              spreadValue.properties.set(key, {
+                descriptor: {
+                  value: evaluator.createAbstractValue(),
+                },
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
+  let attributes = new Map();
+  let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
+  let spread = null;
+  const defaultProps = getDefaultProps(elementType, scope);
+  // apply any defaultProps
   if (defaultProps !== null) {
     const defaultPropsShape = convertAccessorsToNestedObject(null, defaultProps.properties, true);
     const defaultPropsAst = convertNestedObjectToAst(defaultPropsShape);
     for (let i = 0; i < defaultPropsAst.properties.length; i++) {
       const defaultPropAst = defaultPropsAst.properties[i];
       const name = defaultPropAst.key.name;
-      attributeUsed.set(name, true);
       attributes.set(name, GetValue(realm, env.evaluate(defaultPropAst.value, strictCode)));
     }
   }
@@ -196,63 +230,37 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
             "JSX attribute name type not supported: " + astAttribute.type
           );
         }
-        attributeUsed.set(name.name, true);
         attributes.set(name.name, evaluateJSXValue(value, strictCode, env, realm));
         break;
       case "JSXSpreadAttribute":
-        // can get the value from Prepack for the current this.props/props?
-        let alreadyKnownPropsValue = null;
-        let alreadyKnownProps = {};
-        try {
-          // try this.props first
-          alreadyKnownPropsValue = GetValue(realm, env.evaluate(t.memberExpression(t.identifier('this'), t.identifier('props')), strictCode));
-        } catch (e) {
-          // try props second
-          try {
-            alreadyKnownPropsValue = GetValue(realm, env.evaluate(t.identifier('props'), strictCode));
-          } catch (e2) {
-            // neither worked, so we have no known properties
-          }
-        }
-        if (alreadyKnownPropsValue !== null && alreadyKnownPropsValue.properties !== undefined) {
-          for (let [key] of alreadyKnownPropsValue.properties) {
-            // we just assign it as any, as we derive the value as part of the generic flow
-            alreadyKnownProps[key] = 'any';
-          }
-        }
-        // combine our known props together with information from PropTypes
-        // we also make children known even if its not used
-        const propsShape = Object.assign(
-          {
-            children: 'any',
-          },
-          alreadyKnownProps,
-          convertAccessorsToNestedObject(null, propTypes ? propTypes.properties : null, true) || {}
-        );
-        const spreadName = createSpreadName(astAttribute.argument, scope);
-        Object.keys(propsShape).forEach(key => {
-          if (!attributeUsed.has(key)) {
-            let val = null;
-            // try and get the value from Prepack (if it knows it)
-            try {
-              val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
+        const possibleProperties = {};
+        const spreadValue = GetValue(realm, env.evaluate(astAttribute.argument, strictCode));
 
-              if (val instanceof UndefinedValue) {
-                val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
-              }
-            } catch (e) {
-              // if Prepack doesn't know it, we put it back as an abstract
-              val = evaluator.createAbstractObjectOrUndefined(`${spreadName}.${key}`);
+        if (spreadValue.properties === undefined) {
+          // we are passing in an object to spread where we know literally nothing about it...
+          // we need to de-opt if this spread isn't the only property
+          // otherwise, we make the attributes value the spread value
+          if (astAttributes.length > 1) {
+            throw new Error(`An unknown JSXSpreadAttribute of "...${traverser.getNameFromAst(astAttribute.argument)}" with unknown properties was passed in.`);
+          }
+          spread = spreadValue;
+          // TODO do we set the children here too? probably...
+          break;
+        }
+        addInferredSpreadProperties(spreadValue, astAttribute.argument, elementType, scope);
+        // get the value from Prepack and see what properties Prepack already has information for
+        for (let [key] of spreadValue.properties) {
+          // we just assign it as any, as we derive the value as part of the generic flow below
+          possibleProperties[key] = 'any';
+        }
+        Object.keys(possibleProperties).forEach(key => {
+          const val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
+          if (key === 'children') {
+            if (!children) {
+              children = val;
             }
-            if (val !== null) {
-              if (key === 'children') {
-                if (!children) {
-                  children = val;
-                }
-              } else {
-                attributes.set(key, val);
-              }
-            }
+          } else {
+            attributes.set(key, val);
           }
         });
         break;
@@ -265,6 +273,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
   return {
     attributes,
     children,
+    spread,
   };
 }
 
@@ -290,7 +299,7 @@ module.exports = function(ast, strictCode, env, realm) {
   const openingElement = ast.openingElement;
   const scope = ast.scope || null;
   const type = evaluateJSXIdentifier(openingElement.name, strictCode, env, realm);
-  const {attributes, children} = evaluateJSXAttributes(
+  const {attributes, children, spread} = evaluateJSXAttributes(
     openingElement.name,
     openingElement.attributes,
     ast.children,
@@ -299,22 +308,23 @@ module.exports = function(ast, strictCode, env, realm) {
     realm,
     scope
   );
+  if (spread === null) {
+    let key = attributes.get("key") || realm.intrinsics.null;
+    let ref = attributes.get("ref") || realm.intrinsics.null;
 
-  let key = attributes.get("key") || realm.intrinsics.null;
-  let ref = attributes.get("ref") || realm.intrinsics.null;
+    if (key === realm.intrinsics.undefined) {
+      key = realm.intrinsics.null;
+    }
+    if (ref === realm.intrinsics.undefined) {
+      ref = realm.intrinsics.null;
+    }
 
-  if (key === realm.intrinsics.undefined) {
-    key = realm.intrinsics.null;
+    if (key !== realm.intrinsics.null && key instanceof ConcreteValue) {
+      key = new StringValue(realm, ToString(realm, key));
+    }
+    const props = createReactProps(realm, type, attributes, children, env);
+    return createReactElement(realm, type, key, ref, props);
+  } else {
+    return createReactElementWithSpread(realm, type, spread);
   }
-  if (ref === realm.intrinsics.undefined) {
-    ref = realm.intrinsics.null;
-  }
-
-  if (key !== realm.intrinsics.null && key instanceof ConcreteValue) {
-    key = new StringValue(realm, ToString(realm, key));
-  }
-
-  let props = createReactProps(realm, type, attributes, children, env);
-
-  return createReactElement(realm, type, key, ref, props);
 };

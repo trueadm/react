@@ -3,9 +3,7 @@ let { ExecutionContext } = require("prepack/lib/realm");
 let {
   NewDeclarativeEnvironment,
   GetValue,
-  SetValue,
   Get,
-  Set: $Set,
   ObjectCreate,
   Construct
 } = require("prepack/lib/methods");
@@ -334,35 +332,7 @@ function get(object, propertyName) {
   return GetValue(realm, res);
 }
 
-function set(object, propertyName, value) {
-  let context = new ExecutionContext();
-  context.lexicalEnvironment = realm.$GlobalEnv;
-  context.variableEnvironment = realm.$GlobalEnv;
-  context.realm = realm;
-  realm.pushContext(context);
-
-  let res;
-  try {
-    res = $Set(realm, object, propertyName, value);
-  } catch (completion) {
-    if (completion instanceof AbruptCompletion) {
-      res = completion;
-    } else {
-      throw completion;
-    }
-  } finally {
-    realm.popContext(context);
-  }
-  if (res instanceof AbruptCompletion) {
-    let error = getError(res);
-    throw error;
-  }
-  return SetValue(realm, res);
-}
-
 exports.get = get;
-
-exports.set = set;
 
 exports.createAbstractBoolean = createAbstractBoolean;
 
