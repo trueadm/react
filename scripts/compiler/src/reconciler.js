@@ -91,10 +91,7 @@ async function resolveDeeply(value, rootConfig) {
       }
       return await renderAsDeepAsPossible(type, props, rootConfig);
     } catch (x) {
-      if (name === 'Link') {
-        console.log(x.stack + '\n')
-        // debugger;
-      }
+      // console.log(x.stack + '\n')
       if (x.value !== undefined) {
         return await resolveDeeply(x.value, rootConfig);
       }
