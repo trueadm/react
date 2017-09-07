@@ -51,6 +51,40 @@ function convertKeyValueToJSXAttribute(key, value, rootConfig, source) {
   );
 }
 
+function addKeyToElement(astElement, key) {
+  const astAttributes = astElement.openingElement.attributes;
+  let existingKey = null;
+
+  for (let i = 0; i < astAttributes.length; i++) {
+    const astAttribute = astAttributes[i];
+    
+    if (astAttribute.type === 'JSXAttribute' && astAttribute.name.type === 'JSXIdentifier' && astAttribute.name.name === 'key') {
+      existingKey = astAttribute.value;
+    }
+  }
+  if (existingKey !== null) {
+    // do nothing for now
+  } else {
+    astAttributes.push(t.jSXAttribute(t.jSXIdentifier('key'), t.stringLiteral(key)));
+  }
+}
+
+// as we compile and inline components, nested arrays will be common
+// to avoid key issues and bad updates, we need to manually add keys
+// to static children that won't ever collide
+function applyKeysToNestedArray(expr) {
+  const astElements = expr.elements;
+  const randomHashString = Math.random().toString(36).substring(5);
+
+  for (let i = 0; i < astElements.length; i++) {
+    const astElement = astElements[i];
+    
+    if (astElement.type === 'JSXElement') {
+      addKeyToElement(astElement, `.${randomHashString}.${i}`);
+    }
+  }
+}
+
 function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
   const objectProps = objectValue.properties;
   let typeValue = objectProps.get("type").descriptor.value;
@@ -86,14 +120,18 @@ function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
           ? expr.elements
           : [expr];
         children = elements.map(
-          expr =>
-            (expr === null
+          expr => {
+            if (expr.type === 'ArrayExpression') {
+              applyKeysToNestedArray(expr);
+            }
+            return (expr === null
               ? t.jSXExpressionContainer(t.jSXEmptyExpression())
               : expr.type === "StringLiteral"
                   ? t.jSXText(expr.value)
                   : expr.type === "JSXElement"
                       ? expr
                       : t.jSXExpressionContainer(expr))
+            }
         );
         continue;
       }
