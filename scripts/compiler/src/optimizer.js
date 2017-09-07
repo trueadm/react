@@ -17,6 +17,48 @@ function convertToExpression(node) {
   return node;
 }
 
+  // we need to find if there are any missing props that we know are passed to this component
+  // we already have this information (or should) in the data on the component
+function addInferredPropsFromJSXElementCallSites(props, astComponent) {
+  if (astComponent.class !== undefined) {
+    const theClass = astComponent.class;
+    const jsxElementCallSites = theClass.jsxElementCallSites;
+
+    for (let i = 0; i < jsxElementCallSites.length; i++) {
+      const jsxElementCallSite = jsxElementCallSites[i];
+      if (jsxElementCallSite.props !== null) {
+        Object.keys(jsxElementCallSite.props).forEach(key => {
+          if (props[key] === undefined) {
+            // we need to add it
+            props[key] = 'any';
+          }
+        });
+        // if there are spreads, we need to see what is in that object
+        if (jsxElementCallSite.spreads !== null) {
+          jsxElementCallSite.spreads.forEach(spread => {
+            const value = spread.value;
+
+            // _objectWithoutProperties is an object rest handler
+            if (value.type === 'FunctionCall') {
+              // bail-out, we can't track through function calls
+              throw new Error('Component tree bail-out due to object spread/rest on props at root.');
+            }
+
+            if (value.accessedAsSpreadProps != null) {
+              for (let [key] of value.accessedAsSpreadProps) {
+                if (props[key] === undefined) {
+                  // we need to add it
+                  props[key] = 'any';
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+}
+
 function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   const type = astComponent.type;
   let propsShape = null;
@@ -35,6 +77,9 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
       propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null, false);
     }
   }
+  // add any inferred props
+  addInferredPropsFromJSXElementCallSites(propsShape, astComponent);
+
   // add children to propsShape as we should assume it might always be there
   propsShape = Object.assign({children: 'any'}, propsShape || {});
   // first we create some AST and convert it... need to do this properly later
@@ -164,7 +209,7 @@ async function optimizeComponentTree(
       await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope, source);
       console.log(`Optimized component "${name}"\n`);
     } catch (e) {
-      if (e.stack.indexOf('not yet supported on abstract value props') !== -1) {
+      if (e.stack && e.stack.indexOf('not yet supported on abstract value props') !== -1) {
         console.warn(`\nPrepack component bail-out on "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`);
       } else {
         console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
@@ -173,7 +218,7 @@ async function optimizeComponentTree(
       await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope, source);
     }
   } else {
-    console.log(`Found component "${name}" but has already optimized this component before.`)
+    console.log(`Found component "${name}" but has already processed this component before.`)
   }
 }
 

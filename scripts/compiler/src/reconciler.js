@@ -78,14 +78,18 @@ async function resolveDeeply(value, rootConfig) {
       }
       return value;
     }
+    let name;
+    if (type.properties && type.properties.has('name')) {
+      name = type.properties.get('name').descriptor.value.value;
+    } else if (type.func) {
+      name = type.func.name;
+    }
     try {
       return await renderAsDeepAsPossible(type, props, rootConfig);
     } catch (x) {
-      // if (type.properties && type.properties.has('name')) {
-      //   console.log(type.properties.get('name').descriptor.value.value)
-      // } else if (type.func) {
-      //   console.log(type.func.name);
-      // }
+      if (name === 'Image') {
+        debugger;
+      }
       // console.log(x.stack + '\n')
       // If something went wrong, just bail out and return the value we had.
       return value;
@@ -124,6 +128,8 @@ function renderOneLevel(componentType, props, rootConfig) {
         inst.properties.get('state').descriptor.value = evaluator.createAbstractObject('this.state');
       }
     }
+    // set props on the instance
+    inst.properties.get('props').descriptor.value = props;
     const render = evaluator.get(inst, "render");
     return evaluator.call(render, inst, []);
   } else {

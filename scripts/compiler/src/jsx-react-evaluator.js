@@ -206,7 +206,7 @@ function addInferredSpreadProperties(spreadValue, spreadAstNode, elementType, sc
   }
 }
 
-function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope) {
+function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCode, env, realm, scope, jsxElement) {
   let attributes = new Map();
   let children = evaluateJSXChildren(astChildren, strictCode, env, realm);
   let spread = null;
@@ -248,12 +248,25 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           break;
         }
         addInferredSpreadProperties(spreadValue, astAttribute.argument, elementType, scope);
+        let inferredSpreadObject = null;
+        // find the inferred JSXElement object and link the spread props
+        for (let i = 0; i < jsxElement.spreads.length; i++) {
+          const _spread = jsxElement.spreads[i];
+
+          if (_spread.astNode === astAttribute.argument) {
+            inferredSpreadObject = _spread.value;
+            break;
+          }
+        }
         // get the value from Prepack and see what properties Prepack already has information for
         for (let [key] of spreadValue.properties) {
           // we just assign it as any, as we derive the value as part of the generic flow below
           possibleProperties[key] = 'any';
         }
         Object.keys(possibleProperties).forEach(key => {
+          if (inferredSpreadObject !== null) {
+            inferredSpreadObject.accessedAsSpreadProps.set(key, 'any');
+          }
           const val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
           if (key === 'children') {
             if (!children) {
@@ -268,8 +281,6 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
         throw new Error("Unknown JSX attribute type: " + astAttribute.type);
     }
   }
-  // console.log(elementType.name)
-  // debugger;
   return {
     attributes,
     children,
@@ -306,7 +317,8 @@ module.exports = function(ast, strictCode, env, realm) {
     strictCode,
     env,
     realm,
-    scope
+    scope,
+    ast.jsxElement
   );
   if (spread === null) {
     let key = attributes.get("key") || realm.intrinsics.null;
@@ -323,6 +335,7 @@ module.exports = function(ast, strictCode, env, realm) {
       key = new StringValue(realm, ToString(realm, key));
     }
     const props = createReactProps(realm, type, attributes, children, env);
+  
     return createReactElement(realm, type, key, ref, props);
   } else {
     return createReactElementWithSpread(realm, type, spread);

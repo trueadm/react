@@ -2,6 +2,7 @@
 
 const t = require("babel-types");
 const babylon = require("babylon");
+const evaluator = require("./evaluator");
 
 const cloneElementCode = `
 function cloneElement(element, config, children) {
@@ -120,6 +121,16 @@ function createMockReact() {
   );
 }
 
+function createMockWindow() {
+  const windowObject = evaluator.createAbstractObject('window');
+  const locationObject = evaluator.createAbstractObject('window.location');
+  locationObject.$SetPartial('host', evaluator.createAbstractString('window.location.host'), locationObject);
+  locationObject.$SetPartial('protocol', evaluator.createAbstractString('window.location.protocol'), locationObject);
+  windowObject.$SetPartial('location', locationObject, windowObject);
+  return windowObject;
+}
+
 module.exports = {
+  createMockWindow: createMockWindow,
   createMockReact: createMockReact,
 };

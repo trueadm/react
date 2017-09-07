@@ -159,6 +159,10 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
         case Types.OBJECT:
           properties.get(key).descriptor.value = evaluator.createAbstractObjectOrUndefined(newPrefix);
           break;
+        case Types.STRING:
+          // not correct but we're cheating for now
+          properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
+          break;
         // generic abstract value
         default: {
           properties.get(key).descriptor.value = evaluator.createAbstractValue(newPrefix);

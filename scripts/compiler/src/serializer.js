@@ -213,7 +213,7 @@ const isInvalid = {
   '-': true,
   '|': true,
   '&': true,
-  ',': true,
+  // ',': true,
   ';': true,
   '\n': true,
   ')': true,
@@ -222,6 +222,8 @@ const isInvalid = {
   '=': true,
 };
 
+
+// TODO this entire thing is as hacky as anything and needs to go away
 function getExpressionFromSource(start, end, source) {
   const lines = source.split('\n');
   let inString = false;
@@ -242,12 +244,12 @@ function getExpressionFromSource(start, end, source) {
       i++;
       char = line[i];
     }
-    if (string[0] === "'" && string[string.length - 1] === "'") {
+    if (string[0] === "'" && string[string.length - 1] === "'" && string !== "''") {
       // we are passing a string into a function call (hacky as hell)
       // lets traverve back from start to find the call
       let s = start.column - 2;
       char = line[s];
-      while (char && !isInvalid[char]) {
+      while (char && (!isInvalid[char] || char === '(')) {
         s--;
         char = line[s];
       }
@@ -277,7 +279,6 @@ function convertValueToExpression(value, rootConfig, source) {
         return node;
       }
     } else if (serializedArgs.length === 0) {
-      console.log(getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source))
       return t.identifier(getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source));
     }
     return value.buildNode(serializedArgs);

@@ -6,16 +6,12 @@ const fs = require("fs");
 const babylon = require("babylon");
 const traverser = require("./traverser");
 const createMockReact = require("./mocks").createMockReact;
+const createMockWindow = require("./mocks").createMockWindow;
 const convertAccessorsToNestedObject = require("./types")
   .convertAccessorsToNestedObject;
 const convertNestedObjectToAst = require("./types").convertNestedObjectToAst;
 const setAbstractPropsUsingNestedObject = require("./types")
   .setAbstractPropsUsingNestedObject;
-
-const whitelist = {
-  window: true,
-  document: true
-};
 
 function toAst(node) {
   if (typeof node === "string") {
@@ -35,14 +31,19 @@ function setupPrepackEnvironment(moduleEnv, declarations) {
     if (declaration.type === undefined) {
       moduleEnv.declare(declarationKey, declaration);
     } else {
-      const evaluation = moduleEnv.eval(declaration);
-      if (declaration.func !== undefined) {
-        evaluation.func = declaration.func;
+      try {
+        const evaluation = moduleEnv.eval(declaration);
+
+        if (declaration.func !== undefined) {
+          evaluation.func = declaration.func;
+        }
+        if (declaration.class !== undefined) {
+          evaluation.class = declaration.class;
+        }
+        moduleEnv.declare(declarationKey, evaluation);
+      } catch (e) {
+        moduleEnv.declare(declarationKey, evaluator.createAbstractValue(declarationKey));
       }
-      if (declaration.class !== undefined) {
-        evaluation.class = declaration.class;
-      }
-      moduleEnv.declare(declarationKey, evaluation);
     }
   });
   return moduleEnv;
@@ -193,9 +194,13 @@ function handleAssignmentValue(
         break;
       }
       case "MathExpression": {
-        declarations[assignmentKey] = evaluator.createAbstractValue(
-          assignmentKey
-        );
+        if (assignmentValue.astNode !== null) {
+          declarations[assignmentKey] = assignmentValue.astNode;
+        } else {
+          declarations[assignmentKey] = evaluator.createAbstractValue(
+            assignmentKey
+          );
+        }
         break;
       }
       default: {
@@ -229,6 +234,7 @@ function createPrepackMetadata(moduleScope) {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
 
     if (
+      assignmentKey === "Object" ||
       assignmentKey === "Promise" ||
       assignmentKey === "Date" ||
       assignmentKey === "String" ||
@@ -244,11 +250,10 @@ function createPrepackMetadata(moduleScope) {
       handleAssignmentValue(moduleScope, fbt, "fbt", declarations, env);
     } else if (assignmentKey === "React") {
       declarations.React = createMockReact();
-    } else if (
-      whitelist[assignmentKey] === true &&
-      moduleScope.parentScope === null
-    ) {
-      // skip whitelist items
+    } else if (assignmentKey === "window") {
+      declarations.window = createMockWindow();
+    } else if (assignmentKey === "document") {
+      // TODO
     } else if (
       assignmentKey === "require" &&
       moduleScope.parentScope === null

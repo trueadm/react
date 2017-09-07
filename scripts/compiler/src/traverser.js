@@ -50,16 +50,22 @@ const propTypes = createObject(null, {
   shape: PropTypes.SHAPE,
 });
 
-function createJSXElement(astNode) {
+function createJSXElement(astNode, nodeType, props, spreads, key, ref) {
   return {
     astNode: astNode,
-    type: Types.JSXElement
+    key: key,
+    nodeType: nodeType,
+    props: props,
+    ref: ref,
+    spreads: spreads,
+    type: Types.JSXElement,
   };
 }
 
-function createMathExpression(left, right, operator) {
+function createMathExpression(astNode, left, right, operator) {
   return {
     action: null,
+    astNode: astNode,
     left: left,
     operator: operator,
     right: right,
@@ -122,6 +128,7 @@ function createNull(action) {
 function createIdentifier() {
   return {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     action: null,
     type: Types.Identifier,
   };
@@ -130,6 +137,7 @@ function createIdentifier() {
 function createAbstractObject() {
   return {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     type: Types.AbstractObject
@@ -139,6 +147,7 @@ function createAbstractObject() {
 function createAbstractObjectOrUndefined(crossModule) {
   return {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
@@ -149,6 +158,7 @@ function createAbstractObjectOrUndefined(crossModule) {
 function createAbstractValue(crossModule) {
   return {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
@@ -171,6 +181,7 @@ function createFunction(name, astNode, scope) {
     astNode: astNode,
     callSites: [],
     defaultProps: null,
+    jsxElementCallSites: [],
     name: name,
     params: [],
     properties: createObject(),
@@ -188,8 +199,9 @@ function createClass(name, astNode, superIdentifier, scope) {
     action: null,
     astNode: astNode,
     defaultProps: null,
+    jsxElementCallSites: [],
     name: name,
-    propTypes: null,  
+    propTypes: null,
     scope: scope,
     superIdentifier: superIdentifier,
     thisObject: createObject(null, {
@@ -204,6 +216,7 @@ function createClass(name, astNode, superIdentifier, scope) {
 function createFunctionCall(identifier, astNode) {
   return {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -235,6 +248,7 @@ function createScope(assignments) {
 function createObject(astNode, properties) {
   const object = {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -252,6 +266,7 @@ function createObject(astNode, properties) {
 function createArray(astNode, properties) {
   const object = {
     accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
     astNode: astNode,
@@ -353,13 +368,14 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
+        // TODO we might not need this anymore with the new jsxElement type objects
         if (isReactComponent === true) {
           scope.jsxElementIdentifiers.set(
             name,
             getOrSetValueFromAst(astName, scope, action)
-          );;
+          );
         }
-        node.scope = scope
+        node.scope = scope;
       } else if (action === Actions.FindComponents) {
         if (isReactComponent) {
           scope.components.set(name, true);
@@ -492,8 +508,8 @@ function traverse(node, action, scope) {
       } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
         const optimizedNode = node.optimizedReplacement;
 
-        node.body = optimizedNode.body;
-        node.params = optimizedNode.params;
+        // node.body = optimizedNode.body;
+        // node.params = optimizedNode.params;
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
@@ -878,7 +894,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "NumericLiteral":
     case "BooleanLiteral":
-    case "StringLiteral": {
+    case "StringLiteral":
+    case "JSXText": {
       return astNode.value;
     }
     case "ThisExpression":
@@ -1000,6 +1017,8 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else if (typeof subject === 'string') {
         // this is probably from PropTypes? like isRequired, so we add it on the end
         return `${subject}_${key}`;
+      } else if (subject.type === 'Null') {
+        return createAbstractValue();
       } else {
         debugger;
       }
@@ -1056,11 +1075,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const object = getOrSetValueFromAst(astObject, subject, action);
 
       if (object !== null) {
-        if (astProperty.type === "Identifier") {
+        if (astProperty.type === "Identifier" || astProperty.type === "MemberExpression") {
           return getOrSetValueFromAst(astProperty, object, action, newValue);
-        } else if (astProperty.type === "NumericLiteral") {
-          return getOrSetValueFromAst(astProperty.value, object, action, newValue);
-        } else if (astProperty.type === "StringLiteral") {
+        } else if (astProperty.type === "NumericLiteral" || astProperty.type === "StringLiteral") {
           return getOrSetValueFromAst(astProperty.value, object, action, newValue);
         } else {
           debugger;
@@ -1086,6 +1103,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astRight = astNode.right;
       const operator = astNode.operator;
       return createMathExpression(
+        astNode,
         getOrSetValueFromAst(astLeft, subject, action),
         getOrSetValueFromAst(astRight, subject, action),
         operator
@@ -1172,10 +1190,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       }
     }
     case "JSXElement": {
-      // TODO build up attrs/children
-      // for now just traverse so accessors get touched
-      traverse(astNode, action, subject);
-      return createJSXElement(astNode);
+      return callJSXElement(astNode, action, subject);
     }
     case "SpreadElement": {
       if (newValue === undefined) {
@@ -1194,10 +1209,80 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "RegExpLiteral": {
       return createAbstractValue();
     }
+    case "JSXExpressionContainer": {
+      return getOrSetValueFromAst(astNode.expression, subject, action, newValue);
+    }
     default: {
       debugger;
     }
   }
+}
+
+function callJSXElement(astNode, action, subject) {
+  let props = null;
+  let key = null;
+  let ref = null;
+  let children = null;
+  let spreads = null;
+  const astOpeningElement = astNode.openingElement;
+  const nodeType = getOrSetValueFromAst(astOpeningElement.name, subject, action) || astOpeningElement.name.name;
+
+  const astAttributes = astOpeningElement.attributes;
+  for (let i = 0; i < astAttributes.length; i++) {
+    const astAttribute = astAttributes[i];
+
+    if (astAttribute.type === 'JSXSpreadAttribute') {
+      if (spreads === null) {
+        spreads = [];
+      }
+      const value = getOrSetValueFromAst(astAttribute.argument, subject, action);
+      value.accessedAsSpread = true;
+      spreads.push({
+        astNode: astAttribute.argument,
+        value: value,
+      });
+    } else if (astAttribute.type === 'JSXAttribute') {
+      if (props === null) {
+        props = {};
+      }
+      const name = astAttribute.name.name;
+      
+      if (name === 'key') {
+        key = getOrSetValueFromAst(astAttribute.value, subject, action);
+      } else if (name === 'children') {
+        children = getOrSetValueFromAst(astAttribute.value, subject, action);
+      } else if (name === 'ref') {
+        ref = getOrSetValueFromAst(astAttribute.value, subject, action);
+      } else {
+        props[name] = getOrSetValueFromAst(astAttribute.value, subject, action);
+      }
+    } else {
+      debugger;
+    }
+  }
+  const astChildren = astNode.children;
+  for (let i = 0; i < astChildren.length; i++) {
+    const astChild = astChildren[i];
+    if (children === null) {
+      children = [];
+    }
+    children.push(getOrSetValueFromAst(astChild, subject, action));
+  }
+  if (children !== null) {
+    if (props === null) {
+      props = {};
+    }
+    props.children = children;
+  }
+  const jsxElement = createJSXElement(astNode, nodeType, props, spreads, key, ref);
+  astNode.jsxElement = jsxElement;
+  // link the jsxElement to the component itself (unless its an element)
+  if (typeof nodeType !== 'string') {
+    if (nodeType.type === 'Class' || nodeType.type === 'Function') {
+      nodeType.jsxElementCallSites.push(jsxElement);
+    }
+  }
+  return jsxElement;
 }
 
 function callFunction(astNode, callee, args, action, scope) {
