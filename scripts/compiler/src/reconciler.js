@@ -85,10 +85,18 @@ async function resolveDeeply(value, rootConfig) {
       name = type.func.name;
     }
     try {
+      // TODO extra URI module
+      if (name === 'Link') {
+        // debugger;
+      }
       return await renderAsDeepAsPossible(type, props, rootConfig);
     } catch (x) {
-      if (name === 'Image') {
-        debugger;
+      if (name === 'Link') {
+        console.log(x.stack + '\n')
+        // debugger;
+      }
+      if (x.value !== undefined) {
+        return await resolveDeeply(x.value, rootConfig);
       }
       // console.log(x.stack + '\n')
       // If something went wrong, just bail out and return the value we had.

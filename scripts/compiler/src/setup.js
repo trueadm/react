@@ -91,8 +91,11 @@ function handleAssignmentValue(
         break;
       }
       case "FunctionCall": {
+        if (assignmentValue.accessedAsConstructor === true) {
+          declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
+          break;
+        }
         const identifier = assignmentValue.identifier;
-
         if (identifier.type === "AbstractFunction") {
           if (identifier.name) {
             // for requires, we can try and guess an abstract shape to help prepack
@@ -232,11 +235,12 @@ function createPrepackMetadata(moduleScope) {
 
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
-
     if (
+      assignmentKey === "Array" ||
       assignmentKey === "Object" ||
       assignmentKey === "Promise" ||
       assignmentKey === "Date" ||
+      assignmentKey === "Error" ||
       assignmentKey === "String" ||
       assignmentKey === "Number" ||
       assignmentKey === "parseInt" ||

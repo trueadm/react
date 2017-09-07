@@ -136,6 +136,7 @@ function createIdentifier() {
 
 function createAbstractObject() {
   return {
+    accessedAsConstructor: false,
     accessedAsSpread: false,
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
@@ -146,6 +147,7 @@ function createAbstractObject() {
 
 function createAbstractObjectOrUndefined(crossModule) {
   return {
+    accessedAsConstructor: false,
     accessedAsSpread: false,
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
@@ -247,6 +249,7 @@ function createScope(assignments) {
 
 function createObject(astNode, properties) {
   const object = {
+    accessedAsConstructor: false,
     accessedAsSpread: false,
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
@@ -298,6 +301,7 @@ function createModuleScope() {
     debugger: createAbstractFunction(),
     parseInt: createAbstractFunction(),
     parseFloat: createAbstractFunction(),
+    Error: createAbstractFunction(),
     String: createAbstractFunction(),
     Number: createAbstractFunction(),
     Element: createAbstractFunction(),
@@ -1110,7 +1114,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       );
     }
     case "NewExpression": {
-      return getOrSetValueFromAst(astNode.callee, subject, action);
+      const object = getOrSetValueFromAst(astNode.callee, subject, action);
+      if (!object) {
+        debugger;
+      }
+      object.accessedAsConstructor = true;
+      return object;
     }
     case "FunctionExpression": {
       return declareFunction(
