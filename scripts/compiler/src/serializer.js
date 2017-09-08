@@ -327,6 +327,29 @@ function convertValueToExpression(value, rootConfig, source) {
   return t.valueToNode(value.serialize());
 }
 
+function createClassConstructorBody(rootConfig, source) {
+  const bodyBlock = [
+    t.expressionStatement(t.callExpression(t.identifier('super'), [t.identifier('props')])),
+    t.expressionStatement(t.assignmentExpression(
+      '=',
+      t.memberExpression(t.thisExpression(), t.identifier('state')),
+      rootConfig.state,
+    )),
+  ];
+  if (rootConfig.instanceProperties !== null) {
+    rootConfig.instanceProperties.forEach(instanceProperty => {
+      bodyBlock.push(
+        t.expressionStatement(t.assignmentExpression(
+          '=',
+          t.memberExpression(t.thisExpression(), t.identifier(instanceProperty.key)),
+          convertValueToExpression(instanceProperty.value, rootConfig, source)
+        ))
+      );
+    });
+  }
+  return t.blockStatement(bodyBlock);
+}
+
 function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue, rootConfig, source) {
   const name = getFunctionReferenceName(functionValue);
   const params = args.map(arg => {
@@ -340,19 +363,13 @@ function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue, r
   const returnStatement = t.returnStatement(bodyExpr);
   const renderBody = t.blockStatement([returnStatement]);
   if (rootConfig.useClassComponent === true) {
+    const constructorBody = createClassConstructorBody(rootConfig, source);
     return t.classDeclaration(
       t.identifier(name), t.memberExpression(t.identifier('React'), t.identifier('Component')),
       t.classBody([
         // build the constructor method and put the merged state object back in
         // TODO: add in merged instance variables and other stuff
-        t.classMethod('constructor', t.identifier('constructor'), [t.identifier('props')], t.blockStatement([
-          t.expressionStatement(t.callExpression(t.identifier('super'), [t.identifier('props')])),
-          t.expressionStatement(t.assignmentExpression(
-            '=',
-            t.memberExpression(t.thisExpression(), t.identifier('state')),
-            convertValueToExpression(rootConfig.state, rootConfig, source),
-          )),
-        ])),
+        t.classMethod('constructor', t.identifier('constructor'), [t.identifier('props')], constructorBody),
         // put in the optimized render method
         t.classMethod('method', t.identifier('render'), [], renderBody),
       ]),

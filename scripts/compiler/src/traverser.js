@@ -190,7 +190,6 @@ function createClass(name, astNode, superIdentifier, scope) {
     superIdentifier: superIdentifier,
     thisObject: createObject(null, {
       props: createAbstractObject(null),
-      state: createAbstractObject(null),
       refs: createAbstractObject(null),
     }),
     type: Types.Class,
@@ -920,25 +919,26 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           }
         }
       } else if (subject.type === Types.Object || subject.type === Types.Array) {
+        let accesorObject;
+        if (subject.accessors.has(key)) {
+          accesorObject = subject.accessors.get(key);
+        } else {
+          accesorObject = createAbstractObject();
+          subject.accessors.set(key, accesorObject);
+        }
         if (newValue != null) {
           if (newValue.action !== undefined && typeof newValue === 'object') {
             newValue.action = action;
           }
           assign(subject, "properties", key, newValue);
           return newValue;
-        } else {
-          let accesorObject;
-          if (subject.accessors.has(key)) {
-            accesorObject = subject.accessors.get(key);
-          } else {
-            accesorObject = createAbstractObject();
-            subject.accessors.set(key, accesorObject);
-          }
-          if (subject.properties.has(key)) {
-            return handleMultipleValues(subject.properties.get(key), action);
-          }
-          return accesorObject;
         }
+        if (subject.properties.has(key)) {
+          const obj = handleMultipleValues(subject.properties.get(key), action);
+          subject.accessors.set(key, obj);
+          return obj;
+        }
+        return accesorObject;
       } else if (subject.type === Types.FunctionCall) {
         if (
           subject.identifier.name === "require" &&
@@ -1107,9 +1107,6 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "NewExpression": {
       const object = getOrSetValueFromAst(astNode.callee, subject, action);
-      if (!object) {
-        debugger;
-      }
       object.accessedAsConstructor = true;
       return object;
     }
@@ -1378,6 +1375,9 @@ function declareClass(node, id, superId, body, action, scope) {
     scopeFunc() {
       astClassBody.forEach(bodyPart => {
         if (bodyPart.type === "ClassMethod") {
+          if (bodyPart.kind === 'constructor') {
+            bodyPart.body.class = theClass;
+          }
           declareClassMethod(bodyPart, theClass, thisAssignment, scope, action);
         } else {
           debugger;

@@ -45,7 +45,7 @@ let realmOptions = {
   serialize: true,
   debugNames: false,
   uniqueSuffix: false,
-  timeout: 5000,
+  timeout: 8000,
   compatibility: "browser",
   errorHandler: onError,
 };

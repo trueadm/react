@@ -94,6 +94,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
 
 function createRootConfig() {
   return {
+    instanceProperties: null,
     useClassComponent: false,
     state: null,
   };
@@ -119,6 +120,7 @@ async function optimizeComponentWithPrepack(
   const resolvedResult = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
+    moduleEnv,
     rootConfig
   );
   const node = serializer.serializeEvaluatedFunction(

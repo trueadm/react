@@ -1,4 +1,4 @@
-let {
+const {
   AbstractValue,
   ArrayValue,
   BooleanValue,
@@ -10,6 +10,13 @@ let {
   NullValue,
   UndefinedValue
 } = require("prepack/lib/values");
+const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
+const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
+const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
+const t = require("babel-types");
+const {
+  GetValue,
+} = require("prepack/lib/methods");
 
 let evaluator = require("./evaluator");
 
@@ -25,7 +32,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue, rootConfig) {
+async function resolveFragment(arrayValue, moduleEnv, rootConfig) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -43,13 +50,14 @@ async function resolveFragment(arrayValue, rootConfig) {
     if (elementValue) {
       elementProperty.descriptor.value = await resolveDeeply(
         elementValue,
+        moduleEnv,
         rootConfig
       );
     }
   }
 }
 
-async function resolveDeeply(value, rootConfig) {
+async function resolveDeeply(value, moduleEnv, rootConfig) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -61,12 +69,12 @@ async function resolveDeeply(value, rootConfig) {
     return value;
   } else if (value instanceof AbstractValue) {
     for (let i = 0; i < value.args.length; i++) {
-      value.args[i] = await resolveDeeply(value.args[i], rootConfig);
+      value.args[i] = await resolveDeeply(value.args[i], moduleEnv, rootConfig);
     }
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value, rootConfig);
+    await resolveFragment(value, moduleEnv, rootConfig);
     return value;
   }
   if (isReactElement(value)) {
@@ -78,6 +86,7 @@ async function resolveDeeply(value, rootConfig) {
       if (childrenProperty && childrenProperty.descriptor) {
         const resolvedChildren = await resolveDeeply(
           childrenProperty.descriptor.value,
+          moduleEnv,
           rootConfig
         );
         childrenProperty.descriptor.value = resolvedChildren;
@@ -91,7 +100,7 @@ async function resolveDeeply(value, rootConfig) {
       name = type.func.name;
     }
     try {
-      const nextValue = await renderAsDeepAsPossible(type, props, rootConfig);
+      const nextValue = await renderAsDeepAsPossible(type, props, moduleEnv, rootConfig);
       if (nextValue === null) {
         console.log(
           `\nFailed to inline component "${type.intrinsicName}" but failed as the reference wasn't a statically determinable function or class.\n`
@@ -106,7 +115,7 @@ async function resolveDeeply(value, rootConfig) {
         );
       }
       if (x.value !== undefined) {
-        return await resolveDeeply(x.value, rootConfig);
+        return await resolveDeeply(x.value, moduleEnv, rootConfig);
       }
       // console.log(x.stack + '\n')
       // If something went wrong, just bail out and return the value we had.
@@ -117,47 +126,126 @@ async function resolveDeeply(value, rootConfig) {
   }
 }
 
-function renderOneLevel(componentType, props, rootConfig) {
+function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
+  // we used to use Prepack to construct the component but this generally lead to
+  // unwanted effects, as we don't really want to evaluate the code but rather
+  // we just want to extract the things we care about and set everything else as abstract
+  // specifically we want to create an object for "this" and put back on abstract properties
+  // this will also help avoid bail outs and improve how we can inline things
+  // we need to be careful not to set render methods to abstract (i.e. this._renderHeader())
+  const baseComponent = moduleEnv.eval(t.memberExpression(t.identifier('React'), t.identifier('Component')), true);
+  // add all prototype properties on to the BaseComponent
+  const baseComponentPrototype = baseComponent.properties.get('prototype').descriptor.value.properties;
+  const componentPrototype = componentType.properties.get('prototype').descriptor.value.properties;
+  for (let [key, property] of componentPrototype) {
+    if (key !== 'constructor') {
+      baseComponentPrototype.set(key, property);
+    }
+  }
+  const instance = evaluator.construct(baseComponent, [props]);
+  const instanceProperties = instance.properties;
+  // set props on the new instance
+  instanceProperties.get("props").descriptor.value = props;
+  // now we need to work out all the instance properties for "this"
+  // first we find the class object we made during the scan phase, it can be in two places
+  let thisObject;
+  if (componentType.class !== undefined) {
+    thisObject = componentType.class.thisObject;
+  } else if (componentType.$ECMAScriptCode.class) {
+    thisObject = componentType.$ECMAScriptCode.class.thisObject;
+  } else {
+    debugger;
+  }
+  const instanceThisShape = convertAccessorsToNestedObject(thisObject.accessors, null, true);
+  const instanceThisAst = convertNestedObjectToAst(instanceThisShape);
+  let instanceThis = moduleEnv.eval(instanceThisAst);
+  instanceThis = setAbstractPropsUsingNestedObject(instanceThis, instanceThisShape, 'this', true);
+  // copy over the instanceThis properties to our instance, minus "props" as we have that already
+  let useClassComponent = false;
+  for (let [key, value] of instanceThis.properties) {
+    if (key === 'state') {
+      useClassComponent = true;
+      instanceProperties.set(key, value);
+    } else if (key !== 'props') {
+      if (componentPrototype.has(key) === false) {
+        instanceProperties.set(key, value);
+      }
+    }
+  }
+  
+  // as we may bail out later on, don't actually apply changes to rootConfig until we know all is well
+  const commitToRootConfig = () => {
+    if (useClassComponent === true) {
+      rootConfig.useClassComponent = true;
+      if (rootConfig.state === null) {
+        rootConfig.state = thisObject.properties.get('state').astNode;
+      } else {
+        thisObject.properties.get('state').astNode.properties.forEach(property => {
+          rootConfig.state.properties.push(property);
+        });
+      }
+    }
+  };
+
+  // // inst = evaluator.construct(componentType, [props]);
+  // if (componentType.class !== undefined) {
+  //   const thisObject = componentType.class.thisObject;
+  //   // check if the state is being used
+  //   if (thisObject.accessors.has("state")) {
+  //     // TODO:
+  //     // we need to merge state and add prefixes on to avoid collisions
+  //     const stateValue = inst.properties.get("state").descriptor.value;
+  //     rootConfig.useClassComponent = true;
+  //     if (rootConfig.state === null) {
+  //       rootConfig.state = stateValue;
+  //     } else {
+  //       for (let [key, value] of stateValue.properties) {
+  //         if (rootConfig.state.properties.has(key) === false) {
+  //           rootConfig.state.properties.set(key, value);
+  //         } else {
+  //           debugger;
+  //         }
+  //       }
+  //     }
+  //     inst.properties.get(
+  //       "state"
+  //     ).descriptor.value = evaluator.createAbstractObject("this.state");
+  //   }
+  // }
+  // // go through all other properties
+  // for (let [key, val] of inst.properties) {
+  //   if (key !== 'state' && key !== 'props' && key !== 'context' && key !== 'refs') {
+  //     if (rootConfig.instanceProperties === null) {
+  //       rootConfig.instanceProperties = [];
+  //     }
+  //     // we set a used flag on the object to determine if we can DCE and leave it out
+  //     rootConfig.instanceProperties.push({
+  //       key: key,
+  //       used: false,
+  //       value: val.descriptor.value,
+  //     });
+  //     // replace instance variable with an abstract
+  //     inst.properties.get(
+  //       key
+  //     ).descriptor.value = evaluator.createAbstractValue(`this.${key}`);
+  //   }
+  // }
+  return {
+    instance,
+    commitToRootConfig,
+  };
+}
+
+function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
   if (isReactClassComponent(componentType)) {
     // Class Component
-    // should we event construct the class? should we not pass in abstracts for
-    // state and instance variables instead? otherwise it gets merged in our render
-    // method, which isn't what we want
-    const inst = evaluator.construct(componentType, [props]);
-    if (componentType.class !== undefined) {
-      const thisObject = componentType.class.thisObject;
-      // check if the state is being used
-      if (thisObject.accessors.has("state")) {
-        // TODO:
-        // we need to merge state and add prefixes on to avoid collisions
-        const stateValue = inst.properties.get("state").descriptor.value;
-        rootConfig.useClassComponent = true;
-        if (rootConfig.state === null) {
-          rootConfig.state = stateValue;
-        } else {
-          for (let [key, value] of stateValue.properties) {
-            if (rootConfig.state.properties.has(key) === false) {
-              rootConfig.state.properties.set(key, value);
-            } else {
-              debugger;
-            }
-          }
-        }
-        inst.properties.get(
-          "state"
-        ).descriptor.value = evaluator.createAbstractObject("this.state");
-      }
-    }
-    // go through all other properties
-    for (let [key, val] of inst.properties) {
-      if (key !== 'state' && key !== 'props' && key !== 'context' && key !== 'refs') {
-        // debugger;
-      }
-    }
-    // set props on the instance
-    inst.properties.get("props").descriptor.value = props;
-    const render = evaluator.get(inst, "render");
-    return evaluator.call(render, inst, []);
+    const {instance, commitToRootConfig} = createReactClassInstance(componentType, props, moduleEnv, rootConfig);
+   
+    const render = evaluator.get(instance, "render");
+    const value = evaluator.call(render, instance, []);
+    // we would have thrown if there was an issue, so if not, we can commit to root config
+    commitToRootConfig();
+    return value;
   } else {
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
@@ -168,9 +256,9 @@ function renderOneLevel(componentType, props, rootConfig) {
   return null;
 }
 
-async function renderAsDeepAsPossible(componentType, props, rootConfig) {
-  const result = renderOneLevel(componentType, props, rootConfig);
-  return await resolveDeeply(result, rootConfig);
+async function renderAsDeepAsPossible(componentType, props, moduleEnv, rootConfig) {
+  const result = renderOneLevel(componentType, props, moduleEnv, rootConfig);
+  return await resolveDeeply(result, moduleEnv, rootConfig);
 }
 
 exports.renderOneLevel = renderOneLevel;
