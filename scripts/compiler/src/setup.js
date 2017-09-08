@@ -179,12 +179,6 @@ function handleAssignmentValue(
         );
         break;
       }
-      case "LogicExpression": {
-        declarations[assignmentKey] = evaluator.createAbstractFunction(
-          assignmentKey
-        );
-        break;
-      }
       case "Object": {
         const astNode = assignmentValue.astNode;
         if (astNode !== null) {
@@ -196,11 +190,25 @@ function handleAssignmentValue(
         }
         break;
       }
+      case "SequenceExpression":
+      case "UnaryExpression":
+      case "LogicExpression":
+      case "ConditionalExpression":
       case "MathExpression": {
         if (assignmentValue.astNode !== null) {
           declarations[assignmentKey] = assignmentValue.astNode;
         } else {
           declarations[assignmentKey] = evaluator.createAbstractValue(
+            assignmentKey
+          );
+        }
+        break;
+      }
+      case "Array": {
+        if (assignmentValue.astNode !== null) {
+          declarations[assignmentKey] = assignmentValue.astNode;
+        } else {
+          declarations[assignmentKey] = evaluator.createAbstractArray(
             assignmentKey
           );
         }
@@ -243,6 +251,12 @@ function createPrepackMetadata(moduleScope) {
       assignmentKey === "Error" ||
       assignmentKey === "String" ||
       assignmentKey === "Number" ||
+      assignmentKey === "RegExp" ||
+      assignmentKey === "Symbol" ||
+      assignmentKey === "Function" ||
+      assignmentKey === "Boolean" ||
+      assignmentKey === "eval" ||
+      assignmentKey === "console" ||
       assignmentKey === "parseInt" ||
       assignmentKey === "parseFloat"
     ) {

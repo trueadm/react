@@ -51,11 +51,20 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
         switch (value.identifier) {
           case Types.ONE_OF: {
             const properties = value.args[0].properties;
-            const newObj = {};
+            let typeOf = null;
+            let mixedTypes = false;
             Array.from(properties.values()).forEach(val => {
-                newObj[val] = Types.ANY;
+              if (typeOf === null) {
+                typeOf = typeof val;
+              } else if (typeof val !== typeOf) {
+                mixedTypes = true;
+              }
             });
-            value = newObj;
+            if (mixedTypes === false) {
+              value = typeOf;
+            } else {
+              value = Types.ANY;
+            }
             break;
           }
           case Types.SHAPE: {

@@ -12,13 +12,20 @@ const t = require("babel-types");
 const travser = require("./traverser");
 
 function getFunctionReferenceName(functionValue) {
+  let name = null;
   if (functionValue.__originalName) {
-    return functionValue.__originalName;
+    name = functionValue.__originalName;
   }
   const namer = functionValue.properties.get("name");
   if (namer && namer.descriptor.value.value) {
-    return namer.descriptor.value.value;
+    name = namer.descriptor.value.value;
   }
+
+  if (name !== null) {
+    const hasThis = functionValue.$HomeObject !== undefined && functionValue.$HomeObject.properties.has(name);
+    return `${hasThis ? 'this.' : ''}${name}`;
+  }
+  // debugger;
   return null;
 }
 

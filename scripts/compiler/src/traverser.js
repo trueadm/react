@@ -19,7 +19,6 @@ const Types = {
   Object: "Object",
   Array: "Array",
   Scope: "Scope",
-  Identifier: "Identifier",
   MathExpression: "MathExpression",
   LogicExpression: "LogicExpression",
   UnaryExpression: "UnaryExpression",
@@ -48,6 +47,7 @@ const propTypes = createObject(null, {
   oneOf: PropTypes.ONE_OF,
   instanceOf: PropTypes.INSTANCE_OF,
   shape: PropTypes.SHAPE,
+  ReactElement: PropTypes.ELEMENT,
 });
 
 function createJSXElement(astNode, nodeType, props, spreads, key, ref) {
@@ -73,9 +73,10 @@ function createMathExpression(astNode, left, right, operator) {
   };
 }
 
-function createLogicExpression(left, right, operator) {
+function createLogicExpression(astNode, left, right, operator) {
   return {
     action: null,
+    astNode: astNode,
     left: left,
     operator: operator,
     right: right,
@@ -83,18 +84,20 @@ function createLogicExpression(left, right, operator) {
   };
 }
 
-function createUnaryExpression(argument, operator) {
+function createUnaryExpression(astNode, argument, operator) {
   return {
     argument: argument,
     action: null,
+    astNode: astNode,
     operator: operator,
     type: Types.UnaryExpression
   };
 }
 
-function createConditionalExpression(alternate, consequent, test) {
+function createConditionalExpression(astNode, alternate, consequent, test) {
   return {
     alternate: alternate,
+    astNode: astNode,
     action: null,
     consequent: consequent,
     test: test,
@@ -108,7 +111,7 @@ function createSequenceExpression(astNode, expressions) {
     action: null,
     expressions: expressions,
     type: Types.SequenceExpression
-  };  
+  };
 }
 
 function createUndefined(action) {
@@ -125,15 +128,6 @@ function createNull(action) {
   };
 }
 
-function createIdentifier() {
-  return {
-    accessedAsSpread: false,
-    accessedAsSpreadProps: new Map(),
-    action: null,
-    type: Types.Identifier,
-  };
-}
-
 function createAbstractObject() {
   return {
     accessedAsConstructor: false,
@@ -142,18 +136,6 @@ function createAbstractObject() {
     accessors: new Map(),
     action: null,
     type: Types.AbstractObject
-  };
-}
-
-function createAbstractObjectOrUndefined(crossModule) {
-  return {
-    accessedAsConstructor: false,
-    accessedAsSpread: false,
-    accessedAsSpreadProps: new Map(),
-    accessors: new Map(),
-    action: null,
-    crossModule: crossModule,
-    type: Types.AbstractObjectOrUndefined
   };
 }
 
@@ -286,26 +268,39 @@ function createArray(astNode, properties) {
 
 function createModuleScope() {
   return createScope({
+    Promise: createAbstractObject(),
+    Object: createAbstractObject(),
+    Math: createAbstractObject(),
+    Date: createAbstractObject(),
+    RegExp: createAbstractObject(),
+    Error: createAbstractFunction(),
+    String: createAbstractFunction(),
+    Number: createAbstractFunction(),
+    Array: createAbstractFunction(),
+    Boolean: createAbstractFunction(),
+    Symbol: createAbstractFunction(),
+    Function: createAbstractFunction(),
+    Element: createAbstractFunction(),
+    Node: createAbstractFunction(),
+    performance: createAbstractObject(),
+    console: createAbstractObject(),
+    debugger: createAbstractFunction(),
+    parseInt: createAbstractFunction(),
+    parseFloat: createAbstractFunction(),
+    isNaN: createAbstractFunction(),
+    isFinite: createAbstractFunction(),
+    eval: createAbstractFunction(),
+    uneval: createAbstractFunction(),
+    decodeURI: createAbstractFunction(),
+    decodeURIComponent: createAbstractFunction(),
+    encodeURI: createAbstractFunction(),
+    encodeURIComponent: createAbstractFunction(),
     module: createObject(null, {
       exports: createObject(null)
     }),
     require: createAbstractFunction("require"),
     window: createAbstractObject(),
     document: createAbstractObject(),
-    Promise: createAbstractObject(),
-    Object: createAbstractObject(),
-    Math: createAbstractObject(),
-    Date: createAbstractObject(),
-    performance: createAbstractObject(),
-    console: createAbstractObject(),
-    debugger: createAbstractFunction(),
-    parseInt: createAbstractFunction(),
-    parseFloat: createAbstractFunction(),
-    Error: createAbstractFunction(),
-    String: createAbstractFunction(),
-    Number: createAbstractFunction(),
-    Element: createAbstractFunction(),
-    Node: createAbstractFunction(),
     fbt: createObject(null, {
       _: createAbstractFunction('_'),
     }),
@@ -893,8 +888,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
   }
   switch (type) {
     case "Super": {
-      // TODO?
-      break;
+      return createAbstractFunction('super');
     }
     case "NumericLiteral":
     case "BooleanLiteral":
@@ -907,13 +901,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "Identifier": {
       const key = getNameFromAst(astNode);
 
-
       if (key === "undefined") {
         return createUndefined(action);
       } else if (subject.type === Types.Scope) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
-            if (newValue !== undefined) {
+            if (newValue != null) {
               if (newValue !== undefined && typeof newValue === 'object') {
                 newValue.action = action;
               }
@@ -927,7 +920,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           }
         }
       } else if (subject.type === Types.Object || subject.type === Types.Array) {
-        if (newValue !== undefined) {
+        if (newValue != null) {
           if (newValue.action !== undefined && typeof newValue === 'object') {
             newValue.action = action;
           }
@@ -991,10 +984,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       } else if (subject.type === Types.LogicExpression) {
         // who knows what it could be?
         return createAbstractValue(false);
-      } else if (subject.type === Types.Identifier) {
-        // NO OP
       } else if (subject.type === Types.Function) {
         if (key === 'propTypes') {
+          // debugger;
           subject.propTypes = newValue;
         } else if (key === 'defaultProps') {
           subject.defaultProps = newValue;
@@ -1153,6 +1145,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astRight = astNode.right;
       const operator = astNode.operator;
       return createLogicExpression(
+        astNode,
         getOrSetValueFromAst(astLeft, subject, action),
         getOrSetValueFromAst(astRight, subject, action),
         operator
@@ -1162,6 +1155,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astArgument = astNode.argument;
       const operator = astNode.operator;
       return createUnaryExpression(
+        astNode,
         getOrSetValueFromAst(astArgument, subject, action),
         operator
       );
@@ -1171,6 +1165,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astConsequent = astNode.consequent;
       const astTest = astNode.test;
       return createConditionalExpression(
+        astNode,
         getOrSetValueFromAst(astAlternate, subject, action),
         getOrSetValueFromAst(astConsequent, subject, action),
         getOrSetValueFromAst(astTest, subject, action)

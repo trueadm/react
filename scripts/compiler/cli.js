@@ -27,7 +27,7 @@ createHasteMap(resolveEntryFilePath, destinationBundlePath)
   .then(setupBundle)
   .then(compileBundle)
   .then(code => {
-    console.log('Compilation complete!');
+    console.log('\nCompilation complete!');
     console.log(`Optimized Trees: ${optimizer.getOptimizedTrees()}`)
   }).catch(e => {
     console.error(e.stack);

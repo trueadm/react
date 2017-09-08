@@ -41,7 +41,10 @@ async function resolveFragment(arrayValue, rootConfig) {
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
     if (elementValue) {
-      elementProperty.descriptor.value = await resolveDeeply(elementValue, rootConfig);
+      elementProperty.descriptor.value = await resolveDeeply(
+        elementValue,
+        rootConfig
+      );
     }
   }
 }
@@ -73,25 +76,35 @@ async function resolveDeeply(value, rootConfig) {
       // Terminal host component. Start evaluating its children.
       const childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
-        const resolvedChildren = await resolveDeeply(childrenProperty.descriptor.value, rootConfig);
+        const resolvedChildren = await resolveDeeply(
+          childrenProperty.descriptor.value,
+          rootConfig
+        );
         childrenProperty.descriptor.value = resolvedChildren;
       }
       return value;
     }
     let name;
-    if (type.properties && type.properties.has('name')) {
-      name = type.properties.get('name').descriptor.value.value;
+    if (type.properties && type.properties.has("name")) {
+      name = type.properties.get("name").descriptor.value.value;
     } else if (type.func) {
       name = type.func.name;
     }
     try {
-      // TODO extra URI module
-      if (name === 'Link') {
-        // debugger;
+      const nextValue = await renderAsDeepAsPossible(type, props, rootConfig);
+      if (nextValue === null) {
+        console.log(
+          `\nFailed to inline component "${type.intrinsicName}" but failed as the reference wasn't a statically determinable function or class.\n`
+        );
+        return value;
       }
-      return await renderAsDeepAsPossible(type, props, rootConfig);
+      return nextValue;
     } catch (x) {
-      // console.log(x.stack + '\n')
+      if (name !== undefined) {
+        console.log(
+          `\nFailed to inline component "${name}" but failed due to a Prepack evaluation error:\n${x.stack}\n`
+        );
+      }
       if (x.value !== undefined) {
         return await resolveDeeply(x.value, rootConfig);
       }
@@ -106,7 +119,7 @@ async function resolveDeeply(value, rootConfig) {
 
 function renderOneLevel(componentType, props, rootConfig) {
   if (isReactClassComponent(componentType)) {
-    // Class Component 
+    // Class Component
     // should we event construct the class? should we not pass in abstracts for
     // state and instance variables instead? otherwise it gets merged in our render
     // method, which isn't what we want
@@ -114,10 +127,10 @@ function renderOneLevel(componentType, props, rootConfig) {
     if (componentType.class !== undefined) {
       const thisObject = componentType.class.thisObject;
       // check if the state is being used
-      if (thisObject.accessors.has('state')) {
+      if (thisObject.accessors.has("state")) {
         // TODO:
         // we need to merge state and add prefixes on to avoid collisions
-        const stateValue = inst.properties.get('state').descriptor.value;
+        const stateValue = inst.properties.get("state").descriptor.value;
         rootConfig.useClassComponent = true;
         if (rootConfig.state === null) {
           rootConfig.state = stateValue;
@@ -130,17 +143,29 @@ function renderOneLevel(componentType, props, rootConfig) {
             }
           }
         }
-        inst.properties.get('state').descriptor.value = evaluator.createAbstractObject('this.state');
+        inst.properties.get(
+          "state"
+        ).descriptor.value = evaluator.createAbstractObject("this.state");
+      }
+    }
+    // go through all other properties
+    for (let [key, val] of inst.properties) {
+      if (key !== 'state' && key !== 'props' && key !== 'context' && key !== 'refs') {
+        // debugger;
       }
     }
     // set props on the instance
-    inst.properties.get('props').descriptor.value = props;
+    inst.properties.get("props").descriptor.value = props;
     const render = evaluator.get(inst, "render");
     return evaluator.call(render, inst, []);
   } else {
     // Stateless Functional Component
-    return evaluator.call(componentType, undefined, [props]);
+    // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
+    if (componentType.$Call !== undefined) {
+      return evaluator.call(componentType, undefined, [props]);
+    }
   }
+  return null;
 }
 
 async function renderAsDeepAsPossible(componentType, props, rootConfig) {

@@ -3,6 +3,10 @@
 const t = require("babel-types");
 const babylon = require("babylon");
 const evaluator = require("./evaluator");
+const {
+  ObjectCreate,
+  CreateDataPropertyOrThrow,
+} = require("prepack/lib/methods");
 
 const cloneElementCode = `
 function cloneElement(element, config, children) {
@@ -122,11 +126,18 @@ function createMockReact() {
 }
 
 function createMockWindow() {
-  const windowObject = evaluator.createAbstractObject('window');
+  const realm = evaluator.realm;
+  const windowObject = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
+  // const windowObject = evaluator.createObject('window');
   const locationObject = evaluator.createAbstractObject('window.location');
   locationObject.$SetPartial('host', evaluator.createAbstractString('window.location.host'), locationObject);
   locationObject.$SetPartial('protocol', evaluator.createAbstractString('window.location.protocol'), locationObject);
-  windowObject.$SetPartial('location', locationObject, windowObject);
+  CreateDataPropertyOrThrow(
+    realm,
+    windowObject,
+    "location",
+    locationObject
+  );
   return windowObject;
 }
 

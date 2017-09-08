@@ -143,24 +143,6 @@ function getDefaultProps(elementType, scope) {
           defaultProps = componentData.defaultProps;
         }
       }
-    } else {
-      // for non component elements, like div and span, we need to find the parent function/class component
-      // and then get its proptypes that way
-      let currentScope = scope;
-      while (currentScope !== null) {
-        const func = currentScope.func;
-        if (func != null) {
-          if (func.defaultProps !== null) {
-            defaultProps = func.defaultProps;
-          } else if (func.theClass !== null) {
-            if (func.theClass.defaultProps !== undefined) {
-              defaultProps = func.theClass.defaultProps;
-            }
-            break;
-          }
-        }
-        currentScope = currentScope.parentScope;
-      }
     }
   }
   return defaultProps;
@@ -269,7 +251,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           }
           const val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
           if (key === 'children') {
-            if (!children) {
+            if (!children || children instanceof UndefinedValue) {
               children = val;
             }
           } else {

@@ -209,18 +209,16 @@ async function optimizeComponentTree(
       astComponent.optimizedReplacement = optimizedAstComponent;
       optimizedTrees++;
       await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope, source);
-      console.log(`Optimized component "${name}"\n`);
+      console.log(`Successfully optimized a component tree with a root component of "${name}".`);
     } catch (e) {
       if (e.stack && e.stack.indexOf('not yet supported on abstract value props') !== -1) {
-        console.warn(`\nPrepack component bail-out on "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`);
+        console.warn(`\nFailed to optimize a component tree with a root component of "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`);
       } else {
-        console.warn(`\nPrepack component bail-out on "${name}" due to:\n${e.stack}\n`);
+        console.warn(`\nFailed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n${e.stack}\n`);
       }
       // find all direct child components in the tree of this component
       await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope, source);
     }
-  } else {
-    console.log(`Found component "${name}" but has already processed this component before.`)
   }
 }
 

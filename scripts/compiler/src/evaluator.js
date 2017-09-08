@@ -263,6 +263,9 @@ function call(
 
   let res;
   try {
+    if (!functionValue.$Call) {
+      debugger;
+    }
     res = functionValue.$Call(thisArg, argsList);
   } catch (completion) {
     if (completion instanceof AbruptCompletion) {
@@ -357,3 +360,5 @@ exports.call = call;
 exports.construct = construct;
 
 exports.ModuleEnvironment = ModuleEnvironment;
+
+exports.realm = realm;
