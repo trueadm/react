@@ -304,13 +304,41 @@ function getExpressionFromSource(start, end, source) {
   }
 }
 
+function toIdentififer(string) {
+  if (string === 'this') {
+    return t.thisExpression();
+  }
+  return t.identifier(string);
+}
+
+function convertPrefixPlaceholderToExpression(placeholder) {
+  const parts = placeholder.substr(3).split('$_$');
+  let astNode = null;
+  while (parts.length > 0) {
+    if (parts.length === 1) {
+      if (astNode === null) {
+        astNode = toIdentififer(parts.shift());
+      } else {
+        astNode = t.memberExpression(astNode, toIdentififer(parts.shift()));
+      }
+    } else {
+      if (astNode === null) {
+        astNode = t.memberExpression(toIdentififer(parts.shift()), toIdentififer(parts.shift()));
+      } else {
+        debugger;
+      }
+    }
+  }
+  return astNode;
+}
+
 function convertValueToExpression(value, rootConfig, source) {
   if (value instanceof AbstractValue) {
     let serializedArgs = value.args.map(abstractArg =>
       convertValueToExpression(abstractArg, rootConfig, source)
     );
     if (value.isIntrinsic()) {
-      if (value.intrinsicName.indexOf("_$") !== -1) {
+      if (value.intrinsicName.indexOf("_$") === 0) {
         const nameFromSource = getExpressionFromSource(
           value.expressionLocation.start,
           value.expressionLocation.end,
@@ -318,6 +346,8 @@ function convertValueToExpression(value, rootConfig, source) {
         );
         value._buildNode.name = nameFromSource;
         value.intrinsicName = nameFromSource;
+      } else if (value.intrinsicName.indexOf("$F$") === 0) {
+        return convertPrefixPlaceholderToExpression(value.intrinsicName);
       }
       if (
         rootConfig.useClassComponent === false &&

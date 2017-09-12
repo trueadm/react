@@ -156,12 +156,14 @@ class RootConfig {
       const entry = entries[i];
       if (entry.state !== null) {
         if (mergedState === null) {
-          mergedState = entry.state;
-        } else {
-          entry.state.properties.forEach(property => {
-            mergedState.properties.push(property);
-          });
+          mergedState = t.objectExpression([]);
         }
+        entry.state.properties.forEach(originalProperty => {
+          mergedState.properties.push(t.objectProperty(
+            t.identifier(entry.key + originalProperty.key.name),
+            originalProperty.value
+          ));
+        });
       }
     }
     return mergedState;

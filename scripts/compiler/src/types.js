@@ -128,6 +128,35 @@ function convertNestedObjectToAst(object) {
   );
 }
 
+// this will add additioal prefixed aliases to all prefixes one level deep
+// i.e. this.state.foo => this.state.PREFIX_foo
+function convertNestedObjectWithPrefixesToAst(object, prefix, aliasKey, moduleEnv) {
+  return t.objectExpression(
+    Object.keys(object).map(key => {
+      const value = object[key];
+      if (typeof value === 'object') {
+        return t.objectProperty(t.identifier(key), convertNestedObjectWithPrefixesToAst(value, `${prefix}$_$${key}`, aliasKey, moduleEnv));
+      } else {
+        const ident = `$F$${prefix}$_$${aliasKey}${key}`;
+        moduleEnv.declare(ident, evaluator.createAbstractValue(ident));
+        return t.objectProperty(t.identifier(key), t.identifier(ident));
+      }
+    })
+  );
+}
+
+
+// function convertNestedObjectWithPrefixesToAst(object, aliasKey, moduleEnv) {
+//   Object.keys(object).forEach(key => {
+//     const value = object[key];
+//     if (typeof key === 'object') {
+//       convertNestedObjectWithPrefixesToAst(value, aliasKey, moduleEnv);
+//     } else {
+//       object[key] = t.identifier(aliasKey + key);
+//     }
+//   });
+// }
+
 function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
   const oldProperties = oldValue.properties;
   let properties = oldProperties;
@@ -186,5 +215,6 @@ module.exports = {
   convertAccessorsToNestedObject: convertAccessorsToNestedObject,
   convertNestedObjectToAst: convertNestedObjectToAst,
   setAbstractPropsUsingNestedObject: setAbstractPropsUsingNestedObject,
+  convertNestedObjectWithPrefixesToAst: convertNestedObjectWithPrefixesToAst,
   Types: Types,
 };

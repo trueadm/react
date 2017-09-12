@@ -11,8 +11,7 @@ const {
   UndefinedValue
 } = require("prepack/lib/values");
 const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
-const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
-const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
+const convertNestedObjectWithPrefixesToAst = require('./types').convertNestedObjectWithPrefixesToAst;
 const t = require("babel-types");
 const {
   GetValue,
@@ -126,12 +125,6 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
   }
 }
 
-// this will add additioal prefixed aliases to all prefixes one level deep
-// i.e. this.state.foo => this.state.PREFIX_foo
-function addPrefixedAliases(object, prefix) {
-  debugger;
-}
-
 function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   // add a rootConfig entry
   const {rootConfigEntry, entryKey} = rootConfig.addEntry(props);
@@ -166,10 +159,8 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   }
   const thisObject = theClass.thisObject;
   const instanceThisShape = convertAccessorsToNestedObject(thisObject.accessors, null, true);
-  addPrefixedAliases(instanceThisShape, entryKey);
-  const instanceThisAst = convertNestedObjectToAst(instanceThisShape);
-  let instanceThis = moduleEnv.eval(instanceThisAst);
-  instanceThis = setAbstractPropsUsingNestedObject(instanceThis, instanceThisShape, 'this', true);
+  const instanceThisAstWithPrefixes = convertNestedObjectWithPrefixesToAst(instanceThisShape, 'this', entryKey, moduleEnv);
+  let instanceThis = moduleEnv.eval(instanceThisAstWithPrefixes);
   // copy over the instanceThis properties to our instance, minus "props" as we have that already
   let useClassComponent = false;
   for (let [key, value] of instanceThis.properties) {
