@@ -4,8 +4,8 @@ require('React');
 require('PropTypes');
 
 function timeAge(time) {
-  const now = new Date().getTime() / 1000;
-  const minutes = (now - time) / 60;
+  var now = new Date().getTime() / 1000;
+  var minutes = (now - time) / 60;
 
   if (minutes < 60) {
     return Math.round(minutes) + ' minutes ago';
@@ -60,15 +60,13 @@ function Story({ story, rank }) {
   }} className="spacer" />];
 }
 
-
-
 function App(props) {
   return <center>
       <table id="hnmain" border="0" cellPadding="0" cellSpacing="0" width="85%" style={{
       "backgroundColor": "#f6f6ef"
     }}>
         <tbody>
-          {props.stories.length > 0 ? [<tr style={{
+          {this.props.stories.length > 0 ? [<tr style={{
           "backgroundColor": "#222"
         }}>
       <table style={{
@@ -90,7 +88,7 @@ function App(props) {
                   "lineHeight": "12pt"
                 }} height="10">
               <span className="pagetop">
-                <b className="hnname">React HN Benchmark</b>
+                <b className="hnname">{undefined}</b>
                 <a href="#">new</a>
                  | 
                 <a href="#">comments</a>
@@ -111,7 +109,7 @@ function App(props) {
       <td>
         <table cellPadding="0" cellSpacing="0" className="itemlist">
           <tbody>
-            {props.stories.map((story, i) => {
+            {this.props.stories.map((story, i) => {
                   return <Story story={story} rank={++i} key={story.id} />;
                 })}
           </tbody>
@@ -122,8 +120,6 @@ function App(props) {
       </table>
     </center>;
 }
-
-
 
 var App_1 = App;
 

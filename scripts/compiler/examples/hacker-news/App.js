@@ -41,7 +41,7 @@ function App({stories}) {
 }
 
 App.propTypes = {
-  stories: PropTypes.array,
+  stories: PropTypes.array.isRequired,
 };
 
 module.exports = App;

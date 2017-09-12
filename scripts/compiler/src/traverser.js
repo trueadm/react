@@ -24,6 +24,7 @@ const Types = {
   LogicExpression: "LogicExpression",
   UnaryExpression: "UnaryExpression",
   ConditionalExpression: "ConditionalExpression",
+  UpdateExpression: "UpdateExpression",
   Undefined: "Undefined",
   Null: "Null",
   AbstractObject: "AbstractObject",
@@ -103,6 +104,16 @@ function createConditionalExpression(astNode, alternate, consequent, test) {
     consequent: consequent,
     test: test,
     type: Types.ConditionalExpression
+  };
+}
+
+function createUpdateExpression(astNode, argument, operator) {
+  return {
+    argument: argument,
+    astNode: astNode,
+    action: null,
+    operator: operator,
+    type: Types.UpdateExpression
   };
 }
 
@@ -1269,6 +1280,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "JSXExpressionContainer": {
       return getOrSetValueFromAst(astNode.expression, subject, action, newValue);
+    }
+    case "UpdateExpression": {
+      return createUpdateExpression(astNode, getOrSetValueFromAst(astNode.argument, subject, action), astNode.operator);
     }
     default: {
       debugger;

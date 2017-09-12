@@ -59,7 +59,7 @@ var Benchmark = function Benchmark(props) {
       "width": 1306
     }}>
         <div className="_4u-c">
-        {[<div className="_2wdc"><span><div size="medium" className="_585n _585o _2wdd">
+        {[<div className="_2wdc" key=".hoz7vrpu.0"><span><div size="medium" className="_585n _585o _2wdd">
         <i alt="Warning" className="_585p img sp_i534r85sjIn sx_20273d" src={null}>
         <u>Warning</u>
       </i>
@@ -296,7 +296,7 @@ var Benchmark = function Benchmark(props) {
           </div>, <div key="campaign_group_basic_section98010048849317">
             <div className="_12k2 _4-u2  _4-u8">
         <div className="_5dw9 _5dwa _4-u3">
-        {[<span className="_38my">Campaign Details<span className="_c1c" /></span>]}
+        {[<span className="_38my" key=".tfbrk5a.0">Campaign Details<span className="_c1c" /></span>]}
         <div className="_3s3-" />
       </div><div className="_12jy _4-u3">
         <div className="_3-8j">
