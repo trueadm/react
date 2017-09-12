@@ -493,6 +493,10 @@ function traverse(node, action, scope) {
         traverse(node.id, action, scope);
         const nodeInit = traverse(node.init, action, scope);
         if (nodeInit !== undefined) {
+          nodeInit.id = node.id;
+          if (nodeInit.type === 'ClassDeclaration') {
+            nodeInit.type = 'ClassExpression';
+          }
           node.init = nodeInit;
         }
       }
@@ -538,10 +542,7 @@ function traverse(node, action, scope) {
       ) {
         declareFunction(node, node.id, node.params, node.body, action, scope, false, true);
       } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
-        const optimizedNode = node.optimizedReplacement;
-
-        // node.body = optimizedNode.body;
-        // node.params = optimizedNode.params;
+        return node.optimizedReplacement;
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);

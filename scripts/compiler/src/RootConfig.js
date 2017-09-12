@@ -1,5 +1,15 @@
 "use strict";
 
+const {
+  AbstractValue,
+  ArrayValue,
+  FunctionValue,
+  ObjectValue,
+  NullValue,
+  NumberValue,
+  SymbolValue,
+  UndefinedValue
+} = require("prepack/lib/values");
 const traverser = require("./traverser");
 const t = require("babel-types");
 const serializer = require("./serializer");
@@ -164,6 +174,12 @@ function addPrefixesToAstNodes(entryNode, entry) {
                   value.intrinsicName
                 );
               }
+            }
+            if (typeof value.buildNode !== 'function') {
+              if (value instanceof UndefinedValue) {
+                return t.identifier('undefined');
+              }
+              debugger;
             }
             return value.buildNode();
           }

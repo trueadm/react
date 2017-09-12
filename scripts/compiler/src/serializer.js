@@ -259,7 +259,8 @@ const isInvalid = {
   ")": true,
   "(": true,
   ":": true,
-  "=": true
+  "=": true,
+  "?": true
 };
 
 // TODO this entire thing is as hacky as anything and needs to go away
@@ -292,7 +293,7 @@ function getExpressionFromSource(start, end, source) {
       // lets traverve back from start to find the call
       let s = start.column - 2;
       char = line[s];
-      while (char && (!isInvalid[char] || char === "(" || char === ",")) {
+      while (char && (!isInvalid[char] || char === "(" || char === "," || char === "\n" || char === "'" || char === " ")) {
         s--;
         char = line[s];
       }
