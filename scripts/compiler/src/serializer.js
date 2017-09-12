@@ -424,7 +424,10 @@ function createClassConstructorBody(rootConfig, source) {
       )
     );
   }
-  rootConfig.applyFilteredConstructorPropertiesToBlock(bodyBlock);
+  const constructorProperties = rootConfig.getConstructorProperties(bodyBlock);
+  if (constructorProperties !== null) {
+    bodyBlock.push(...constructorProperties);
+  }
   return t.blockStatement(bodyBlock);
 }
 
@@ -485,3 +488,5 @@ function serializeEvaluatedFunction(
 exports.convertValueToExpression = convertValueToExpression;
 
 exports.serializeEvaluatedFunction = serializeEvaluatedFunction;
+
+exports.convertPrefixPlaceholderToExpression = convertPrefixPlaceholderToExpression;

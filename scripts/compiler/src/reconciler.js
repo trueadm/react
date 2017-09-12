@@ -126,8 +126,15 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
 }
 
 function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
+  // first we find the class object we made during the scan phase, it can be in two places
+  let theClass;
+  if (componentType.class !== undefined) {
+    theClass = componentType.class;
+  } else if (componentType.$ECMAScriptCode.class) {
+    theClass = componentType.$ECMAScriptCode.class;
+  }
   // add a rootConfig entry
-  const {rootConfigEntry, entryKey} = rootConfig.addEntry(props);
+  const {rootConfigEntry, entryKey} = rootConfig.addEntry(props, theClass);
   // we used to use Prepack to construct the component but this generally lead to
   // unwanted effects, as we don't really want to evaluate the code but rather
   // we just want to extract the things we care about and set everything else as abstract
@@ -148,15 +155,6 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   // set props on the new instance
   instanceProperties.get("props").descriptor.value = props;
   // now we need to work out all the instance properties for "this"
-  // first we find the class object we made during the scan phase, it can be in two places
-  let theClass;
-  if (componentType.class !== undefined) {
-    theClass = componentType.class;
-  } else if (componentType.$ECMAScriptCode.class) {
-    theClass = componentType.$ECMAScriptCode.class;
-  } else {
-    debugger;
-  }
   const thisObject = theClass.thisObject;
   const instanceThisShape = convertAccessorsToNestedObject(thisObject.accessors, null, true);
   const instanceThisAstWithPrefixes = convertNestedObjectWithPrefixesToAst(instanceThisShape, 'this', entryKey, moduleEnv);

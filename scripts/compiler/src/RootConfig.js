@@ -2,43 +2,47 @@
 
 const traverser = require("./traverser");
 const t = require("babel-types");
+const serializer = require("./serializer");
 
-function filterConstructorProperties(object, bodyBlock) {
+// this can be done better
+function filterConstructorProperties(object, constructorProperties) {
   if (object !== null) {
     if (Array.isArray(object)) {
       object.forEach(child => {
-        // skip this.state and super() expressions
-        filterConstructorProperties(child, bodyBlock);
+        filterConstructorProperties(child, constructorProperties);
       });
       return;
     } else if (object.type === "ExpressionStatement") {
       const expression = object.expression;
 
-      filterConstructorProperties(expression, bodyBlock);
+      filterConstructorProperties(expression, constructorProperties);
       return;
     } else if (object.type === "ReturnStatement") {
-      // we don't want return statements
+      // remove return statements
       if (object.argument.type === "SequenceExpression") {
-        filterConstructorProperties(object.argument.expressions, bodyBlock);
+        filterConstructorProperties(
+          object.argument.expressions,
+          constructorProperties
+        );
       } else {
         debugger;
       }
       return;
     } else if (
-      // Super(...)
+      // remove Super(...)
       object.type === "CallExpression" &&
       object.callee.type === "Super"
     ) {
       return;
     } else if (object.type === "AssignmentExpression") {
-      // = Super(...)
+      // remove ... = Super(...)
       if (
         object.right.type === "CallExpression" &&
         object.right.callee.type === "Super"
       ) {
         return;
       }
-      // this.state = ...
+      // remove this.state = ...
       if (
         object.left.type === "MemberExpression" &&
         object.left.object.type === "ThisExpression" &&
@@ -52,9 +56,9 @@ function filterConstructorProperties(object, bodyBlock) {
       return;
     }
     if (object.type.indexOf("Expression") !== -1) {
-      bodyBlock.push(t.expressionStatement(object));
+      constructorProperties.push(t.expressionStatement(object));
     } else {
-      bodyBlock.push(object);
+      constructorProperties.push(object);
     }
   }
 }
@@ -63,16 +67,112 @@ function mergeLifecycleMethod(
   name,
   lifecycleMethod,
   lifecycleMethods,
-  prototypeProperties
+  prototypeProperties,
+  entry
 ) {
   if (lifecycleMethods[name] === undefined) {
-    lifecycleMethods[name] = lifecycleMethod;
-    prototypeProperties.push(lifecycleMethod);
-  } else {
-    lifecycleMethod.body.body.forEach(componentWillMountStatement => {
-      lifecycleMethods[name].body.body.push(componentWillMountStatement);
-    });
+    lifecycleMethods[name] = t.classMethod(
+      lifecycleMethod.kind,
+      lifecycleMethod.key,
+      lifecycleMethod.params,
+      t.blockStatement([])
+    );
+    prototypeProperties.push(lifecycleMethods[name]);
   }
+  lifecycleMethod.body.body.forEach(componentWillMountStatement => {
+    lifecycleMethods[name].body.body.push(
+      addPrefixesToAstNodes(componentWillMountStatement, entry)
+    );
+  });
+}
+
+function findFirstMemberNodeOfMemberExpression(node) {
+  while (node.type !== "Identifier") {
+    if (node.type === "MemberExpression") {
+      if (node.object.type === "ThisExpression") {
+        node.property.parentNode = node;
+        node = node.property;
+      } else {
+        node.object.parentNode = node;
+        node = node.object;
+      }
+    }
+  }
+  return node;
+}
+
+function getNextMemberNodeOfMemberExpression(rootNode, prevNode) {
+  let parentNode = prevNode.parentNode;
+  let property;
+  if (parentNode.object === prevNode) {
+    property = parentNode.property;
+  } else if (parentNode.parentNode !== undefined) {
+    property = parentNode.parentNode.property;
+  } else {
+    property = rootNode.property;
+  }
+  return property;
+}
+
+const blacklist = {
+  state: true,
+  props: true,
+  context: true,
+  refs: true,
+  setState: true,
+  forceUpdate: true,
+  displayName: true,
+  defaultProps: true,
+};
+
+function addPrefixesToAstNodes(entryNode, entry) {
+  const thisAccessors = entry.thisClass.thisObject.accessors;
+  const prefix = entry.key;
+  const propsValue = entry.props;
+  const scope = traverser.createModuleScope();
+  scope.findAndReplace = {
+    MemberExpression(node) {
+      if (node.object.type === "ThisExpression") {
+        // handle this.* instance properties/methods
+        const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
+
+        const name = firstNode.name;
+        if (thisAccessors.has(name) && blacklist[name] !== true) {
+          firstNode.name = prefix + name;
+        }
+        return true;
+      } else if (node.object.type === "MemberExpression") {
+        // handle this.state and this.props
+        const firstNode = findFirstMemberNodeOfMemberExpression(node.object);
+        const name = firstNode.name;
+        if (name === "state") {
+          const property = getNextMemberNodeOfMemberExpression(node, firstNode);
+          property.name = prefix + property.name;
+          return true;
+        } else if (name === "props") {
+          // we need to replace with correct props
+          const memberName = getNextMemberNodeOfMemberExpression(
+            node,
+            firstNode
+          ).name;
+          const propValue = propsValue.properties.get(memberName);
+          if (propsValue !== undefined) {
+            const value = propValue.descriptor.value;
+            if (value.isIntrinsic()) {
+              if (value.intrinsicName.indexOf("$F$") === 0) {
+                return serializer.convertPrefixPlaceholderToExpression(
+                  value.intrinsicName
+                );
+              }
+            }
+            return value.buildNode();
+          }
+        }
+      }
+    }
+  };
+  traverser.traverse(entryNode, traverser.Actions.FindAndReplace, scope);
+  return entryNode;
 }
 
 class RootConfig {
@@ -81,7 +181,7 @@ class RootConfig {
     this._entriesCache = null;
     this.useClassComponent = false;
   }
-  addEntry(props) {
+  addEntry(props, theClass) {
     const key =
       Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3) + "_";
     const entry = {
@@ -89,7 +189,8 @@ class RootConfig {
       key: key,
       props: props,
       prototypeProperties: null,
-      state: null
+      state: null,
+      thisClass: theClass
     };
 
     this._entries.add(entry);
@@ -124,30 +225,53 @@ class RootConfig {
             name === "componentDidMount" ||
             name === "componentWillUpdate" ||
             name === "componentDidUpdate" ||
-            name === "componentWillUnmount"
+            name === "componentWillUnmount" ||
+            name === "shouldComponentUpdate" ||
+            name === "componentWillReceiveProps" ||
+            name === "componentDidCatch"
           ) {
             mergeLifecycleMethod(
               name,
               prototypeProperty,
               lifecycleMethods,
-              prototypeProperties
+              prototypeProperties,
+              entry
             );
           } else {
-            prototypeProperties.push(prototypeProperty);
+            prototypeProperties.push(
+              t.classMethod(
+                prototypeProperty.kind,
+                t.identifier(entry.key + prototypeProperty.key.name),
+                prototypeProperty.params,
+                addPrefixesToAstNodes(prototypeProperty.body, entry)
+              )
+            );
           }
         });
       }
     }
     return prototypeProperties;
   }
-  applyFilteredConstructorPropertiesToBlock(bodyBlock) {
+  getConstructorProperties() {
     const entries = this._getEntries();
+    let constructorProperties = [];
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (entry.constructorProperties !== null) {
-        filterConstructorProperties(entry.constructorProperties, bodyBlock);
+        if (constructorProperties === null) {
+          constructorProperties = [];
+        }
+        addPrefixesToAstNodes(
+          t.blockStatement(entry.constructorProperties),
+          entry
+        );
+        filterConstructorProperties(
+          entry.constructorProperties,
+          constructorProperties
+        );
       }
     }
+    return constructorProperties;
   }
   getMergedState() {
     const entries = this._getEntries();
@@ -159,10 +283,12 @@ class RootConfig {
           mergedState = t.objectExpression([]);
         }
         entry.state.properties.forEach(originalProperty => {
-          mergedState.properties.push(t.objectProperty(
-            t.identifier(entry.key + originalProperty.key.name),
-            originalProperty.value
-          ));
+          mergedState.properties.push(
+            t.objectProperty(
+              t.identifier(entry.key + originalProperty.key.name),
+              addPrefixesToAstNodes(originalProperty.value, entry)
+            )
+          );
         });
       }
     }

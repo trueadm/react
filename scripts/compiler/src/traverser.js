@@ -10,6 +10,7 @@ const Actions = {
   ScanInnerScope3: "ScanInnerScope3",
   ReplaceWithOptimized: "ReplaceWithOptimized",
   FindComponents: "FindComponents",
+  FindAndReplace: "FindAndReplace",
 };
 
 const Types = {
@@ -216,6 +217,7 @@ function createScope(assignments) {
     assignments: new Map(),
     calls: [],
     deferredScopes: [],
+    findAndReplace: null,
     func: null,
     jsxElementIdentifiers: new Map(),
     parentScope: null,
@@ -329,6 +331,17 @@ function assign(subject, topic, name, value) {
 function traverse(node, action, scope) {
   if (node === undefined || node === null) {
     return;
+  }
+  if (action === Actions.FindAndReplace) {
+    const callback = scope.findAndReplace[node.type];
+    if (typeof callback === 'function') {
+      const callbackVal = callback(node);
+      if (callbackVal === true) {
+        return undefined;
+      } else if (callbackVal !== undefined) {
+        return callbackVal;
+      }
+    }
   }
   switch (node.type) {
     case "BlockStatement": {
@@ -446,6 +459,18 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         callFunction(node, node.callee, node.arguments, action, scope);
+      } else {
+        const callee = traverse(node.callee, action, scope);
+        if (callee !== undefined) {
+          node.callee = callee;
+        }
+        const args = node.arguments;
+        for (let i = 0; i < args.length; i++) {
+          const arg = traverse(args[i], action, scope);
+          if (arg !== undefined) {
+            args[i] = arg;
+          }
+        }
       }
       break;
     }
@@ -487,12 +512,21 @@ function traverse(node, action, scope) {
       break;
     }
     case "BinaryExpression": {
-      traverse(node.left, action, scope);
-      traverse(node.right, action, scope);
+      const left = traverse(node.left, action, scope);
+      if (left !== undefined) {
+        node.left = left;
+      }
+      const right = traverse(node.right, action, scope);
+      if (right !== undefined) {
+        node.right = right;
+      }
       break;
     }
     case "UpdateExpression": {
-      traverse(node.argument, action, scope);
+      const argument = traverse(node.argument, action, scope);
+      if (argument !== undefined) {
+        node.argument = argument;
+      }
       break;
     }
     case "ArrowFunctionExpression": {
@@ -525,9 +559,18 @@ function traverse(node, action, scope) {
       break;
     }
     case "IfStatement": {
-      traverse(node.test, action, scope);
-      traverse(node.consequent, action, scope);
-      traverse(node.alternate, action, scope);
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = node.test;
+      }
+      const consequent = traverse(node.consequent, action, scope);
+      if (consequent !== undefined) {
+        node.consequent = consequent;
+      }
+      const alternate = traverse(node.alternate, action, scope);
+      if (alternate !== undefined) {
+        node.alternate = alternate;
+      }
       break;
     }
     case "FunctionExpression": {
@@ -562,9 +605,18 @@ function traverse(node, action, scope) {
       break;
     }
     case "ConditionalExpression": {
-      traverse(node.test, action, scope);
-      traverse(node.consequent, action, scope);
-      traverse(node.alternate, action, scope);
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = test;
+      }
+      const consequent = traverse(node.consequent, action, scope);
+      if (consequent !== undefined) {
+        node.consequent = consequent;
+      }
+      const alternate = traverse(node.alternate, action, scope);
+      if (alternate !== undefined) {
+        node.alternate = alternate;
+      }
       break;
     }
     case "ObjectPattern": {
@@ -637,6 +689,9 @@ function traverse(node, action, scope) {
       } else if (action === Actions.ReplaceWithOptimized &&
         node.right.optimized === true) {
         return node.right.optimizedReplacement;
+      } else {
+        traverse(node.left, action, scope);
+        traverse(node.right, action, scope);
       }
       break;
     }
