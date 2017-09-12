@@ -126,7 +126,15 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
   }
 }
 
+// this will add additioal prefixed aliases to all prefixes one level deep
+// i.e. this.state.foo => this.state.PREFIX_foo
+function addPrefixedAliases(object, prefix) {
+  debugger;
+}
+
 function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
+  // add a rootConfig entry
+  const {rootConfigEntry, entryKey} = rootConfig.addEntry(props);
   // we used to use Prepack to construct the component but this generally lead to
   // unwanted effects, as we don't really want to evaluate the code but rather
   // we just want to extract the things we care about and set everything else as abstract
@@ -148,15 +156,17 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   instanceProperties.get("props").descriptor.value = props;
   // now we need to work out all the instance properties for "this"
   // first we find the class object we made during the scan phase, it can be in two places
-  let thisObject;
+  let theClass;
   if (componentType.class !== undefined) {
-    thisObject = componentType.class.thisObject;
+    theClass = componentType.class;
   } else if (componentType.$ECMAScriptCode.class) {
-    thisObject = componentType.$ECMAScriptCode.class.thisObject;
+    theClass = componentType.$ECMAScriptCode.class;
   } else {
     debugger;
   }
+  const thisObject = theClass.thisObject;
   const instanceThisShape = convertAccessorsToNestedObject(thisObject.accessors, null, true);
+  addPrefixedAliases(instanceThisShape, entryKey);
   const instanceThisAst = convertNestedObjectToAst(instanceThisShape);
   let instanceThis = moduleEnv.eval(instanceThisAst);
   instanceThis = setAbstractPropsUsingNestedObject(instanceThis, instanceThisShape, 'this', true);
@@ -169,6 +179,7 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
     } else if (key !== 'props') {
       if (componentPrototype.has(key) === false) {
         instanceProperties.set(key, value);
+        useClassComponent = true;
       }
     }
   }
@@ -177,59 +188,25 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   const commitToRootConfig = () => {
     if (useClassComponent === true) {
       rootConfig.useClassComponent = true;
-      if (rootConfig.state === null) {
-        rootConfig.state = thisObject.properties.get('state').astNode;
-      } else {
-        thisObject.properties.get('state').astNode.properties.forEach(property => {
-          rootConfig.state.properties.push(property);
-        });
+    }
+    if (thisObject.properties.has('state')) {
+      rootConfigEntry.state = thisObject.properties.get('state').astNode;
+
+    }
+    for (let [key, property] of componentPrototype) {
+      if (key === 'constructor') {
+        const constructorAstBody = property.descriptor.value.$ECMAScriptCode.body;
+        rootConfigEntry.constructorProperties = constructorAstBody;
+      } else if (key !== 'render') {
+        if (theClass.methods.has(key)) {
+          if (rootConfigEntry.prototypeProperties === null) {
+            rootConfigEntry.prototypeProperties = [];
+          }
+          rootConfigEntry.prototypeProperties.push(theClass.methods.get(key).astNode);
+        }
       }
     }
   };
-
-  // // inst = evaluator.construct(componentType, [props]);
-  // if (componentType.class !== undefined) {
-  //   const thisObject = componentType.class.thisObject;
-  //   // check if the state is being used
-  //   if (thisObject.accessors.has("state")) {
-  //     // TODO:
-  //     // we need to merge state and add prefixes on to avoid collisions
-  //     const stateValue = inst.properties.get("state").descriptor.value;
-  //     rootConfig.useClassComponent = true;
-  //     if (rootConfig.state === null) {
-  //       rootConfig.state = stateValue;
-  //     } else {
-  //       for (let [key, value] of stateValue.properties) {
-  //         if (rootConfig.state.properties.has(key) === false) {
-  //           rootConfig.state.properties.set(key, value);
-  //         } else {
-  //           debugger;
-  //         }
-  //       }
-  //     }
-  //     inst.properties.get(
-  //       "state"
-  //     ).descriptor.value = evaluator.createAbstractObject("this.state");
-  //   }
-  // }
-  // // go through all other properties
-  // for (let [key, val] of inst.properties) {
-  //   if (key !== 'state' && key !== 'props' && key !== 'context' && key !== 'refs') {
-  //     if (rootConfig.instanceProperties === null) {
-  //       rootConfig.instanceProperties = [];
-  //     }
-  //     // we set a used flag on the object to determine if we can DCE and leave it out
-  //     rootConfig.instanceProperties.push({
-  //       key: key,
-  //       used: false,
-  //       value: val.descriptor.value,
-  //     });
-  //     // replace instance variable with an abstract
-  //     inst.properties.get(
-  //       key
-  //     ).descriptor.value = evaluator.createAbstractValue(`this.${key}`);
-  //   }
-  // }
   return {
     instance,
     commitToRootConfig,

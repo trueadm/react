@@ -184,6 +184,7 @@ function createClass(name, astNode, superIdentifier, scope) {
     astNode: astNode,
     defaultProps: null,
     jsxElementCallSites: [],
+    methods: new Map(),
     name: name,
     propTypes: null,
     scope: scope,
@@ -346,7 +347,6 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         if (argument !== null) {
-          traverse(argument, action, scope);
           const object = getOrSetValueFromAst(argument, scope, action);
           scope.func.return = object;
         }
@@ -1065,6 +1065,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       debugger;
       break;
     }
+    case "JSXMemberExpression":
     case "MemberExpression": {
       const astObject = astNode.object;
       const astProperty = astNode.property;
@@ -1353,6 +1354,7 @@ function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   bodyPart.scope = newScope;
   newScope.func = func;
   func.theClass = theClass;
+  theClass.methods.set(name, func);
   traverse(bodyPart, getNextAction(action), newScope);
   newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
@@ -1526,6 +1528,7 @@ function assignExpression(left, right, action, scope) {
 module.exports = {
   Actions: Actions,
   createModuleScope: createModuleScope,
+  createScope: createScope,
   traverse: traverse,
   getOrSetValueFromAst: getOrSetValueFromAst,
   getNameFromAst: getNameFromAst,

@@ -9,7 +9,6 @@ const {
   UndefinedValue
 } = require("prepack/lib/values");
 const t = require("babel-types");
-const travser = require("./traverser");
 
 function getFunctionReferenceName(functionValue) {
   let name = null;
@@ -22,8 +21,10 @@ function getFunctionReferenceName(functionValue) {
   }
 
   if (name !== null) {
-    const hasThis = functionValue.$HomeObject !== undefined && functionValue.$HomeObject.properties.has(name);
-    return `${hasThis ? 'this.' : ''}${name}`;
+    const hasThis =
+      functionValue.$HomeObject !== undefined &&
+      functionValue.$HomeObject.properties.has(name);
+    return `${hasThis ? "this." : ""}${name}`;
   }
   // debugger;
   return null;
@@ -31,6 +32,8 @@ function getFunctionReferenceName(functionValue) {
 
 function convertExpressionToJSXIdentifier(expr, rootConfig, source) {
   switch (expr.type) {
+    case "ThisExpression":
+      return t.jSXIdentifier("this");
     case "Identifier":
       return t.jSXIdentifier(expr.name);
     case "StringLiteral":
@@ -64,15 +67,21 @@ function addKeyToElement(astElement, key) {
 
   for (let i = 0; i < astAttributes.length; i++) {
     const astAttribute = astAttributes[i];
-    
-    if (astAttribute.type === 'JSXAttribute' && astAttribute.name.type === 'JSXIdentifier' && astAttribute.name.name === 'key') {
+
+    if (
+      astAttribute.type === "JSXAttribute" &&
+      astAttribute.name.type === "JSXIdentifier" &&
+      astAttribute.name.name === "key"
+    ) {
       existingKey = astAttribute.value;
     }
   }
   if (existingKey !== null) {
     // do nothing for now
   } else {
-    astAttributes.push(t.jSXAttribute(t.jSXIdentifier('key'), t.stringLiteral(key)));
+    astAttributes.push(
+      t.jSXAttribute(t.jSXIdentifier("key"), t.stringLiteral(key))
+    );
   }
 }
 
@@ -85,8 +94,8 @@ function applyKeysToNestedArray(expr) {
 
   for (let i = 0; i < astElements.length; i++) {
     const astElement = astElements[i];
-    
-    if (astElement.type === 'JSXElement') {
+
+    if (astElement.type === "JSXElement") {
       addKeyToElement(astElement, `.${randomHashString}.${i}`);
     }
   }
@@ -95,22 +104,38 @@ function applyKeysToNestedArray(expr) {
 function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
   const objectProps = objectValue.properties;
   let typeValue = objectProps.get("type").descriptor.value;
-  let keyValue = objectProps.has("key") ? objectProps.get("key").descriptor.value : null;
-  let refValue = objectProps.has("ref") ? objectProps.get("ref").descriptor.value : null;
+  let keyValue = objectProps.has("key")
+    ? objectProps.get("key").descriptor.value
+    : null;
+  let refValue = objectProps.has("ref")
+    ? objectProps.get("ref").descriptor.value
+    : null;
   let propsValue = objectProps.get("props").descriptor.value;
 
   let identifier = convertExpressionToJSXIdentifier(
-    convertValueToExpression(typeValue, rootConfig, source), rootConfig, source
+    convertValueToExpression(typeValue, rootConfig, source),
+    rootConfig,
+    source
   );
   let attributes = [];
   let children = [];
 
-  if (keyValue !== null && !(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)) {
-    attributes.push(convertKeyValueToJSXAttribute("key", keyValue, rootConfig, source));
+  if (
+    keyValue !== null &&
+    !(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)
+  ) {
+    attributes.push(
+      convertKeyValueToJSXAttribute("key", keyValue, rootConfig, source)
+    );
   }
 
-  if (refValue !== null && !(refValue instanceof UndefinedValue || refValue instanceof NullValue)) {
-    attributes.push(convertKeyValueToJSXAttribute("ref", refValue, rootConfig, source));
+  if (
+    refValue !== null &&
+    !(refValue instanceof UndefinedValue || refValue instanceof NullValue)
+  ) {
+    attributes.push(
+      convertKeyValueToJSXAttribute("ref", refValue, rootConfig, source)
+    );
   }
   if (propsValue.properties) {
     for (let [key, propertyBinding] of propsValue.properties) {
@@ -123,33 +148,38 @@ function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
 
       if (key === "children") {
         let expr = convertValueToExpression(desc.value, rootConfig, source);
-        let elements = expr.type === "ArrayExpression" && expr.elements.length > 1
+        let elements = expr.type === "ArrayExpression" &&
+          expr.elements.length > 1
           ? expr.elements
           : [expr];
-        children = elements.map(
-          expr => {
-            if (expr.type === 'ArrayExpression') {
-              applyKeysToNestedArray(expr);
-            }
-            return (expr === null
-              ? t.jSXExpressionContainer(t.jSXEmptyExpression())
-              : expr.type === "StringLiteral"
-                  ? t.jSXText(expr.value)
-                  : expr.type === "JSXElement"
-                      ? expr
-                      : t.jSXExpressionContainer(expr))
-            }
-        );
+        children = elements.map(expr => {
+          if (expr.type === "ArrayExpression") {
+            applyKeysToNestedArray(expr);
+          }
+          return expr === null
+            ? t.jSXExpressionContainer(t.jSXEmptyExpression())
+            : expr.type === "StringLiteral"
+                ? t.jSXText(expr.value)
+                : expr.type === "JSXElement"
+                    ? expr
+                    : t.jSXExpressionContainer(expr);
+        });
         continue;
       }
-      attributes.push(convertKeyValueToJSXAttribute(key, desc.value, rootConfig, source));
+      attributes.push(
+        convertKeyValueToJSXAttribute(key, desc.value, rootConfig, source)
+      );
     }
   } else {
     // spread
-    attributes.push(t.jSXSpreadAttribute(convertValueToExpression(propsValue, rootConfig, source)));
+    attributes.push(
+      t.jSXSpreadAttribute(
+        convertValueToExpression(propsValue, rootConfig, source)
+      )
+    );
   }
 
-  if (identifier.type === 'ArrowFunctionExpression') {
+  if (identifier.type === "ArrowFunctionExpression") {
     // we don't have the name here, so we have to find it
     // luckily I hacked it on to the BlockStatement body of the arrow function
     if (identifier.body.func !== undefined) {
@@ -160,7 +190,6 @@ function convertReactElementToJSXExpression(objectValue, rootConfig, source) {
     } else {
       // we need to do more hacking?
       debugger;
-
     }
   }
 
@@ -207,38 +236,41 @@ function convertArrayValueToArrayLiteral(arrayValue, rootConfig, source) {
       elementProperty &&
       elementProperty.descriptor &&
       elementProperty.descriptor.value;
-    elements.push(elementValue ? convertValueToExpression(elementValue, rootConfig, source) : null);
+    elements.push(
+      elementValue
+        ? convertValueToExpression(elementValue, rootConfig, source)
+        : null
+    );
   }
   return t.arrayExpression(elements);
 }
 
 const isInvalid = {
-  '{': true,
-  '}': true,
-  ' ': true,
-  '+': true,
-  '-': true,
-  '|': true,
-  '&': true,
-  // ',': true,
-  ';': true,
-  '\n': true,
-  ')': true,
-  '(': true,
-  ':': true,
-  '=': true,
+  "{": true,
+  "}": true,
+  " ": true,
+  "+": true,
+  "-": true,
+  "|": true,
+  "&": true,
+  ",": true,
+  ";": true,
+  "\n": true,
+  ")": true,
+  "(": true,
+  ":": true,
+  "=": true
 };
-
 
 // TODO this entire thing is as hacky as anything and needs to go away
 function getExpressionFromSource(start, end, source) {
-  const lines = source.split('\n');
+  const lines = source.split("\n");
   let inString = false;
   if (start.line === end.line) {
     const line = lines[start.line - 1];
     let i = start.column;
     let char = line[i];
-    let string = '';
+    let string = "";
     while (char && (!isInvalid[char] || inString === true)) {
       if (char === "'") {
         if (inString === true) {
@@ -251,12 +283,16 @@ function getExpressionFromSource(start, end, source) {
       i++;
       char = line[i];
     }
-    if (string[0] === "'" && string[string.length - 1] === "'" && string !== "''") {
+    if (
+      string[0] === "'" &&
+      string[string.length - 1] === "'" &&
+      string !== "''"
+    ) {
       // we are passing a string into a function call (hacky as hell)
       // lets traverve back from start to find the call
       let s = start.column - 2;
       char = line[s];
-      while (char && (!isInvalid[char] || char === '(')) {
+      while (char && (!isInvalid[char] || char === "(" || char === ",")) {
         s--;
         char = line[s];
       }
@@ -270,23 +306,36 @@ function getExpressionFromSource(start, end, source) {
 
 function convertValueToExpression(value, rootConfig, source) {
   if (value instanceof AbstractValue) {
-    let serializedArgs = value.args.map(abstractArg => 
+    let serializedArgs = value.args.map(abstractArg =>
       convertValueToExpression(abstractArg, rootConfig, source)
     );
     if (value.isIntrinsic()) {
-      if (value.intrinsicName.indexOf('_$') !== -1) {
-        const nameFromSource = getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source);
+      if (value.intrinsicName.indexOf("_$") !== -1) {
+        const nameFromSource = getExpressionFromSource(
+          value.expressionLocation.start,
+          value.expressionLocation.end,
+          source
+        );
         value._buildNode.name = nameFromSource;
         value.intrinsicName = nameFromSource;
       }
-      if (rootConfig.useClassComponent === false && value.intrinsicName.indexOf('this.props') !== -1) {
+      if (
+        rootConfig.useClassComponent === false &&
+        value.intrinsicName.indexOf("this.props") !== -1
+      ) {
         // hack for now
         const node = value.buildNode(serializedArgs);
-        node.object = t.identifier('props');
+        node.object = t.identifier("props");
         return node;
       }
     } else if (serializedArgs.length === 0) {
-      return t.identifier(getExpressionFromSource(value.expressionLocation.start, value.expressionLocation.end, source));
+      return t.identifier(
+        getExpressionFromSource(
+          value.expressionLocation.start,
+          value.expressionLocation.end,
+          source
+        )
+      );
     }
     return value.buildNode(serializedArgs);
   }
@@ -297,9 +346,9 @@ function convertValueToExpression(value, rootConfig, source) {
     // TODO: Get a proper reference from a lexical map of names instead.
     let name = getFunctionReferenceName(value);
     if (name !== null) {
-      if (name.indexOf('bound') !== -1) {
+      if (name.indexOf("bound") !== -1) {
         // this is a temp hack
-        name = name.replace('bound ', '');
+        name = name.replace("bound ", "");
       }
       return t.identifier(name);
     } else {
@@ -329,28 +378,33 @@ function convertValueToExpression(value, rootConfig, source) {
 
 function createClassConstructorBody(rootConfig, source) {
   const bodyBlock = [
-    t.expressionStatement(t.callExpression(t.identifier('super'), [t.identifier('props')])),
-    t.expressionStatement(t.assignmentExpression(
-      '=',
-      t.memberExpression(t.thisExpression(), t.identifier('state')),
-      rootConfig.state,
-    )),
+    t.expressionStatement(
+      t.callExpression(t.identifier("super"), [t.identifier("props")])
+    ),
   ];
-  if (rootConfig.instanceProperties !== null) {
-    rootConfig.instanceProperties.forEach(instanceProperty => {
-      bodyBlock.push(
-        t.expressionStatement(t.assignmentExpression(
-          '=',
-          t.memberExpression(t.thisExpression(), t.identifier(instanceProperty.key)),
-          convertValueToExpression(instanceProperty.value, rootConfig, source)
-        ))
-      );
-    });
+  const mergedState = rootConfig.getMergedState();
+  if (mergedState !== null) {
+    bodyBlock.push(
+      t.expressionStatement(
+        t.assignmentExpression(
+          "=",
+          t.memberExpression(t.thisExpression(), t.identifier("state")),
+          mergedState
+        )
+      )
+    );
   }
+  rootConfig.applyFilteredConstructorPropertiesToBlock(bodyBlock);
   return t.blockStatement(bodyBlock);
 }
 
-function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue, rootConfig, source) {
+function serializeEvaluatedFunction(
+  functionValue,
+  args,
+  evaluatedReturnValue,
+  rootConfig,
+  source
+) {
   const name = getFunctionReferenceName(functionValue);
   const params = args.map(arg => {
     const intrinsicName = arg.intrinsicName;
@@ -359,20 +413,39 @@ function serializeEvaluatedFunction(functionValue, args, evaluatedReturnValue, r
     }
     return t.identifier(intrinsicName);
   });
-  const bodyExpr = convertValueToExpression(evaluatedReturnValue, rootConfig, source);
+  const bodyExpr = convertValueToExpression(
+    evaluatedReturnValue,
+    rootConfig,
+    source
+  );
   const returnStatement = t.returnStatement(bodyExpr);
   const renderBody = t.blockStatement([returnStatement]);
   if (rootConfig.useClassComponent === true) {
     const constructorBody = createClassConstructorBody(rootConfig, source);
+    const classBody = [
+      // build the constructor method and put the merged state object back in
+      // TODO: add in merged instance variables and other stuff
+      t.classMethod(
+        "constructor",
+        t.identifier("constructor"),
+        [t.identifier("props")],
+        constructorBody
+      )
+    ];
+    const prototypeProperties = rootConfig.getPrototypeProperties();
+    if (prototypeProperties !== null) {
+      prototypeProperties.map(prototypeProperty => {
+        classBody.push(prototypeProperty);
+      });
+    }
+    classBody.push(
+      // put in the optimized render method
+      t.classMethod("method", t.identifier("render"), [], renderBody)
+    );
     return t.classDeclaration(
-      t.identifier(name), t.memberExpression(t.identifier('React'), t.identifier('Component')),
-      t.classBody([
-        // build the constructor method and put the merged state object back in
-        // TODO: add in merged instance variables and other stuff
-        t.classMethod('constructor', t.identifier('constructor'), [t.identifier('props')], constructorBody),
-        // put in the optimized render method
-        t.classMethod('method', t.identifier('render'), [], renderBody),
-      ]),
+      t.identifier(name),
+      t.memberExpression(t.identifier("React"), t.identifier("Component")),
+      t.classBody(classBody),
       []
     );
   }

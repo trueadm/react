@@ -9,6 +9,7 @@ const Types = require("./types").Types;
 const convertAccessorsToNestedObject = require('./types').convertAccessorsToNestedObject;
 const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
 const setAbstractPropsUsingNestedObject = require('./types').setAbstractPropsUsingNestedObject;
+const RootConfig = require('./RootConfig');
 
 function convertToExpression(node) {
   if (node.type === "FunctionDeclaration") {
@@ -93,11 +94,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
 }
 
 function createRootConfig() {
-  return {
-    instanceProperties: null,
-    useClassComponent: false,
-    state: null,
-  };
+  return new RootConfig();
 }
 
 async function optimizeComponentWithPrepack(
@@ -128,7 +125,7 @@ async function optimizeComponentWithPrepack(
     [initialProps],
     resolvedResult,
     rootConfig,
-    source
+    source,
   );
   return convertToExpression(node);
 }
