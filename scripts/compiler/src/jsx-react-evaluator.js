@@ -251,7 +251,7 @@ function evaluateJSXAttributes(elementType, astAttributes, astChildren, strictCo
           }
           const val = GetValue(realm, env.evaluate(t.memberExpression(astAttribute.argument, t.identifier(key)), strictCode));
           if (key === 'children') {
-            if (!children || children instanceof UndefinedValue) {
+            if (!children) {
               children = val;
             }
           } else {
