@@ -384,21 +384,7 @@ function traverse(node, action, scope) {
       const astName = astOpeningElement.name;
       const name = getNameFromAst(astName);
       const isReactComponent = name[0].toUpperCase() === name[0];
-      if (
-        action === Actions.ScanInnerScope1 ||
-        action === Actions.ScanInnerScope2 ||
-        action === Actions.ScanInnerScope3 ||
-        action === Actions.ScanTopLevelScope
-      ) {
-        // TODO we might not need this anymore with the new jsxElement type objects
-        if (isReactComponent === true) {
-          scope.jsxElementIdentifiers.set(
-            name,
-            getOrSetValueFromAst(astName, scope, action)
-          );
-        }
-        node.scope = scope;
-      } else if (action === Actions.FindComponents) {
+      if (action === Actions.FindComponents) {
         if (isReactComponent) {
           scope.components.set(name, true);
         }
@@ -1348,8 +1334,13 @@ function callJSXElement(astNode, action, subject) {
   }
   const jsxElement = createJSXElement(astNode, nodeType, props, spreads, key, ref);
   astNode.jsxElement = jsxElement;
+  astNode.scope = subject;  
   // link the jsxElement to the component itself (unless its an element)
   if (typeof nodeType !== 'string') {
+    subject.jsxElementIdentifiers.set(
+      nodeType.name,
+      nodeType
+    );
     if (nodeType.type === 'Class' || nodeType.type === 'Function') {
       nodeType.jsxElementCallSites.push(jsxElement);
     }
