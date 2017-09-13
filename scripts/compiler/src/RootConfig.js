@@ -190,7 +190,7 @@ function addPrefixesToAstNodes(entryNode, entry) {
                 }
                 debugger;
               }
-              memberNode = value.buildNode();
+              memberNode = value.buildNode([]);
             }
             if (lastNode !== null) {
               return t.memberExpression(memberNode, lastNode);

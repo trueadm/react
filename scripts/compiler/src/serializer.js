@@ -333,21 +333,33 @@ function convertPrefixPlaceholderToExpression(placeholder) {
   return astNode;
 }
 
+const alreadyGatheredArgs = new WeakMap();
+
 function convertValueToExpression(value, rootConfig, source) {
   if (value instanceof AbstractValue) {
-    let serializedArgs = value.args.map(abstractArg =>
-      convertValueToExpression(abstractArg, rootConfig, source)
-    );
+    let serializedArgs;
+    if (alreadyGatheredArgs.has(value) === false) {
+      serializedArgs = [];
+      alreadyGatheredArgs.set(value, serializedArgs);
+      for (let i = 0; i < value.args.length; i++) {
+        const abstractArg = value.args[i];
+        serializedArgs.push(convertValueToExpression(abstractArg, rootConfig, source));
+      }
+    } else {
+      serializedArgs = alreadyGatheredArgs.get(value);
+    }
+    alreadyGatheredArgs.set(value, serializedArgs);
     if (value.isIntrinsic()) {
-      if (value.intrinsicName.indexOf("_$") === 0) {
-        const nameFromSource = getExpressionFromSource(
-          value.expressionLocation.start,
-          value.expressionLocation.end,
-          source
-        );
-        value._buildNode.name = nameFromSource;
-        value.intrinsicName = nameFromSource;
-      } else if (value.intrinsicName.indexOf("$F$") === 0) {
+      // if (value.intrinsicName.indexOf("_$") === 0) {
+      //   const nameFromSource = getExpressionFromSource(
+      //     value.expressionLocation.start,
+      //     value.expressionLocation.end,
+      //     source
+      //   );
+      //   value._buildNode.name = nameFromSource;
+      //   value.intrinsicName = nameFromSource;
+      // }
+      if (value.intrinsicName.indexOf("$F$") === 0) {
         return convertPrefixPlaceholderToExpression(value.intrinsicName);
       }
       if (

@@ -13,16 +13,6 @@ const convertNestedObjectToAst = require("./types").convertNestedObjectToAst;
 const setAbstractPropsUsingNestedObject = require("./types")
   .setAbstractPropsUsingNestedObject;
 
-function toAst(node) {
-  if (typeof node === "string") {
-    return t.stringLiteral(node);
-  } else if (node.astNode != null) {
-    return node.astNode;
-  } else {
-    debugger;
-  }
-}
-
 function setupPrepackEnvironment(moduleEnv, declarations) {
   // eval and declare all declarations
   Object.keys(declarations).forEach(declarationKey => {

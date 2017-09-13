@@ -166,7 +166,9 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
       useClassComponent = true;
       instanceProperties.set(key, value);
     } else if (key !== 'props') {
-      if (key.indexOf("_render") === 0 || key.indexOf("render") === 0) {
+      if (componentPrototype.has(key)) {
+        // NO-OP
+      } else if (key.indexOf("_render") === 0 || key.indexOf("render") === 0) {
         // NO-OP we inline renders
       } else {
         instanceProperties.set(key, value);

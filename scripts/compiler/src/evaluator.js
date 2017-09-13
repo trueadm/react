@@ -5,32 +5,38 @@ let {
   GetValue,
   Get,
   ObjectCreate,
-  Construct
+  Construct,
+  ToStringPartial
 } = require("prepack/lib/methods");
 let { AbruptCompletion } = require("prepack/lib/completions");
 let {
   ArrayValue,
+  AbstractObjectValue,
   AbstractValue,
   ObjectValue,
   NumberValue,
   StringValue,
   FunctionValue,
-  BooleanValue
+  BooleanValue,
+  UndefinedValue,
+  Value
 } = require("prepack/lib/values");
 let { TypesDomain, ValuesDomain } = require("prepack/lib/domains");
 let { Generator } = require("prepack/lib/utils/generator");
 let buildExpressionTemplate = require("prepack/lib/utils/builder").default;
 let jsxEvaluator = require("./jsx-react-evaluator");
+let { describeLocation } = require("prepack/lib/intrinsics/ecma262/Error.js");
+const t = require("babel-types");
 
 class NoTempVariablesGenerator extends Generator {
-  derive(types, values, args, buildNode, kind) {
-    let result = this.realm.createAbstract(
-      types,
-      values,
-      args,
-      buildNode,
-      kind
-    );
+  derive(types, values, args, buildFunction, kind) {
+    let result = AbstractValue.createFromTemplate(realm, () => args => {
+      // convert it back to array
+      args = Object.values(args);
+      return buildFunction(args);
+    }, types, [], '', undefined);
+    result.values = values;
+    result.args = args;
     return result;
   }
 }
@@ -54,144 +60,136 @@ let realm = construct_realm(realmOptions);
 realm.generator = new NoTempVariablesGenerator(realm);
 realm.evaluators.JSXElement = jsxEvaluator;
 
-function createAbstractNumber(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(NumberValue);
-  let values = ValuesDomain.topVal;
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
+function parseTypeNameOrTemplate(typeNameOrTemplate) {
+  if (typeNameOrTemplate === undefined || typeNameOrTemplate instanceof UndefinedValue) {
+    return { type: Value, template: undefined };
+  } else if (typeNameOrTemplate instanceof StringValue || typeof typeNameOrTemplate === 'string') {
+    let typeNameString = ToStringPartial(realm, typeNameOrTemplate);
+    let type = Value.getTypeFromName(typeNameString);
+    if (type === undefined) {
+      throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "unknown typeNameOrTemplate");
+    }
+    return {
+      type,
+      template: Value.isTypeCompatibleWith(type, ObjectValue)
+        ? ObjectCreate(realm, realm.intrinsics.ObjectPrototype)
+        : undefined,
+    };
+  } else if (typeNameOrTemplate instanceof FunctionValue) {
+    return { type: FunctionValue, template: typeNameOrTemplate };
+  } else if (typeNameOrTemplate instanceof ObjectValue) {
+    return { type: ObjectValue, template: typeNameOrTemplate };
+  } else {
+    throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "typeNameOrTemplate has unsupported type");
+  }
+}
+
+function __abstract(typeNameOrTemplate, name) {
+  if (!realm.useAbstractInterpretation) {
+    throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "realm is not partial");
+  }
+
+  let { type, template } = parseTypeNameOrTemplate(typeNameOrTemplate);
+
+  let result;
+  let nameString = name ? ToStringPartial(realm, name) : "";
+  if (nameString === "") {
+    let locString;
+    for (let executionContext of realm.contextStack.slice().reverse()) {
+      let caller = executionContext.caller;
+      locString = describeLocation(
+        realm,
+        caller ? caller.function : undefined,
+        caller ? caller.lexicalEnvironment : undefined,
+        executionContext.loc
+      );
+      if (locString !== undefined) break;
+    }
+    let locVal = new StringValue(realm, locString || "(unknown location)");
+    debugger;
+    // result = AbstractValue.createFromTemplate(realm, throwTemplate, type, [locVal], throwTemplateSrc);
+  } else {
+    result = AbstractValue.createFromTemplate(realm, buildExpressionTemplate(nameString), type, [], nameString);
+    result.intrinsicName = nameString;
+  }
+
+  if (template) result.values = new ValuesDomain(new Set([template]));
+  if (template && !(template instanceof FunctionValue)) {
+    // why exclude functions?
+    template.makePartial();
+    // invariant(realm.generator);
+    if (nameString) realm.rebuildNestedProperties(result, nameString);
+  }
   return result;
+}
+
+function __makePartial(object) {
+  // casting to any to avoid Flow bug
+  if (object instanceof AbstractObjectValue || object instanceof ObjectValue) {
+    object.makePartial();
+    return object;
+  }
+  throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "not an (abstract) object");
+}
+
+function __makeSimple(object) {
+  // casting to any to avoid Flow bug
+  if (object instanceof AbstractObjectValue || object instanceof ObjectValue) {
+    object.makeSimple();
+    return object;
+  }
+  throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "not an (abstract) object");
+}
+
+function __optional(value) {
+  if (!realm.useAbstractInterpretation) {
+    throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "realm is not partial");
+  }
+  if (value instanceof AbstractValue && value.isIntrinsic()) {
+    let result = AbstractValue.createFromConditionalOp(realm, value, value, realm.intrinsics.undefined);
+    let condition = AbstractValue.createFromBinaryOp(realm, "!==", result, realm.intrinsics.undefined);
+    condition.types = new TypesDomain(BooleanValue);
+    result.args[0] = condition;
+    result.intrinsicName = value.intrinsicName;
+    if (value.intrinsicName === undefined) {
+      throw new Error('Name is not known');
+    }
+    result._buildNode = t.identifier(value.intrinsicName);
+    return result;
+  }
+  throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "not an intrinsic abstract value");
+}
+
+function createAbstractNumber(nameString) {
+  return __abstract('number', nameString);
 }
 
 function createAbstractString(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(StringValue);
-  let values = ValuesDomain.topVal;
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  return result;
+  return __abstract('string', nameString);
 }
 
 function createAbstractBoolean(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(BooleanValue);
-  let values = ValuesDomain.topVal;
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  return result;
+  return __abstract('boolean', nameString);
 }
 
 function createAbstractArray(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let template = ObjectCreate(realm, realm.intrinsics.ArrayPrototype);
-  let types = new TypesDomain(ArrayValue);
-  let values = new ValuesDomain(new Set([template]));
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  template.makePartial();
-  if (nameString) realm.rebuildNestedProperties(result, nameString);
-  result.makeSimple();
-  result.makePartial();
-  return result;
-}
-
-function createObject(nameString, template) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(ObjectValue);
-  let values = new ValuesDomain(new Set([template]));
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  return result;
+  return __makeSimple(__makePartial(__abstract(ObjectCreate(realm, realm.intrinsics.ArrayPrototype), nameString)));
 }
 
 function createAbstractObject(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let template = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
-  let types = new TypesDomain(ObjectValue);
-  let values = new ValuesDomain(new Set([template]));
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  template.makePartial();
-  if (nameString) realm.rebuildNestedProperties(result, nameString);
-  result.makeSimple();
-  result.makePartial();
-  return result;
+  return __makeSimple(__makePartial(__abstract(ObjectCreate(realm, realm.intrinsics.ObjectPrototype), nameString)));
 }
 
 function createAbstractFunction(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(FunctionValue);
-  let values = ValuesDomain.topVal;
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  return result;
+  return __abstract('function', nameString);
 }
 
 function createAbstractValue(nameString) {
-  let buildNode = buildExpressionTemplate(nameString)(realm.preludeGenerator);
-  let types = new TypesDomain(AbstractValue);
-  let values = ValuesDomain.topVal;
-  let result = realm.createAbstract(
-    types,
-    values,
-    [],
-    buildNode,
-    undefined,
-    nameString
-  );
-  return result;
+  return __abstract('empty', nameString);
 }
 
 function createAbstractObjectOrUndefined(nameString) {
-  // this abstract is a union of Object and Undefined
-  const result = createAbstractObject(nameString);
-  result.mightBeEmpty = true;
-  result.mightNotBeObject = () => {
-    return true;
-  }
-  return result;
+  return __optional(createAbstractObject(nameString));
 }
 
 function getError(completionValue) {
@@ -352,8 +350,6 @@ exports.createAbstractFunction = createAbstractFunction;
 exports.createAbstractValue = createAbstractValue;
 
 exports.createAbstractObjectOrUndefined = createAbstractObjectOrUndefined;
-
-exports.createObject = createObject;
 
 exports.call = call;
 

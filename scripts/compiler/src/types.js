@@ -163,7 +163,7 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
   let value = oldValue;
   if (!root) {
     // TODO this should be a partial?
-    value = evaluator.createAbstractObjectOrUndefined(prefix);
+    value = evaluator.createAbstractObject(prefix);
     value.properties = properties;
   }
   Object.keys(object).forEach(key => {
