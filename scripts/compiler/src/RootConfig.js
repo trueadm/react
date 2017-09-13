@@ -113,15 +113,17 @@ function findFirstMemberNodeOfMemberExpression(node) {
 
 function getNextMemberNodeOfMemberExpression(rootNode, prevNode) {
   let parentNode = prevNode.parentNode;
-  let property;
-  if (parentNode.object === prevNode) {
-    property = parentNode.property;
+  if (parentNode === undefined) {
+    if (rootNode.property === prevNode) {
+      return null;
+    }
+    return rootNode.property;
+  } else if (parentNode.object === prevNode) {
+    return parentNode.property;
   } else if (parentNode.parentNode !== undefined) {
-    property = parentNode.parentNode.property;
-  } else {
-    property = rootNode.property;
+    return parentNode.parentNode.property;
   }
-  return property;
+  return rootNode.property;
 }
 
 const blacklist = {
@@ -161,27 +163,39 @@ function addPrefixesToAstNodes(entryNode, entry) {
           return true;
         } else if (name === "props") {
           // we need to replace with correct props
-          const memberName = getNextMemberNodeOfMemberExpression(
+          const nextNode = getNextMemberNodeOfMemberExpression(
             node,
             firstNode
-          ).name;
+          );
+          const lastNode = getNextMemberNodeOfMemberExpression(
+            node,
+            nextNode
+          );
+          const memberName = nextNode.name;
           const propValue = propsValue.properties.get(memberName);
+          let memberNode = null;
           if (propsValue !== undefined) {
             const value = propValue.descriptor.value;
             if (value.isIntrinsic()) {
               if (value.intrinsicName.indexOf("$F$") === 0) {
-                return serializer.convertPrefixPlaceholderToExpression(
+                memberNode = serializer.convertPrefixPlaceholderToExpression(
                   value.intrinsicName
                 );
               }
             }
-            if (typeof value.buildNode !== 'function') {
-              if (value instanceof UndefinedValue) {
-                return t.identifier('undefined');
+            if (memberNode === null) {
+              if (typeof value.buildNode !== 'function') {
+                if (value instanceof UndefinedValue) {
+                  return t.identifier('undefined');
+                }
+                debugger;
               }
-              debugger;
+              memberNode = value.buildNode();
             }
-            return value.buildNode();
+            if (lastNode !== null) {
+              return t.memberExpression(memberNode, lastNode);
+            }
+            return memberNode;
           }
         }
       }
