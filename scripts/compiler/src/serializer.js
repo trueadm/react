@@ -9,6 +9,7 @@ const {
   UndefinedValue
 } = require("prepack/lib/values");
 const t = require("babel-types");
+const evaluator = require("./evaluator");
 
 function getFunctionReferenceName(functionValue) {
   let name = null;
@@ -350,17 +351,33 @@ function convertValueToExpression(value, rootConfig, source) {
     }
     alreadyGatheredArgs.set(value, serializedArgs);
     if (value.isIntrinsic()) {
-      // if (value.intrinsicName.indexOf("_$") === 0) {
-      //   const nameFromSource = getExpressionFromSource(
-      //     value.expressionLocation.start,
-      //     value.expressionLocation.end,
-      //     source
-      //   );
+      const intrinsicName = value.intrinsicName;
+      if (value.intrinsicName.indexOf("_$") === 0) {
+        const preludeGenerator = evaluator.getPreludeGenerator();
+        if (preludeGenerator.derivedIds.has(intrinsicName)) {
+          const derivedArgValues = preludeGenerator.derivedIds.get(intrinsicName);
+          const derivedArgs = derivedArgValues.map(derivedArgValue => convertValueToExpression(derivedArgValue, rootConfig, source));
+          if (derivedArgs.length > 1) {
+            if (derivedArgs[0].name === 'fbt') {
+              // TODO how to deal with fbt._?
+              debugger;
+              convertValueToExpression(derivedArgValues[0], rootConfig, source)
+            }
+            return t.callExpression(derivedArgs[0], derivedArgs.slice(1));
+          } else if (derivedArgs.length === 1) {
+            return derivedArgs[0];
+          } else {
+            debugger;
+          }
+        } else {
+          debugger;
+        }
+
       //   value._buildNode.name = nameFromSource;
       //   value.intrinsicName = nameFromSource;
-      // }
-      if (value.intrinsicName.indexOf("$F$") === 0) {
-        return convertPrefixPlaceholderToExpression(value.intrinsicName);
+      }
+      if (intrinsicName.indexOf("$F$") === 0) {
+        return convertPrefixPlaceholderToExpression(intrinsicName);
       }
       if (
         rootConfig.useClassComponent === false &&

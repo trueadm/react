@@ -100,6 +100,11 @@ function handleAssignmentValue(
                   null,
                   true
                 );
+                // small hack to make fbt better
+                if (assignmentKey === 'fbt') {
+                  estimatedShape._ = 'func_isRequired';
+                  estimatedShape.param = 'func_isRequired';
+                }
                 const estimatedShapeAst = convertNestedObjectToAst(
                   estimatedShape
                 );
@@ -251,11 +256,6 @@ function createPrepackMetadata(moduleScope) {
       assignmentKey === "parseFloat"
     ) {
       // NO-OP
-    } else if (assignmentKey === "fbt") {
-      const fbt = Array.isArray(assignmentValue)
-        ? assignmentValue[0]
-        : assignmentValue;
-      handleAssignmentValue(moduleScope, fbt, "fbt", declarations, env);
     } else if (assignmentKey === "React") {
       declarations.React = createMockReact();
     } else if (assignmentKey === "window") {

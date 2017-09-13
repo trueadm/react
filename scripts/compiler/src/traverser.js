@@ -314,9 +314,6 @@ function createModuleScope() {
     require: createAbstractFunction("require"),
     window: createAbstractObject(),
     document: createAbstractObject(),
-    fbt: createObject(null, {
-      _: createAbstractFunction('_'),
-    }),
     // type stuff
     ReactElement: 'ReactElement',
     ReactClass: 'ReactClass',
