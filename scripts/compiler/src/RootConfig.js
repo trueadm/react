@@ -78,7 +78,8 @@ function mergeLifecycleMethod(
   lifecycleMethod,
   lifecycleMethods,
   prototypeProperties,
-  entry
+  entry,
+  rootConfig
 ) {
   if (lifecycleMethods[name] === undefined) {
     lifecycleMethods[name] = t.classMethod(
@@ -91,7 +92,7 @@ function mergeLifecycleMethod(
   }
   lifecycleMethod.body.body.forEach(lifecycleStatement => {
     lifecycleMethods[name].body.body.push(
-      addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry)
+      addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry, rootConfig)
     );
   });
 }
@@ -137,7 +138,7 @@ const blacklist = {
   defaultProps: true,
 };
 
-function addPrefixesToAstNodes(entryNode, entry) {
+function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
   const thisAccessors = entry.theClass.thisObject.accessors;
   const prefix = entry.key;
   const propsValue = entry.props;
@@ -190,7 +191,7 @@ function addPrefixesToAstNodes(entryNode, entry) {
                 }
                 debugger;
               }
-              memberNode = value.buildNode([]);
+              memberNode = serializer.convertValueToExpression(value, rootConfig);
             }
             if (lastNode !== null) {
               return t.memberExpression(memberNode, lastNode);
@@ -286,7 +287,8 @@ class RootConfig {
               prototypeProperty,
               lifecycleMethods,
               prototypeProperties,
-              entry
+              entry,
+              this
             );
             return;
           }
@@ -298,7 +300,7 @@ class RootConfig {
               prototypeProperty.kind,
               t.identifier(entry.key + prototypeProperty.key.name),
               prototypeProperty.params,
-              addPrefixesToAstNodes(cloneAst(prototypeProperty.body), entry)
+              addPrefixesToAstNodes(cloneAst(prototypeProperty.body), entry, this)
             )
           );
         });
@@ -318,7 +320,8 @@ class RootConfig {
         const constructorProperties = cloneAst(entry.constructorProperties);
         addPrefixesToAstNodes(
           t.blockStatement(constructorProperties),
-          entry
+          entry,
+          this
         );
         filterConstructorProperties(
           constructorProperties,
@@ -341,7 +344,7 @@ class RootConfig {
           mergedState.properties.push(
             t.objectProperty(
               t.identifier(entry.key + originalProperty.key.name),
-              addPrefixesToAstNodes(cloneAst(originalProperty.value), entry)
+              addPrefixesToAstNodes(cloneAst(originalProperty.value), entry, this)
             )
           );
         });
