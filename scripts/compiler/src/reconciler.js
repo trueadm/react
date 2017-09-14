@@ -219,6 +219,9 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
 
 function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
   if (isReactClassComponent(componentType)) {
+    if (componentType.class !== undefined && componentType.class.bailOut === true) {
+      throw new Error(`Failed to optimize a component tree with a root component of "${componentType.class.name}" due to ${componentType.class.bailOutReason}.`);
+    }
     // Class Component
     const {instance, commitToRootConfig} = createReactClassInstance(componentType, props, moduleEnv, rootConfig);
    
@@ -228,6 +231,9 @@ function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
     commitToRootConfig();
     return value;
   } else {
+    if (componentType.func !== undefined && componentType.func.bailOut === true) {
+      throw new Error(`Failed to optimize a component tree with a root component of "${componentType.func.name}" due to ${componentType.func.bailOutReason}.`);
+    }
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
     if (componentType.$Call !== undefined) {

@@ -42,7 +42,7 @@ function addInferredPropsFromJSXElementCallSites(props, astComponent) {
             // _objectWithoutProperties is an object rest handler
             if (value.type === 'FunctionCall') {
               // bail-out, we can't track through function calls
-              throw new Error('Component tree bail-out due to object spread/rest on props at root.');
+              throw new Error('Failed to optimize a component tree due to object spread/rest on props at root.');
             }
 
             if (value.accessedAsSpreadProps != null) {
@@ -66,15 +66,27 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
 
   // props is the first param of the function component
   if (type === 'ArrowFunctionExpression' || type === 'FunctionExpression' || type === 'FunctionDeclaration') {
-    const propsInScope = astComponent.func.params[0];
+    const func = astComponent.func;
+    const propsInScope = func.params[0];
+    if (func.bailOut === true) {
+      throw new Error(`Failed to optimize a component tree with a root component of "${func.name}" due to ${func.bailOutReason}.`);
+    }
     if (propsInScope !== undefined) {
-      const func = astComponent.func;
+      if (propsInScope.accessedAsSpreadProps === true) {
+        throw new Error(`Failed to optimize a component tree with a root component of "${func.name}" due to object spread/rest on props at root.`);
+      }
       propsShape = convertAccessorsToNestedObject(propsInScope.accessors, func.propTypes ? func.propTypes.properties : null, false);
     }
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const theClass = astComponent.class;
     const propsOnClass = theClass.thisObject.accessors.get('props');
+    if (theClass.bailOut === true) {
+      throw new Error(`Failed to optimize a component tree with a root component of "${theClass.name}" due to ${theClass.bailOutReason}.`);
+    }
     if (propsOnClass !== undefined) {
+      if (propsOnClass.accessedAsSpreadProps === true) {
+        throw new Error(`Failed to optimize a component tree with a root component of "${theClass.name}" due to object spread/rest on props at root.`);
+      }
       propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null, false);
     }
   }

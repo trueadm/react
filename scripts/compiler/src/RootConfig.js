@@ -293,7 +293,10 @@ class RootConfig {
             return;
           }
           if (methods.has(name) && thisObject.properties.has(name) && thisObject.properties.get(name).callSites.length > 0) {
-            return;
+            // strip out render methods entirely
+            if (name.startsWith('_render') || name.startsWith('render')) {
+              return;
+            }
           }
           prototypeProperties.push(
             t.classMethod(

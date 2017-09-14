@@ -175,6 +175,8 @@ function createFunction(name, astNode, scope) {
   return {
     action: null,
     astNode: astNode,
+    bailOut: false,
+    bailOutReason: null,
     callSites: [],
     defaultProps: null,
     jsxElementCallSites: [],
@@ -194,6 +196,8 @@ function createClass(name, astNode, superIdentifier, scope) {
   return {
     action: null,
     astNode: astNode,
+    bailOut: false,
+    bailOutReason: null,
     defaultProps: null,
     jsxElementCallSites: [],
     methods: new Map(),
@@ -1345,10 +1349,47 @@ function callJSXElement(astNode, action, subject) {
   return jsxElement;
 }
 
+function getCurrentComponentFromScope(scope) {
+  // first try to find a class component
+  let currentScope = scope;
+  while (currentScope !== null) {
+    if (currentScope.func !== null) {
+      if (currentScope.func.theClass !== null) {
+        return currentScope.func.theClass;
+      }
+    }
+    currentScope = currentScope.parentScope;
+  }
+  // otherwise a functional component (they have a return and a name)
+  currentScope = scope;
+  while (currentScope !== null) {
+    if (currentScope.func !== null) {
+      if (currentScope.func.return !== null && currentScope.func.name !== null) {
+        return currentScope.func;
+      }
+    }
+    currentScope = currentScope.parentScope;
+  }
+  return null;
+}
+
+function checkForBailouts(astNode, scope) {
+  const name = getNameFromAst(astNode);
+  // ReactDOM.findDOMNode bail-out
+  if (name === 'ReactDOM.findDOMNode') {
+    const component = getCurrentComponentFromScope(scope);
+
+    if (component !== null) {
+      component.bailOut = true;
+      component.bailOutReason = 'ReactDOM.findDOMNode is currently not supported';
+    }
+  }
+}
+
 function callFunction(astNode, callee, args, action, scope) {
   let functionRef = getOrSetValueFromAst(callee, scope, action);
 
-
+  checkForBailouts(astNode.callee, scope);
   if (functionRef == null) {
     // console.warn(
     //   `Could not find an identifier for function call "${getNameFromAst(callee)}"`

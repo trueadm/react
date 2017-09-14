@@ -36,11 +36,11 @@ async function compileBundle(result) {
   }).code;
   fs.writeFileSync(destinationBundlePath, transformedCode);
   // let's use Rollup again for DCE! it handles JSX with our fork
-  // return createBundle({
-  //   hasteMap: null,
-  //   entryFilePath: destinationBundlePath,
-  //   destinationBundlePath: destinationBundlePath,
-  // });
+  return createBundle({
+    hasteMap: null,
+    entryFilePath: destinationBundlePath,
+    destinationBundlePath: destinationBundlePath,
+  });
 }
 
 module.exports = {
