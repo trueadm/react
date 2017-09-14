@@ -68,11 +68,8 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   if (type === 'ArrowFunctionExpression' || type === 'FunctionExpression' || type === 'FunctionDeclaration') {
     const func = astComponent.func;
     const propsInScope = func.params[0];
-    if (func.bailOut === true) {
-      throw new Error(`Failed to optimize a component tree with a root component of "${func.name}" due to ${func.bailOutReason}.`);
-    }
     if (propsInScope !== undefined) {
-      if (propsInScope.accessedAsSpreadProps === true) {
+      if (propsInScope.accessedAsSpread === true) {
         throw new Error(`Failed to optimize a component tree with a root component of "${func.name}" due to object spread/rest on props at root.`);
       }
       propsShape = convertAccessorsToNestedObject(propsInScope.accessors, func.propTypes ? func.propTypes.properties : null, false);
@@ -80,11 +77,8 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   } else if (type === 'ClassExpression' || type === 'ClassDeclaration') {
     const theClass = astComponent.class;
     const propsOnClass = theClass.thisObject.accessors.get('props');
-    if (theClass.bailOut === true) {
-      throw new Error(`Failed to optimize a component tree with a root component of "${theClass.name}" due to ${theClass.bailOutReason}.`);
-    }
     if (propsOnClass !== undefined) {
-      if (propsOnClass.accessedAsSpreadProps === true) {
+      if (propsOnClass.accessedAsSpread === true) {
         throw new Error(`Failed to optimize a component tree with a root component of "${theClass.name}" due to object spread/rest on props at root.`);
       }
       propsShape = convertAccessorsToNestedObject(propsOnClass.accessors, theClass.propTypes ? theClass.propTypes.properties : null, false);
