@@ -209,6 +209,14 @@ function handleAssignmentValue(
         }
         break;
       }
+      case "JSXElement": {
+        if (assignmentValue.astNode !== null) {
+          declarations[assignmentKey] = assignmentValue.astNode;
+        } else {
+          debugger;
+        }
+        break;
+      }
       default: {
         debugger;
       }
