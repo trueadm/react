@@ -320,7 +320,6 @@ function setupBundle(destinationBundlePath) {
     prepackMetadata: createPrepackMetadata(moduleScope),
     destinationBundlePath: destinationBundlePath,
     moduleScope,
-    source
   });
 }
 

@@ -161,15 +161,26 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   let instanceThis = moduleEnv.eval(instanceThisAstWithPrefixes);
   // copy over the instanceThis properties to our instance, minus "props" as we have that already
   let useClassComponent = false;
+  if (
+    componentPrototype.has("componentWillMount") ||
+    componentPrototype.has("componentDidMount") ||
+    componentPrototype.has("componentWillUpdate") ||
+    componentPrototype.has("componentDidUpdate") ||
+    componentPrototype.has("componentWillUnmount") ||
+    componentPrototype.has("shouldComponentUpdate") ||
+    componentPrototype.has("componentWillReceiveProps") ||
+    componentPrototype.has("componentDidCatch")
+  ) {
+    useClassComponent = true;
+  }
   for (let [key, value] of instanceThis.properties) {
     if (key === 'state') {
       useClassComponent = true;
       instanceProperties.set(key, value);
     } else if (key !== 'props') {
-      if (componentPrototype.has(key)) {
+      // if this is a prototype method that is called directly in the component (i.e. lifecycles) then don't make it abstract
+      if (componentPrototype.has(key) && thisObject.properties.has(key) && thisObject.properties.get(key).callSites.length > 0) {
         // NO-OP
-      } else if (key.indexOf("_render") === 0 || key.indexOf("render") === 0) {
-        // NO-OP we inline renders
       } else {
         instanceProperties.set(key, value);
         useClassComponent = true;

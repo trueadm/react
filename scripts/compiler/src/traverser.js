@@ -1348,6 +1348,7 @@ function callJSXElement(astNode, action, subject) {
 function callFunction(astNode, callee, args, action, scope) {
   let functionRef = getOrSetValueFromAst(callee, scope, action);
 
+
   if (functionRef == null) {
     // console.warn(
     //   `Could not find an identifier for function call "${getNameFromAst(callee)}"`
@@ -1413,8 +1414,9 @@ function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   newScope.func = func;
   func.theClass = theClass;
   theClass.methods.set(name, func);
+  theClass.thisObject.properties.set(name, func);
   traverse(bodyPart, getNextAction(action), newScope);
-  newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
+  return () => newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
 
 function declareClass(node, id, superId, body, action, scope) {
@@ -1433,16 +1435,18 @@ function declareClass(node, id, superId, body, action, scope) {
   scope.deferredScopes.push({
     name: getNameFromAst(node.id),
     scopeFunc() {
+      const deferredScopes = [];
       astClassBody.forEach(bodyPart => {
         if (bodyPart.type === "ClassMethod") {
           if (bodyPart.kind === 'constructor') {
             bodyPart.body.class = theClass;
           }
-          declareClassMethod(bodyPart, theClass, thisAssignment, scope, action);
+          deferredScopes.push(declareClassMethod(bodyPart, theClass, thisAssignment, scope, action));
         } else {
           debugger;
         }
       });
+      deferredScopes.forEach(deferredScope => deferredScope());
     },
   });
   assign(scope, "assignments", classAssignKey, theClass);

@@ -138,7 +138,7 @@ const blacklist = {
 };
 
 function addPrefixesToAstNodes(entryNode, entry) {
-  const thisAccessors = entry.thisClass.thisObject.accessors;
+  const thisAccessors = entry.theClass.thisObject.accessors;
   const prefix = entry.key;
   const propsValue = entry.props;
   const scope = traverser.createModuleScope();
@@ -204,7 +204,6 @@ function addPrefixesToAstNodes(entryNode, entry) {
   traverser.traverse(entryNode, traverser.Actions.FindAndReplace, scope);
   return entryNode;
 }
-
 function cloneAst(astNode) {
   if (Array.isArray(astNode)) {
     const arr = new Array(astNode.length);
@@ -221,7 +220,9 @@ function cloneAst(astNode) {
       for (let i = 0; i < value.length; i++) {
         arr[i] = cloneAst(value[i]);
       }
-    } else if (typeof value === 'object' && value !== null && key !== 'class' && key !== 'func' && key !== 'scope' && key !== 'loc') {
+    }
+    // these are all the custom properties we add to AST nodes to help get access to things (monkey-patchy), we want to skip cloninig them when cloining
+    else if (typeof value === 'object' && value !== null && key !== 'class' && key !== 'func' && key !== 'scope' && key !== 'loc' && key !== 'jsxElement') {
       newNode[key] = cloneAst(value);
     }
   }
@@ -243,7 +244,7 @@ class RootConfig {
       props: props,
       prototypeProperties: null,
       state: null,
-      thisClass: theClass
+      theClass: theClass
     };
 
     this._entries.add(entry);
@@ -264,16 +265,13 @@ class RootConfig {
     const lifecycleMethods = {};
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
+      const thisObject = entry.theClass.thisObject;
+      const methods = entry.theClass.methods;
       if (entry.prototypeProperties !== null) {
         entry.prototypeProperties.forEach(prototypeProperty => {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
-          if (name.indexOf("_render") === 0 || name.indexOf("render") === 0) {
-            // NO OP
-            console.log(
-              `Did not include prototype method "${name}" as it looks like a render method on an inlined component.`
-            );
-          } else if (
+          if (
             name === "componentWillMount" ||
             name === "componentDidMount" ||
             name === "componentWillUpdate" ||
@@ -290,16 +288,19 @@ class RootConfig {
               prototypeProperties,
               entry
             );
-          } else {
-            prototypeProperties.push(
-              t.classMethod(
-                prototypeProperty.kind,
-                t.identifier(entry.key + prototypeProperty.key.name),
-                prototypeProperty.params,
-                addPrefixesToAstNodes(cloneAst(prototypeProperty.body), entry)
-              )
-            );
+            return;
           }
+          if (methods.has(name) && thisObject.properties.has(name) && thisObject.properties.get(name).callSites.length > 0) {
+            return;
+          }
+          prototypeProperties.push(
+            t.classMethod(
+              prototypeProperty.kind,
+              t.identifier(entry.key + prototypeProperty.key.name),
+              prototypeProperty.params,
+              addPrefixesToAstNodes(cloneAst(prototypeProperty.body), entry)
+            )
+          );
         });
       }
     }
@@ -307,24 +308,25 @@ class RootConfig {
   }
   getConstructorProperties() {
     const entries = this._getEntries();
-    let constructorProperties = [];
+    let allConstructorProperties = [];
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (entry.constructorProperties !== null) {
-        if (constructorProperties === null) {
-          constructorProperties = [];
+        if (allConstructorProperties === null) {
+          allConstructorProperties = [];
         }
+        const constructorProperties = cloneAst(entry.constructorProperties);
         addPrefixesToAstNodes(
-          t.blockStatement(cloneAst(entry.constructorProperties)),
+          t.blockStatement(constructorProperties),
           entry
         );
         filterConstructorProperties(
-          entry.constructorProperties,
-          constructorProperties
+          constructorProperties,
+          allConstructorProperties
         );
       }
     }
-    return constructorProperties;
+    return allConstructorProperties;
   }
   getMergedState() {
     const entries = this._getEntries();

@@ -102,7 +102,6 @@ async function optimizeComponentWithPrepack(
   moduleEnv,
   astComponent,
   moduleScope,
-  source
 ) {
   // create an abstract props object
   const rootConfig = createRootConfig();
@@ -125,7 +124,6 @@ async function optimizeComponentWithPrepack(
     [initialProps],
     resolvedResult,
     rootConfig,
-    source,
   );
   return convertToExpression(node);
 }
@@ -134,20 +132,20 @@ let optimizedTrees = 0;
 let processedCount = 0;
 const alreadyTried = new Map();
 
-async function findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope, source) {
+async function findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope) {
   // scan the optimized component for further components
   const componentScope = {
     deferredScopes: [],
     components: new Map(),
   };
-  traverser.traverse(astComponent, traverser.Actions.FindComponents, componentScope, source);
+  traverser.traverse(astComponent, traverser.Actions.FindComponents, componentScope);
   const potentialBailOuts = Array.from(componentScope.components.keys());
   for (let i = 0; i < potentialBailOuts.length; i++) {
     const potentialBailOut = potentialBailOuts[i];
     const component = moduleScope.assignments.get(potentialBailOut);
 
     if (component !== undefined) {
-      await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope, source);
+      await optimizeComponentTree(ast, moduleEnv, component.astNode, moduleScope);
     }
   }
 }
@@ -156,8 +154,7 @@ async function optimizeComponentTree(
   ast,
   moduleEnv,
   astComponent,
-  moduleScope,
-  source
+  moduleScope
 ) {
   if (astComponent == null || astComponent.type === undefined) {
     return;
@@ -165,13 +162,13 @@ async function optimizeComponentTree(
   if (astComponent.type === 'CallExpression') {
     const astArguments = astComponent.arguments;
     for (let i = 0; i < astArguments.length; i++) {
-      await optimizeComponentTree(ast, moduleEnv, astArguments[i], moduleScope, source);
+      await optimizeComponentTree(ast, moduleEnv, astArguments[i], moduleScope);
     }
     return;
   } else if (astComponent.type === 'Identifier') {
     const obj = moduleScope.assignments.get(astComponent.name);
     if (obj.astNode !== undefined) {
-      await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope, source);
+      await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope);
     }
     return;
   } else if (astComponent.type === 'FunctionExpression' || astComponent.type === 'FunctionDeclaration' || astComponent.type === 'ArrowFunctionExpression') {
@@ -203,11 +200,11 @@ async function optimizeComponentTree(
     alreadyTried.set(name, true);
     processedCount++;
     try {
-      const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope, source);
+      const optimizedAstComponent = await optimizeComponentWithPrepack(ast, moduleEnv, astComponent, moduleScope);
       astComponent.optimized = true;
       astComponent.optimizedReplacement = optimizedAstComponent;
       optimizedTrees++;
-      await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope, source);
+      await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope);
       console.log(`Successfully optimized a component tree with a root component of "${name}".`);
     } catch (e) {
       if (e.stack && e.stack.indexOf('not yet supported on abstract value props') !== -1) {
@@ -216,7 +213,7 @@ async function optimizeComponentTree(
         console.warn(`\nFailed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n${e.stack}\n`);
       }
       // find all direct child components in the tree of this component
-      await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope, source);
+      await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope);
     }
   }
 }
