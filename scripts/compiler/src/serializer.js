@@ -361,6 +361,10 @@ function createClassConstructorBody(rootConfig) {
       t.callExpression(t.identifier("super"), [t.identifier("props")])
     ),
   ];
+  const constructorProperties = rootConfig.getConstructorProperties(bodyBlock);
+  if (constructorProperties !== null) {
+    bodyBlock.push(...constructorProperties);
+  }
   const mergedState = rootConfig.getMergedState();
   if (mergedState !== null) {
     bodyBlock.push(
@@ -372,10 +376,6 @@ function createClassConstructorBody(rootConfig) {
         )
       )
     );
-  }
-  const constructorProperties = rootConfig.getConstructorProperties(bodyBlock);
-  if (constructorProperties !== null) {
-    bodyBlock.push(...constructorProperties);
   }
   return t.blockStatement(bodyBlock);
 }
