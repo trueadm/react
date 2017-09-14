@@ -357,18 +357,7 @@ function convertValueToExpression(value, rootConfig, source) {
         if (preludeGenerator.derivedIds.has(intrinsicName)) {
           const derivedArgValues = preludeGenerator.derivedIds.get(intrinsicName);
           const derivedArgs = derivedArgValues.map(derivedArgValue => convertValueToExpression(derivedArgValue, rootConfig, source));
-          if (derivedArgs.length > 1) {
-            if (derivedArgs[0].name === 'fbt') {
-              // TODO how to deal with fbt._?
-              debugger;
-              convertValueToExpression(derivedArgValues[0], rootConfig, source)
-            }
-            return t.callExpression(derivedArgs[0], derivedArgs.slice(1));
-          } else if (derivedArgs.length === 1) {
-            return derivedArgs[0];
-          } else {
-            debugger;
-          }
+          return value.buildNode(derivedArgs);
         } else {
           debugger;
         }
