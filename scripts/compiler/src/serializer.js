@@ -286,7 +286,6 @@ function convertValueToExpression(value, rootConfig) {
     } else {
       serializedArgs = alreadyGatheredArgs.get(value);
     }
-    alreadyGatheredArgs.set(value, serializedArgs);
     if (value.isIntrinsic()) {
       const intrinsicName = value.intrinsicName;
       if (intrinsicName.indexOf("_$") === 0) {

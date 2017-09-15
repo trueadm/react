@@ -210,7 +210,7 @@ async function optimizeComponentTree(
       astComponent.optimized = true;
       astComponent.optimizedReplacement = optimizedAstComponent;
       optimizedTrees++;
-      await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope);
+      // await findNonOptimizedComponents(ast, optimizedAstComponent, moduleEnv, moduleScope);
       console.log(`Successfully optimized a component tree with a root component of "${name}".`);
     } catch (e) {
       if (e.stack && e.stack.indexOf('not yet supported on abstract value props') !== -1) {
@@ -219,7 +219,7 @@ async function optimizeComponentTree(
         console.warn(`\nFailed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n${e.stack}\n`);
       }
       // find all direct child components in the tree of this component
-      await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope);
+      // await findNonOptimizedComponents(ast, astComponent, moduleEnv, moduleScope);
     }
   }
 }

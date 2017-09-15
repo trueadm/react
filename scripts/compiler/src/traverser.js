@@ -648,7 +648,10 @@ function traverse(node, action, scope) {
     case "ArrayExpression": {
       const elements = node.elements;
       for (let i = 0; i < elements.length; i++) {
-        traverse(elements[i], action, scope);
+        const element = traverse(elements[i], action, scope);
+        if (element !== undefined) {
+          elements[i] = element;
+        }
       }
       break;
     }
