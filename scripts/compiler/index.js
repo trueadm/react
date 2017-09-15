@@ -1,7 +1,10 @@
 "use strict";
 
-function compileSource(source) {
+const setupSource = require('./src/setup').setupSource;
+const compileSource = require('./src/compiler').compileSource;
 
+async function compileSourceEntry(source) {
+	return setupSource(source).then(compileSource);
 }
 
-module.exports = compileSource;
+module.exports = compileSourceEntry;

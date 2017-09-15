@@ -1,16 +1,25 @@
 "use strict";
 
-const t = require("babel-types");
 const fs = require("fs");
-const evaluator = require("./evaluator");
 const optimizeComponentTree = require("./optimizer").optimizeComponentTree;
 const traverser = require("./traverser");
 const babel = require('babel-core');
 const createBundle = require('./bundler').createBundle;
 
 async function compileBundle(result) {
-  const prepackMetadata = result.prepackMetadata;
   const destinationBundlePath = result.destinationBundlePath;
+  const transformedCode = await compileSource(result);
+  fs.writeFileSync(destinationBundlePath, transformedCode);
+  // let's use Rollup again for DCE! it handles JSX with our fork
+  return createBundle({
+    hasteMap: null,
+    entryFilePath: destinationBundlePath,
+    destinationBundlePath: destinationBundlePath,
+  });
+}
+
+async function compileSource(result) {
+  const prepackMetadata = result.prepackMetadata;
   const defaultExportComponent = prepackMetadata.defaultExport.astNode;
   const moduleScope = result.moduleScope;
   const ast = result.ast;
@@ -34,15 +43,11 @@ async function compileBundle(result) {
       // ['minify-dead-code-elimination', {"optimizeRawSize": true}]
     ],
   }).code;
-  fs.writeFileSync(destinationBundlePath, transformedCode);
-  // let's use Rollup again for DCE! it handles JSX with our fork
-  return createBundle({
-    hasteMap: null,
-    entryFilePath: destinationBundlePath,
-    destinationBundlePath: destinationBundlePath,
-  });
+
+  return transformedCode;
 }
 
 module.exports = {
   compileBundle: compileBundle,
+  compileSource: compileSource,
 };

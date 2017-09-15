@@ -1,3 +1,5 @@
+"use strict";
+
 const setupBundle = require('./src/setup').setupBundle;
 const compileBundle = require('./src/compiler').compileBundle;
 const createHasteMap = require('./src/haste-map').createHasteMap;

@@ -10,10 +10,13 @@
  */
 'use strict';
 
+const compile = require('../../compiler/index');
+
 module.exports = async function(src: string) {
   // Put the real compilation call here
-  await Promise.resolve();
-  return src;
+  const newSrc = await compile(src);
+  console.log(newSrc);
+  return newSrc;
   // Uncomment to see a failure:
   // return src.replace('World', 'Dominic');
 };
