@@ -24,9 +24,7 @@ const {
   ValidPronounOptions,
   ValidPluralOptions,
 } = require('./FbtConstants.js');
-const {
-  isFbtMember,
-} = require('./FbtNodeChecks.js');
+const {isFbtMember} = require('./FbtNodeChecks.js');
 const PLURAL_PARAM_TOKEN = 'number';
 
 /**
@@ -68,7 +66,7 @@ let call = {
     if (callee.property.type !== 'Identifier') {
       throw new Error(
         `Expected fbt method to be an identifier, but got ` +
-        callee.property.type
+          callee.property.type
       );
     }
 
@@ -199,7 +197,7 @@ let call = {
         let usages = Object.keys(ValidPronounUsages);
         throw new Error(
           `First argument to fbt.pronoun must be one of [${usages}], ` +
-          `got ${usageExpr.value}`
+            `got ${usageExpr.value}`
         );
       }
       let numericUsageExpr = t.numericLiteral(
@@ -213,7 +211,7 @@ let call = {
       if (getOptionBooleanValue(options, 'human')) {
         pronounArgs.push(
           t.objectExpression([
-            t.objectProperty(t.identifier('human'), t.numericLiteral(1))
+            t.objectProperty(t.identifier('human'), t.numericLiteral(1)),
           ])
         );
       }
@@ -249,7 +247,7 @@ let call = {
     } else {
       throw new Error(`Unknown fbt method ${callee.property.name}`);
     }
-  }
+  },
 };
 
 module.exports.setEnumManifest = setEnumManifest;

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const {
   AbstractValue,
@@ -8,11 +8,11 @@ const {
   NullValue,
   NumberValue,
   SymbolValue,
-  UndefinedValue
-} = require("prepack/lib/values");
-const traverser = require("./traverser");
-const t = require("babel-types");
-const serializer = require("./serializer");
+  UndefinedValue,
+} = require('prepack/lib/values');
+const traverser = require('./traverser');
+const t = require('babel-types');
+const serializer = require('./serializer');
 
 // this can be done better
 function filterConstructorProperties(object, constructorProperties) {
@@ -22,14 +22,14 @@ function filterConstructorProperties(object, constructorProperties) {
         filterConstructorProperties(child, constructorProperties);
       });
       return;
-    } else if (object.type === "ExpressionStatement") {
+    } else if (object.type === 'ExpressionStatement') {
       const expression = object.expression;
 
       filterConstructorProperties(expression, constructorProperties);
       return;
-    } else if (object.type === "ReturnStatement") {
+    } else if (object.type === 'ReturnStatement') {
       // remove return statements
-      if (object.argument.type === "SequenceExpression") {
+      if (object.argument.type === 'SequenceExpression') {
         filterConstructorProperties(
           object.argument.expressions,
           constructorProperties
@@ -40,32 +40,32 @@ function filterConstructorProperties(object, constructorProperties) {
       return;
     } else if (
       // remove Super(...)
-      object.type === "CallExpression" &&
-      object.callee.type === "Super"
+      object.type === 'CallExpression' &&
+      object.callee.type === 'Super'
     ) {
       return;
-    } else if (object.type === "AssignmentExpression") {
+    } else if (object.type === 'AssignmentExpression') {
       // remove ... = Super(...)
       if (
-        object.right.type === "CallExpression" &&
-        object.right.callee.type === "Super"
+        object.right.type === 'CallExpression' &&
+        object.right.callee.type === 'Super'
       ) {
         return;
       }
       // remove this.state = ...
       if (
-        object.left.type === "MemberExpression" &&
-        object.left.object.type === "ThisExpression" &&
-        object.left.property.type === "Identifier" &&
-        object.left.property.name === "state"
+        object.left.type === 'MemberExpression' &&
+        object.left.object.type === 'ThisExpression' &&
+        object.left.property.type === 'Identifier' &&
+        object.left.property.name === 'state'
       ) {
         return;
       }
-    } else if (object.type === "Identifier") {
+    } else if (object.type === 'Identifier') {
       // NO-OP
       return;
     }
-    if (object.type.indexOf("Expression") !== -1) {
+    if (object.type.indexOf('Expression') !== -1) {
       constructorProperties.push(t.expressionStatement(object));
     } else {
       constructorProperties.push(object);
@@ -98,9 +98,9 @@ function mergeLifecycleMethod(
 }
 
 function findFirstMemberNodeOfMemberExpression(node) {
-  while (node.type !== "Identifier") {
-    if (node.type === "MemberExpression") {
-      if (node.object.type === "ThisExpression") {
+  while (node.type !== 'Identifier') {
+    if (node.type === 'MemberExpression') {
+      if (node.object.type === 'ThisExpression') {
         node.property.parentNode = node;
         node = node.property;
       } else {
@@ -145,7 +145,7 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
   const scope = traverser.createModuleScope();
   scope.findAndReplace = {
     MemberExpression(node) {
-      if (node.object.type === "ThisExpression") {
+      if (node.object.type === 'ThisExpression') {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
 
@@ -154,31 +154,25 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           firstNode.name = prefix + name;
         }
         return true;
-      } else if (node.object.type === "MemberExpression") {
+      } else if (node.object.type === 'MemberExpression') {
         // handle this.state and this.props
         const firstNode = findFirstMemberNodeOfMemberExpression(node.object);
         const name = firstNode.name;
-        if (name === "state") {
+        if (name === 'state') {
           const property = getNextMemberNodeOfMemberExpression(node, firstNode);
           property.name = prefix + property.name;
           return true;
-        } else if (name === "props") {
+        } else if (name === 'props') {
           // we need to replace with correct props
-          const nextNode = getNextMemberNodeOfMemberExpression(
-            node,
-            firstNode
-          );
-          const lastNode = getNextMemberNodeOfMemberExpression(
-            node,
-            nextNode
-          );
+          const nextNode = getNextMemberNodeOfMemberExpression(node, firstNode);
+          const lastNode = getNextMemberNodeOfMemberExpression(node, nextNode);
           const memberName = nextNode.name;
           const propValue = propsValue.properties.get(memberName);
           let memberNode = null;
           if (propValue !== undefined) {
             const value = propValue.descriptor.value;
             if (value.isIntrinsic()) {
-              if (value.intrinsicName.indexOf("$F$") === 0) {
+              if (value.intrinsicName.indexOf('$F$') === 0) {
                 memberNode = serializer.convertPrefixPlaceholderToExpression(
                   value.intrinsicName
                 );
@@ -190,7 +184,10 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
                   return t.identifier('undefined');
                 }
               }
-              memberNode = serializer.convertValueToExpression(value, rootConfig);
+              memberNode = serializer.convertValueToExpression(
+                value,
+                rootConfig
+              );
             }
             if (lastNode !== null) {
               return t.memberExpression(memberNode, lastNode);
@@ -199,7 +196,7 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           }
         }
       }
-    }
+    },
   };
   traverser.traverse(entryNode, traverser.Actions.FindAndReplace, scope);
   return entryNode;
@@ -216,13 +213,20 @@ function cloneAst(astNode) {
   for (let key in astNode) {
     const value = astNode[key];
     if (Array.isArray(value)) {
-      const arr = newNode[key] = new Array(value.length);
+      const arr = (newNode[key] = new Array(value.length));
       for (let i = 0; i < value.length; i++) {
         arr[i] = cloneAst(value[i]);
       }
-    }
-    // these are all the custom properties we add to AST nodes to help get access to things (monkey-patchy), we want to skip cloninig them when cloining
-    else if (typeof value === 'object' && value !== null && key !== 'class' && key !== 'func' && key !== 'scope' && key !== 'loc' && key !== 'jsxElement') {
+    } else if (
+      typeof value === 'object' &&
+      value !== null &&
+      key !== 'class' &&
+      key !== 'func' &&
+      key !== 'scope' &&
+      key !== 'loc' &&
+      key !== 'jsxElement'
+    ) {
+      // these are all the custom properties we add to AST nodes to help get access to things (monkey-patchy), we want to skip cloninig them when cloining
       newNode[key] = cloneAst(value);
     }
   }
@@ -237,20 +241,20 @@ class RootConfig {
   }
   addEntry(props, theClass) {
     const key =
-      Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3) + "_";
+      Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 3) + '_';
     const entry = {
       constructorProperties: null,
       key: key,
       props: props,
       prototypeProperties: null,
       state: null,
-      theClass: theClass
+      theClass: theClass,
     };
 
     this._entries.add(entry);
     return {
       rootConfigEntry: entry,
-      entryKey: key
+      entryKey: key,
     };
   }
   _getEntries() {
@@ -272,14 +276,14 @@ class RootConfig {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
           if (
-            name === "componentWillMount" ||
-            name === "componentDidMount" ||
-            name === "componentWillUpdate" ||
-            name === "componentDidUpdate" ||
-            name === "componentWillUnmount" ||
-            name === "shouldComponentUpdate" ||
-            name === "componentWillReceiveProps" ||
-            name === "componentDidCatch"
+            name === 'componentWillMount' ||
+            name === 'componentDidMount' ||
+            name === 'componentWillUpdate' ||
+            name === 'componentDidUpdate' ||
+            name === 'componentWillUnmount' ||
+            name === 'shouldComponentUpdate' ||
+            name === 'componentWillReceiveProps' ||
+            name === 'componentDidCatch'
           ) {
             mergeLifecycleMethod(
               name,
@@ -291,7 +295,11 @@ class RootConfig {
             );
             return;
           }
-          if (methods.has(name) && thisObject.properties.has(name) && thisObject.properties.get(name).callSites.length > 0) {
+          if (
+            methods.has(name) &&
+            thisObject.properties.has(name) &&
+            thisObject.properties.get(name).callSites.length > 0
+          ) {
             // strip out render methods entirely
             if (name.startsWith('_render') || name.startsWith('render')) {
               return;
@@ -302,7 +310,11 @@ class RootConfig {
               prototypeProperty.kind,
               t.identifier(entry.key + prototypeProperty.key.name),
               prototypeProperty.params,
-              addPrefixesToAstNodes(cloneAst(prototypeProperty.body), entry, this)
+              addPrefixesToAstNodes(
+                cloneAst(prototypeProperty.body),
+                entry,
+                this
+              )
             )
           );
         });
@@ -346,7 +358,11 @@ class RootConfig {
           mergedState.properties.push(
             t.objectProperty(
               t.identifier(entry.key + originalProperty.key.name),
-              addPrefixesToAstNodes(cloneAst(originalProperty.value), entry, this)
+              addPrefixesToAstNodes(
+                cloneAst(originalProperty.value),
+                entry,
+                this
+              )
             )
           );
         });

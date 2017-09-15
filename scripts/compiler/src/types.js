@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-const t = require("babel-types");
-const evaluator = require("./evaluator");
+const t = require('babel-types');
+const evaluator = require('./evaluator');
 
 const Types = {
   ANY: 'any',
@@ -29,15 +29,27 @@ const Types = {
 function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
   const keys = accessors ? Array.from(accessors.keys()) : [];
   const propKeys = propTypes ? Array.from(propTypes.keys()) : [];
-  
+
   if (keys.length > 0 || propKeys.length > 0) {
     const object = {};
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const value = accessors.get(key);
-      if (deepAccessors === true && value.accessors !== undefined && value.accessors.size > 0) {
-        object[key] = convertAccessorsToNestedObject(value.accessors, null, deepAccessors);
-      } else if (deepAccessors === true && value.accessors !== undefined && value.accessedAsSpread === true) {
+      if (
+        deepAccessors === true &&
+        value.accessors !== undefined &&
+        value.accessors.size > 0
+      ) {
+        object[key] = convertAccessorsToNestedObject(
+          value.accessors,
+          null,
+          deepAccessors
+        );
+      } else if (
+        deepAccessors === true &&
+        value.accessors !== undefined &&
+        value.accessedAsSpread === true
+      ) {
         object[key] = {};
       } else {
         object[key] = Types.ANY;
@@ -46,7 +58,7 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i];
       let value = propTypes.get(key);
-      
+
       if (value.type === 'FunctionCall') {
         switch (value.identifier) {
           case Types.ONE_OF: {
@@ -78,7 +90,9 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
                 newObj[key] = Types.ANY;
               } else {
                 // TODO
-                throw new Error('A complex deeply nested shape() PropType was used. No support yet!');
+                throw new Error(
+                  'A complex deeply nested shape() PropType was used. No support yet!'
+                );
               }
             });
             value = newObj;
@@ -87,7 +101,10 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
           default:
             value = Types.ANY;
         }
-      } else if (value.type === 'ConditionalExpression' || value.type === 'AbstractValue') {
+      } else if (
+        value.type === 'ConditionalExpression' ||
+        value.type === 'AbstractValue'
+      ) {
         // TODO
         // as we are inlikely to know this statically, let's assume any
         value = Types.ANY;
@@ -118,7 +135,10 @@ function convertNestedObjectToAst(object) {
     Object.keys(object).map(key => {
       const value = object[key];
       if (typeof value === 'object') {
-        return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
+        return t.objectProperty(
+          t.identifier(key),
+          convertNestedObjectToAst(value)
+        );
       } else {
         let valueAst = t.nullLiteral();
         if (typeof value === 'function') {
@@ -140,12 +160,25 @@ function convertNestedObjectToAst(object) {
 
 // this will add additioal prefixed aliases to all prefixes one level deep
 // i.e. this.state.foo => this.state.PREFIX_foo
-function convertNestedObjectWithPrefixesToAst(object, prefix, aliasKey, moduleEnv) {
+function convertNestedObjectWithPrefixesToAst(
+  object,
+  prefix,
+  aliasKey,
+  moduleEnv
+) {
   return t.objectExpression(
     Object.keys(object).map(key => {
       const value = object[key];
       if (typeof value === 'object') {
-        return t.objectProperty(t.identifier(key), convertNestedObjectWithPrefixesToAst(value, `${prefix}$_$${key}`, aliasKey, moduleEnv));
+        return t.objectProperty(
+          t.identifier(key),
+          convertNestedObjectWithPrefixesToAst(
+            value,
+            `${prefix}$_$${key}`,
+            aliasKey,
+            moduleEnv
+          )
+        );
       } else {
         const ident = `$F$${prefix}$_$${aliasKey}${key}`;
         moduleEnv.declare(ident, evaluator.createAbstractValue(ident));
@@ -154,7 +187,6 @@ function convertNestedObjectWithPrefixesToAst(object, prefix, aliasKey, moduleEn
     })
   );
 }
-
 
 // function convertNestedObjectWithPrefixesToAst(object, aliasKey, moduleEnv) {
 //   Object.keys(object).forEach(key => {
@@ -181,39 +213,64 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
     const newPrefix = `${prefix}.${key}`;
 
     if (typeof value === 'object') {
-      properties.get(key).descriptor.value = setAbstractPropsUsingNestedObject(properties.get(key).descriptor.value, value, newPrefix, false);
+      properties.get(key).descriptor.value = setAbstractPropsUsingNestedObject(
+        properties.get(key).descriptor.value,
+        value,
+        newPrefix,
+        false
+      );
     } else {
       switch (value) {
         // simple abstract objects
         case Types.ARRAY_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractArray(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractArray(
+            newPrefix
+          );
           break;
         case Types.OBJECT_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractObject(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractObject(
+            newPrefix
+          );
           break;
         case Types.NUMBER_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractNumber(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractNumber(
+            newPrefix
+          );
           break;
         case Types.STRING_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractString(
+            newPrefix
+          );
           break;
         case Types.FUNC_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractFunction(newPrefix);
+          properties.get(
+            key
+          ).descriptor.value = evaluator.createAbstractFunction(newPrefix);
           break;
         case Types.BOOL_REQUIRED:
-          properties.get(key).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
+          properties.get(
+            key
+          ).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
           break;
         // union objects
         case Types.OBJECT:
-          properties.get(key).descriptor.value = evaluator.createAbstractObjectOrUndefined(newPrefix);
+          properties.get(
+            key
+          ).descriptor.value = evaluator.createAbstractObjectOrUndefined(
+            newPrefix
+          );
           break;
         case Types.STRING:
           // not correct but we're cheating for now
-          properties.get(key).descriptor.value = evaluator.createAbstractString(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractString(
+            newPrefix
+          );
           break;
         // generic abstract value
         default: {
-          properties.get(key).descriptor.value = evaluator.createAbstractValue(newPrefix);
+          properties.get(key).descriptor.value = evaluator.createAbstractValue(
+            newPrefix
+          );
         }
       }
     }

@@ -59,7 +59,6 @@ const FbtRequiredAttributes = {
   desc: true,
 };
 
-
 const PronounRequiredAttributes = {
   type: true,
   gender: true,
@@ -71,10 +70,13 @@ const RequiredParamOptions = {
   name: true,
 };
 
-const ValidParamOptions = Object.assign({
-  number: true,
-  gender: true,
-}, RequiredParamOptions);
+const ValidParamOptions = Object.assign(
+  {
+    number: true,
+    gender: true,
+  },
+  RequiredParamOptions
+);
 
 module.exports.ValidPronounUsages = ValidPronounUsages;
 module.exports.PluralOptions = PluralOptions;

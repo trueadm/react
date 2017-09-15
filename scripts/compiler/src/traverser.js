@@ -1,38 +1,38 @@
-"use strict";
+'use strict';
 
-const PropTypes = require("./types").Types;
-const t = require("babel-types");
+const PropTypes = require('./types').Types;
+const t = require('babel-types');
 
 const Actions = {
-  ScanTopLevelScope: "ScanTopLevelScope",
-  ScanInnerScope1: "ScanInnerScope1",
-  ScanInnerScope2: "ScanInnerScope2",
-  ScanInnerScope3: "ScanInnerScope3",
-  ReplaceWithOptimized: "ReplaceWithOptimized",
-  FindComponents: "FindComponents",
-  FindAndReplace: "FindAndReplace",
+  ScanTopLevelScope: 'ScanTopLevelScope',
+  ScanInnerScope1: 'ScanInnerScope1',
+  ScanInnerScope2: 'ScanInnerScope2',
+  ScanInnerScope3: 'ScanInnerScope3',
+  ReplaceWithOptimized: 'ReplaceWithOptimized',
+  FindComponents: 'FindComponents',
+  FindAndReplace: 'FindAndReplace',
 };
 
 const Types = {
-  Class: "Class",
-  Function: "Function",
-  FunctionCall: "FunctionCall",
-  Object: "Object",
-  Array: "Array",
-  Scope: "Scope",
-  MathExpression: "MathExpression",
-  LogicExpression: "LogicExpression",
-  UnaryExpression: "UnaryExpression",
-  ConditionalExpression: "ConditionalExpression",
-  UpdateExpression: "UpdateExpression",
-  Undefined: "Undefined",
-  Null: "Null",
-  AbstractObject: "AbstractObject",
-  AbstractObjectOrUndefined: "AbstractObjectOrUndefined",
-  AbstractFunction: "AbstractFunction",
-  AbstractValue: "AbstractValue",
-  SequenceExpression: "SequenceExpression",
-  JSXElement: "JSXElement",
+  Class: 'Class',
+  Function: 'Function',
+  FunctionCall: 'FunctionCall',
+  Object: 'Object',
+  Array: 'Array',
+  Scope: 'Scope',
+  MathExpression: 'MathExpression',
+  LogicExpression: 'LogicExpression',
+  UnaryExpression: 'UnaryExpression',
+  ConditionalExpression: 'ConditionalExpression',
+  UpdateExpression: 'UpdateExpression',
+  Undefined: 'Undefined',
+  Null: 'Null',
+  AbstractObject: 'AbstractObject',
+  AbstractObjectOrUndefined: 'AbstractObjectOrUndefined',
+  AbstractFunction: 'AbstractFunction',
+  AbstractValue: 'AbstractValue',
+  SequenceExpression: 'SequenceExpression',
+  JSXElement: 'JSXElement',
 };
 
 const propTypes = createObject(null, {
@@ -71,7 +71,7 @@ function createMathExpression(astNode, left, right, operator) {
     left: left,
     operator: operator,
     right: right,
-    type: Types.MathExpression
+    type: Types.MathExpression,
   };
 }
 
@@ -82,7 +82,7 @@ function createLogicExpression(astNode, left, right, operator) {
     left: left,
     operator: operator,
     right: right,
-    type: Types.LogicExpression
+    type: Types.LogicExpression,
   };
 }
 
@@ -92,7 +92,7 @@ function createUnaryExpression(astNode, argument, operator) {
     action: null,
     astNode: astNode,
     operator: operator,
-    type: Types.UnaryExpression
+    type: Types.UnaryExpression,
   };
 }
 
@@ -103,7 +103,7 @@ function createConditionalExpression(astNode, alternate, consequent, test) {
     action: null,
     consequent: consequent,
     test: test,
-    type: Types.ConditionalExpression
+    type: Types.ConditionalExpression,
   };
 }
 
@@ -113,7 +113,7 @@ function createUpdateExpression(astNode, argument, operator) {
     astNode: astNode,
     action: null,
     operator: operator,
-    type: Types.UpdateExpression
+    type: Types.UpdateExpression,
   };
 }
 
@@ -122,21 +122,21 @@ function createSequenceExpression(astNode, expressions) {
     astNode: astNode,
     action: null,
     expressions: expressions,
-    type: Types.SequenceExpression
+    type: Types.SequenceExpression,
   };
 }
 
 function createUndefined(action) {
   return {
     action: action,
-    type: Types.Undefined
+    type: Types.Undefined,
   };
 }
 
 function createNull(action) {
   return {
     action: action,
-    type: Types.Null
+    type: Types.Null,
   };
 }
 
@@ -147,7 +147,7 @@ function createAbstractObject() {
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
-    type: Types.AbstractObject
+    type: Types.AbstractObject,
   };
 }
 
@@ -158,7 +158,7 @@ function createAbstractValue(crossModule) {
     accessors: new Map(),
     action: null,
     crossModule: crossModule,
-    type: Types.AbstractValue
+    type: Types.AbstractValue,
   };
 }
 
@@ -167,7 +167,7 @@ function createAbstractFunction(name) {
     action: null,
     callSites: [],
     name: name,
-    type: Types.AbstractFunction
+    type: Types.AbstractFunction,
   };
 }
 
@@ -188,7 +188,7 @@ function createFunction(name, astNode, scope) {
     return: null,
     scope: scope,
     theClass: null,
-    type: Types.Function
+    type: Types.Function,
   };
 }
 
@@ -222,7 +222,7 @@ function createFunctionCall(identifier, astNode) {
     astNode: astNode,
     type: Types.FunctionCall,
     identifier: identifier,
-    args: []
+    args: [],
   };
 }
 
@@ -236,11 +236,11 @@ function createScope(assignments) {
     func: null,
     jsxElementIdentifiers: new Map(),
     parentScope: null,
-    type: Types.Scope
+    type: Types.Scope,
   };
   if (assignments != null) {
     Object.keys(assignments).forEach(assignment =>
-      assign(scope, "assignments", assignment, assignments[assignment])
+      assign(scope, 'assignments', assignment, assignments[assignment])
     );
   }
   return scope;
@@ -255,11 +255,11 @@ function createObject(astNode, properties) {
     action: null,
     astNode: astNode,
     type: Types.Object,
-    properties: new Map()
+    properties: new Map(),
   };
   if (properties != null) {
     Object.keys(properties).forEach(property =>
-      assign(object, "properties", property, properties[property])
+      assign(object, 'properties', property, properties[property])
     );
   }
   return object;
@@ -273,11 +273,11 @@ function createArray(astNode, properties) {
     action: null,
     astNode: astNode,
     type: Types.Array,
-    properties: new Map()
+    properties: new Map(),
   };
   if (properties != null) {
     Object.keys(properties).forEach(property =>
-      assign(object, "properties", property, properties[property])
+      assign(object, 'properties', property, properties[property])
     );
   }
   return object;
@@ -313,15 +313,15 @@ function createModuleScope() {
     encodeURI: createAbstractFunction(),
     encodeURIComponent: createAbstractFunction(),
     module: createObject(null, {
-      exports: createObject(null)
+      exports: createObject(null),
     }),
-    require: createAbstractFunction("require"),
+    require: createAbstractFunction('require'),
     window: createAbstractObject(),
     document: createAbstractObject(),
     // type stuff
     ReactElement: 'ReactElement',
     ReactClass: 'ReactClass',
-    ReactNode: 'ReactNode'
+    ReactNode: 'ReactNode',
   });
 }
 
@@ -356,14 +356,14 @@ function traverse(node, action, scope) {
     }
   }
   switch (node.type) {
-    case "BlockStatement": {
+    case 'BlockStatement': {
       const body = node.body;
       for (let i = 0; i < body.length; i++) {
         traverse(body[i], action, scope);
       }
       break;
     }
-    case "ReturnStatement": {
+    case 'ReturnStatement': {
       const argument = node.argument;
       if (
         action === Actions.ScanInnerScope1 ||
@@ -380,7 +380,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "JSXElement": {
+    case 'JSXElement': {
       const astOpeningElement = node.openingElement;
       const astName = astOpeningElement.name;
       const name = getNameFromAst(astName);
@@ -400,12 +400,12 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "JSXAttribute": {
+    case 'JSXAttribute': {
       traverse(node.name, action, scope);
       traverse(node.value, action, scope);
       break;
     }
-    case "JSXSpreadAttribute": {
+    case 'JSXSpreadAttribute': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -419,15 +419,15 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "JSXExpressionContainer":
-    case "ExpressionStatement": {
+    case 'JSXExpressionContainer':
+    case 'ExpressionStatement': {
       const expressionNode = traverse(node.expression, action, scope);
       if (expressionNode !== undefined) {
         node.expression = expressionNode;
       }
       break;
     }
-    case "MemberExpression": {
+    case 'MemberExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -449,7 +449,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "CallExpression": {
+    case 'CallExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -472,14 +472,14 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "VariableDeclaration": {
+    case 'VariableDeclaration': {
       const declarations = node.declarations;
       for (let i = 0; i < declarations.length; i++) {
         traverse(declarations[i], action, scope);
       }
       break;
     }
-    case "VariableDeclarator": {
+    case 'VariableDeclarator': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -500,20 +500,20 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ForStatement": {
+    case 'ForStatement': {
       traverse(node.init, action, scope);
       traverse(node.test, action, scope);
       traverse(node.update, action, scope);
       traverse(node.body, action, scope);
       break;
     }
-    case "ForInStatement": {
+    case 'ForInStatement': {
       traverse(node.left, action, scope);
       traverse(node.right, action, scope);
       traverse(node.body, action, scope);
       break;
     }
-    case "BinaryExpression": {
+    case 'BinaryExpression': {
       const left = traverse(node.left, action, scope);
       if (left !== undefined) {
         node.left = left;
@@ -524,22 +524,34 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "UpdateExpression": {
+    case 'UpdateExpression': {
       const argument = traverse(node.argument, action, scope);
       if (argument !== undefined) {
         node.argument = argument;
       }
       break;
     }
-    case "ArrowFunctionExpression": {
+    case 'ArrowFunctionExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, true);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          true
+        );
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       } else {
         traverse(node.id, action, scope);
@@ -547,17 +559,17 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "DoWhileStatement": {
+    case 'DoWhileStatement': {
       traverse(node.body, action, scope);
       traverse(node.test, action, scope);
       break;
     }
-    case "WhileStatement": {
+    case 'WhileStatement': {
       traverse(node.body, action, scope);
       traverse(node.test, action, scope);
       break;
     }
-    case "IfStatement": {
+    case 'IfStatement': {
       const test = traverse(node.test, action, scope);
       if (test !== undefined) {
         node.test = node.test;
@@ -572,22 +584,34 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "FunctionExpression": {
+    case 'FunctionExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       } else {
         traverse(node.body, action, scope);
       }
       break;
     }
-    case "SwitchStatement": {
+    case 'SwitchStatement': {
       traverse(node.discriminant, action, scope);
       const cases = node.cases;
       for (let i = 0; i < cases.length; i++) {
@@ -595,7 +619,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "SwitchCase": {
+    case 'SwitchCase': {
       traverse(node.test, action, scope);
       const consequents = node.consequent;
       for (let i = 0; i < consequents.length; i++) {
@@ -603,7 +627,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ConditionalExpression": {
+    case 'ConditionalExpression': {
       const test = traverse(node.test, action, scope);
       if (test !== undefined) {
         node.test = test;
@@ -618,26 +642,26 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ObjectPattern": {
+    case 'ObjectPattern': {
       const properties = node.properties;
       for (let i = 0; i < properties.length; i++) {
         traverse(properties[i], action, scope);
       }
       break;
     }
-    case "ObjectProperty": {
+    case 'ObjectProperty': {
       traverse(node.key, action, scope);
       traverse(node.value, action, scope);
       break;
     }
-    case "ObjectExpression": {
+    case 'ObjectExpression': {
       const properties = node.properties;
       for (let i = 0; i < properties.length; i++) {
         traverse(properties[i], action, scope);
       }
       break;
     }
-    case "NewExpression": {
+    case 'NewExpression': {
       traverse(node.callee, action, scope);
       const args = node.arguments;
       for (let i = 0; i < args.length; i++) {
@@ -645,7 +669,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ArrayExpression": {
+    case 'ArrayExpression': {
       const elements = node.elements;
       for (let i = 0; i < elements.length; i++) {
         const element = traverse(elements[i], action, scope);
@@ -655,7 +679,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "TemplateLiteral": {
+    case 'TemplateLiteral': {
       const quasis = node.quasis;
       for (let i = 0; i < quasis.length; i++) {
         traverse(quasis[i], action, scope);
@@ -666,21 +690,21 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "LogicalExpression": {
+    case 'LogicalExpression': {
       traverse(node.left, action, scope);
       traverse(node.right, action, scope);
       break;
     }
-    case "UnaryExpression": {
+    case 'UnaryExpression': {
       traverse(node.expression, action, scope);
       traverse(node.argument, action, scope);
       break;
     }
-    case "TemplateElement": {
+    case 'TemplateElement': {
       // NO-OP?
       break;
     }
-    case "AssignmentExpression": {
+    case 'AssignmentExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -688,8 +712,10 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         assignExpression(node.left, node.right, action, scope);
-      } else if (action === Actions.ReplaceWithOptimized &&
-        node.right.optimized === true) {
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.right.optimized === true
+      ) {
         return node.right.optimizedReplacement;
       } else {
         traverse(node.left, action, scope);
@@ -697,57 +723,66 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "TryStatement": {
+    case 'TryStatement': {
       traverse(node.block, action, scope);
       traverse(node.handler, action, scope);
       break;
     }
-    case "CatchClause": {
+    case 'CatchClause': {
       traverse(node.param, action, scope);
       traverse(node.body, action, scope);
       break;
     }
-    case "TypeCastExpression": {
+    case 'TypeCastExpression': {
       traverse(node.expression, action, scope);
       traverse(node.typeAnnotation, action, scope);
       break;
     }
-    case "TypeAnnotation": {
+    case 'TypeAnnotation': {
       traverse(node.typeAnnotation, action, scope);
       break;
     }
-    case "GenericTypeAnnotation": {
+    case 'GenericTypeAnnotation': {
       traverse(node.id, action, scope);
       break;
     }
-    case "ClassMethod": {
+    case 'ClassMethod': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
       }
       break;
     }
-    case "JSXNamespacedName": {
+    case 'JSXNamespacedName': {
       traverse(node.name, action, scope);
       traverse(node.namespace, action, scope);
       break;
     }
-    case "SpreadElement": {
+    case 'SpreadElement': {
       traverse(node.argument, action, scope);
       break;
     }
-    case "SpreadProperty": {
+    case 'SpreadProperty': {
       traverse(node.argument, action, scope);
       break;
     }
-    case "FunctionDeclaration": {
+    case 'FunctionDeclaration': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -774,12 +809,12 @@ function traverse(node, action, scope) {
         return node.optimizedReplacement;
       }
     }
-    case "ClassProperty": {
+    case 'ClassProperty': {
       traverse(node.key, action, scope);
       traverse(node.value, action, scope);
       break;
     }
-    case "Program": {
+    case 'Program': {
       const body = node.body;
       node.scope = scope;
       for (let i = 0; i < body.length; i++) {
@@ -791,7 +826,7 @@ function traverse(node, action, scope) {
       scope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
       break;
     }
-    case "ClassDeclaration": {
+    case 'ClassDeclaration': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -811,7 +846,7 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ClassExpression": {
+    case 'ClassExpression': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
@@ -831,51 +866,60 @@ function traverse(node, action, scope) {
       }
       break;
     }
-    case "ThrowStatement": {
+    case 'ThrowStatement': {
       traverse(node.argument, action, scope);
       break;
     }
-    case "SequenceExpression": {
+    case 'SequenceExpression': {
       const expressions = node.expressions;
       for (let i = 0; i < expressions.length; i++) {
         traverse(expressions[i], action, scope);
       }
       break;
     }
-    case "ObjectMethod": {
+    case 'ObjectMethod': {
       if (
         action === Actions.ScanInnerScope1 ||
         action === Actions.ScanInnerScope2 ||
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
       }
       break;
     }
-    case "ClassBody": {
+    case 'ClassBody': {
       const body = node.body;
       for (let i = 0; i < body.length; i++) {
         traverse(body[i], action, scope);
       }
       break;
     }
-    case "Super":
-    case "RestProperty":
-    case "AnyTypeAnnotation":
-    case "ThisExpression":
-    case "JSXText":
-    case "StringLiteral":
-    case "NumericLiteral":
-    case "JSXIdentifier":
-    case "NullLiteral":
-    case "BooleanLiteral":
-    case "RegExpLiteral":
-    case "ContinueStatement":
-    case "Identifier": {
+    case 'Super':
+    case 'RestProperty':
+    case 'AnyTypeAnnotation':
+    case 'ThisExpression':
+    case 'JSXText':
+    case 'StringLiteral':
+    case 'NumericLiteral':
+    case 'JSXIdentifier':
+    case 'NullLiteral':
+    case 'BooleanLiteral':
+    case 'RegExpLiteral':
+    case 'ContinueStatement':
+    case 'Identifier': {
       // NO-OP
       break;
     }
@@ -894,23 +938,23 @@ function getNameFromAst(astNode) {
   }
   const type = astNode.type;
   switch (type) {
-    case "Identifier":
-    case "JSXIdentifier": {
+    case 'Identifier':
+    case 'JSXIdentifier': {
       return astNode.name;
     }
-    case "ThisExpression": {
-      return "this";
+    case 'ThisExpression': {
+      return 'this';
     }
-    case "NewExpression":
-    case "CallExpression": {
+    case 'NewExpression':
+    case 'CallExpression': {
       return `new ${getNameFromAst(astNode.callee)}()`;
     }
-    case "MemberExpression":
-    case "JSXMemberExpression": {
+    case 'MemberExpression':
+    case 'JSXMemberExpression': {
       return `${getNameFromAst(astNode.object)}.${getNameFromAst(astNode.property)}`;
     }
-    case "Super": {
-      return "Super()";
+    case 'Super': {
+      return 'Super()';
     }
     default:
       debugger;
@@ -936,28 +980,28 @@ function handleMultipleValues(value, currentAction) {
 
 function getOrSetValueFromAst(astNode, subject, action, newValue) {
   let type;
-  
+
   if (typeof astNode === 'number' || typeof astNode === 'string') {
     type = 'Identifier';
   } else {
     type = astNode.type;
   }
   switch (type) {
-    case "Super": {
+    case 'Super': {
       return createAbstractFunction('super');
     }
-    case "NumericLiteral":
-    case "BooleanLiteral":
-    case "StringLiteral":
-    case "JSXText": {
+    case 'NumericLiteral':
+    case 'BooleanLiteral':
+    case 'StringLiteral':
+    case 'JSXText': {
       return astNode.value;
     }
-    case "ThisExpression":
-    case "JSXIdentifier":
-    case "Identifier": {
+    case 'ThisExpression':
+    case 'JSXIdentifier':
+    case 'Identifier': {
       const key = getNameFromAst(astNode);
 
-      if (key === "undefined") {
+      if (key === 'undefined') {
         return createUndefined(action);
       } else if (subject.type === Types.Scope) {
         while (subject !== null) {
@@ -966,7 +1010,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
               if (newValue !== undefined && typeof newValue === 'object') {
                 newValue.action = action;
               }
-              assign(subject, "assignments", key, newValue);
+              assign(subject, 'assignments', key, newValue);
               return newValue;
             } else {
               return handleMultipleValues(subject.assignments.get(key), action);
@@ -975,7 +1019,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
             subject = subject.parentScope;
           }
         }
-      } else if (subject.type === Types.Object || subject.type === Types.Array) {
+      } else if (
+        subject.type === Types.Object ||
+        subject.type === Types.Array
+      ) {
         let accesorObject;
         if (subject.accessors.has(key)) {
           accesorObject = subject.accessors.get(key);
@@ -987,7 +1034,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           if (newValue.action !== undefined && typeof newValue === 'object') {
             newValue.action = action;
           }
-          assign(subject, "properties", key, newValue);
+          assign(subject, 'properties', key, newValue);
           return newValue;
         }
         if (subject.properties.has(key)) {
@@ -998,9 +1045,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         return accesorObject;
       } else if (subject.type === Types.FunctionCall) {
         if (
-          subject.identifier.name === "require" &&
+          subject.identifier.name === 'require' &&
           subject.args.length === 1 &&
-          (subject.args[0] === "PropTypes" || subject.args[0] === "prop-types")
+          (subject.args[0] === 'PropTypes' || subject.args[0] === 'prop-types')
         ) {
           return getOrSetValueFromAst(astNode, propTypes, action, newValue);
         }
@@ -1013,7 +1060,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           subject.accessors.set(key, accesorObject);
         }
         return accesorObject;
-      } else if (subject.type === Types.AbstractObject || subject.type === Types.AbstractObjectOrUndefined) {
+      } else if (
+        subject.type === Types.AbstractObject ||
+        subject.type === Types.AbstractObjectOrUndefined
+      ) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractObject();
           subject.accessors.set(key, accesorObject);
@@ -1057,11 +1107,27 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Class) {
         if (newValue !== undefined) {
-          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
-            subject.propTypes = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          if (
+            newValue.astNode &&
+            newValue.astNode.type === 'ObjectExpression' &&
+            key === 'propTypes'
+          ) {
+            subject.propTypes = getOrSetValueFromAst(
+              newValue.astNode,
+              subject.scope,
+              action
+            );
           }
-          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'defaultProps') {
-            subject.defaultProps = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          if (
+            newValue.astNode &&
+            newValue.astNode.type === 'ObjectExpression' &&
+            key === 'defaultProps'
+          ) {
+            subject.defaultProps = getOrSetValueFromAst(
+              newValue.astNode,
+              subject.scope,
+              action
+            );
           }
           return subject;
         } else {
@@ -1077,26 +1143,31 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       }
       return null;
     }
-    case "ArrayExpression": {
+    case 'ArrayExpression': {
       const astElements = astNode.elements;
       const arr = createArray(astNode);
       astElements.forEach((astElement, i) => {
-        getOrSetValueFromAst(i, arr, action, getOrSetValueFromAst(astElement, subject, action));
+        getOrSetValueFromAst(
+          i,
+          arr,
+          action,
+          getOrSetValueFromAst(astElement, subject, action)
+        );
       });
       return arr;
     }
-    case "ObjectExpression": {
+    case 'ObjectExpression': {
       const astProperties = astNode.properties;
       const obj = createObject(astNode);
       astProperties.forEach(astProperty => {
-        if (astProperty.type === "ObjectProperty") {
+        if (astProperty.type === 'ObjectProperty') {
           getOrSetValueFromAst(
             astProperty.key,
             obj,
             action,
             getOrSetValueFromAst(astProperty.value, subject, action)
           );
-        } else if (astProperty.type === "ObjectMethod") {
+        } else if (astProperty.type === 'ObjectMethod') {
           getOrSetValueFromAst(
             astProperty.key,
             obj,
@@ -1118,21 +1189,32 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       });
       return obj;
     }
-    case "ObjectProperty": {
+    case 'ObjectProperty': {
       debugger;
       break;
     }
-    case "JSXMemberExpression":
-    case "MemberExpression": {
+    case 'JSXMemberExpression':
+    case 'MemberExpression': {
       const astObject = astNode.object;
       const astProperty = astNode.property;
       const object = getOrSetValueFromAst(astObject, subject, action);
 
       if (object !== null) {
-        if (astProperty.type === "Identifier" || astProperty.type === "MemberExpression") {
+        if (
+          astProperty.type === 'Identifier' ||
+          astProperty.type === 'MemberExpression'
+        ) {
           return getOrSetValueFromAst(astProperty, object, action, newValue);
-        } else if (astProperty.type === "NumericLiteral" || astProperty.type === "StringLiteral") {
-          return getOrSetValueFromAst(astProperty.value, object, action, newValue);
+        } else if (
+          astProperty.type === 'NumericLiteral' ||
+          astProperty.type === 'StringLiteral'
+        ) {
+          return getOrSetValueFromAst(
+            astProperty.value,
+            object,
+            action,
+            newValue
+          );
         } else {
           debugger;
         }
@@ -1143,7 +1225,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         return null;
       }
     }
-    case "CallExpression": {
+    case 'CallExpression': {
       return callFunction(
         astNode,
         astNode.callee,
@@ -1152,7 +1234,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         subject
       );
     }
-    case "BinaryExpression": {
+    case 'BinaryExpression': {
       const astLeft = astNode.left;
       const astRight = astNode.right;
       const operator = astNode.operator;
@@ -1163,12 +1245,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         operator
       );
     }
-    case "NewExpression": {
+    case 'NewExpression': {
       const object = getOrSetValueFromAst(astNode.callee, subject, action);
       object.accessedAsConstructor = true;
       return object;
     }
-    case "FunctionExpression": {
+    case 'FunctionExpression': {
       return declareFunction(
         astNode,
         astNode.id,
@@ -1180,10 +1262,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         false
       );
     }
-    case "NullLiteral": {
+    case 'NullLiteral': {
       return createNull(action);
     }
-    case "ArrowFunctionExpression": {
+    case 'ArrowFunctionExpression': {
       return declareFunction(
         astNode,
         astNode.id,
@@ -1195,7 +1277,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         true
       );
     }
-    case "LogicalExpression": {
+    case 'LogicalExpression': {
       const astLeft = astNode.left;
       const astRight = astNode.right;
       const operator = astNode.operator;
@@ -1206,7 +1288,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         operator
       );
     }
-    case "UnaryExpression": {
+    case 'UnaryExpression': {
       const astArgument = astNode.argument;
       const operator = astNode.operator;
       return createUnaryExpression(
@@ -1215,7 +1297,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         operator
       );
     }
-    case "ConditionalExpression": {
+    case 'ConditionalExpression': {
       const astAlternate = astNode.alternate;
       const astConsequent = astNode.consequent;
       const astTest = astNode.test;
@@ -1226,20 +1308,26 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         getOrSetValueFromAst(astTest, subject, action)
       );
     }
-    case "SequenceExpression": {
+    case 'SequenceExpression': {
       const astExpressions = astNode.expressions;
 
-      return createSequenceExpression(astExpressions,
+      return createSequenceExpression(
+        astExpressions,
         astExpressions.map(astExpression =>
           getOrSetValueFromAst(astExpression, subject, action)
         )
       );
     }
-    case "AssignmentExpression": {
+    case 'AssignmentExpression': {
       if (astNode.operator === '=') {
         if (newValue === undefined) {
           const value = getOrSetValueFromAst(astNode.right, subject, action);
-          const obj = getOrSetValueFromAst(astNode.left, subject, action, value);
+          const obj = getOrSetValueFromAst(
+            astNode.left,
+            subject,
+            action,
+            value
+          );
           return value;
         } else {
           debugger;
@@ -1248,31 +1336,47 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         debugger;
       }
     }
-    case "JSXElement": {
+    case 'JSXElement': {
       return callJSXElement(astNode, action, subject);
     }
-    case "SpreadElement": {
+    case 'SpreadElement': {
       if (newValue === undefined) {
         return getOrSetValueFromAst(astNode.argument, subject, action);
       } else {
         debugger;
       }
     }
-    case "TemplateLiteral": {
+    case 'TemplateLiteral': {
       // TODO
       return createAbstractValue();
     }
-    case "ClassExpression": {
-      return declareClass(astNode, astNode.id, astNode.superClass, astNode.body, action, subject);
+    case 'ClassExpression': {
+      return declareClass(
+        astNode,
+        astNode.id,
+        astNode.superClass,
+        astNode.body,
+        action,
+        subject
+      );
     }
-    case "RegExpLiteral": {
+    case 'RegExpLiteral': {
       return createAbstractValue();
     }
-    case "JSXExpressionContainer": {
-      return getOrSetValueFromAst(astNode.expression, subject, action, newValue);
+    case 'JSXExpressionContainer': {
+      return getOrSetValueFromAst(
+        astNode.expression,
+        subject,
+        action,
+        newValue
+      );
     }
-    case "UpdateExpression": {
-      return createUpdateExpression(astNode, getOrSetValueFromAst(astNode.argument, subject, action), astNode.operator);
+    case 'UpdateExpression': {
+      return createUpdateExpression(
+        astNode,
+        getOrSetValueFromAst(astNode.argument, subject, action),
+        astNode.operator
+      );
     }
     default: {
       debugger;
@@ -1287,7 +1391,9 @@ function callJSXElement(astNode, action, subject) {
   let children = null;
   let spreads = null;
   const astOpeningElement = astNode.openingElement;
-  const nodeType = getOrSetValueFromAst(astOpeningElement.name, subject, action) || astOpeningElement.name.name;
+  const nodeType =
+    getOrSetValueFromAst(astOpeningElement.name, subject, action) ||
+    astOpeningElement.name.name;
 
   const astAttributes = astOpeningElement.attributes;
   for (let i = 0; i < astAttributes.length; i++) {
@@ -1297,7 +1403,11 @@ function callJSXElement(astNode, action, subject) {
       if (spreads === null) {
         spreads = [];
       }
-      const value = getOrSetValueFromAst(astAttribute.argument, subject, action);
+      const value = getOrSetValueFromAst(
+        astAttribute.argument,
+        subject,
+        action
+      );
       value.accessedAsSpread = true;
       spreads.push({
         astNode: astAttribute.argument,
@@ -1308,7 +1418,7 @@ function callJSXElement(astNode, action, subject) {
         props = {};
       }
       const name = astAttribute.name.name;
-      
+
       if (name === 'key') {
         key = getOrSetValueFromAst(astAttribute.value, subject, action);
       } else if (name === 'children') {
@@ -1336,15 +1446,19 @@ function callJSXElement(astNode, action, subject) {
     }
     props.children = children;
   }
-  const jsxElement = createJSXElement(astNode, nodeType, props, spreads, key, ref);
+  const jsxElement = createJSXElement(
+    astNode,
+    nodeType,
+    props,
+    spreads,
+    key,
+    ref
+  );
   astNode.jsxElement = jsxElement;
-  astNode.scope = subject;  
+  astNode.scope = subject;
   // link the jsxElement to the component itself (unless its an element)
   if (typeof nodeType !== 'string') {
-    subject.jsxElementIdentifiers.set(
-      nodeType.name,
-      nodeType
-    );
+    subject.jsxElementIdentifiers.set(nodeType.name, nodeType);
     if (nodeType.type === 'Class' || nodeType.type === 'Function') {
       nodeType.jsxElementCallSites.push(jsxElement);
     }
@@ -1367,7 +1481,10 @@ function getCurrentComponentFromScope(scope) {
   currentScope = scope;
   while (currentScope !== null) {
     if (currentScope.func !== null) {
-      if (currentScope.func.return !== null && currentScope.func.name !== null) {
+      if (
+        currentScope.func.return !== null &&
+        currentScope.func.name !== null
+      ) {
         return currentScope.func;
       }
     }
@@ -1379,12 +1496,17 @@ function getCurrentComponentFromScope(scope) {
 function checkForBailouts(astNode, scope) {
   // ReactDOM.findDOMNode bail-out
   if (astNode.type === 'CallExpression') {
-    if (getNameFromAst(astNode.callee) === 'ReactDOM.findDOMNode' && astNode.arguments.length > 0 && getNameFromAst(astNode.arguments[0]) === 'this') {
+    if (
+      getNameFromAst(astNode.callee) === 'ReactDOM.findDOMNode' &&
+      astNode.arguments.length > 0 &&
+      getNameFromAst(astNode.arguments[0]) === 'this'
+    ) {
       const component = getCurrentComponentFromScope(scope);
 
       if (component !== null) {
         component.bailOut = true;
-        component.bailOutReason = 'ReactDOM.findDOMNode(this) is currently not supported';
+        component.bailOutReason =
+          'ReactDOM.findDOMNode(this) is currently not supported';
       }
     }
   }
@@ -1427,7 +1549,7 @@ function callFunction(astNode, callee, args, action, scope) {
 }
 
 function declareVariable(astNode, id, init, action, scope) {
-  if (id.type === "ObjectPattern") {
+  if (id.type === 'ObjectPattern') {
     const astProperties = id.properties;
     const value = getOrSetValueFromAst(init, scope, action);
 
@@ -1440,7 +1562,9 @@ function declareVariable(astNode, id, init, action, scope) {
       ? createUndefined(action)
       : getOrSetValueFromAst(init, scope, action);
     if (value === null) {
-      throw new Error(`Compilation failed, could not find reference "${getNameFromAst(init)}"`);
+      throw new Error(
+        `Compilation failed, could not find reference "${getNameFromAst(init)}"`
+      );
     }
     if (value.func != null) {
       astNode.func = value;
@@ -1448,7 +1572,7 @@ function declareVariable(astNode, id, init, action, scope) {
     if (value.type === 'Function') {
       value.name = assignKey;
     }
-    assign(scope, "assignments", assignKey, value);
+    assign(scope, 'assignments', assignKey, value);
   }
 }
 
@@ -1464,7 +1588,8 @@ function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   theClass.methods.set(name, func);
   theClass.thisObject.properties.set(name, func);
   traverse(bodyPart, getNextAction(action), newScope);
-  return () => newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
+  return () =>
+    newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
 
 function declareClass(node, id, superId, body, action, scope) {
@@ -1475,7 +1600,7 @@ function declareClass(node, id, superId, body, action, scope) {
   const theClass = createClass(classAssignKey, node, superAssignKey, scope);
   const astClassBody = body.body;
   const thisAssignment = {
-    this: theClass.thisObject
+    this: theClass.thisObject,
   };
   node.optimized = false;
   node.optimizedReplacement = null;
@@ -1485,11 +1610,19 @@ function declareClass(node, id, superId, body, action, scope) {
     scopeFunc() {
       const deferredScopes = [];
       astClassBody.forEach(bodyPart => {
-        if (bodyPart.type === "ClassMethod") {
+        if (bodyPart.type === 'ClassMethod') {
           if (bodyPart.kind === 'constructor') {
             bodyPart.body.class = theClass;
           }
-          deferredScopes.push(declareClassMethod(bodyPart, theClass, thisAssignment, scope, action));
+          deferredScopes.push(
+            declareClassMethod(
+              bodyPart,
+              theClass,
+              thisAssignment,
+              scope,
+              action
+            )
+          );
         } else {
           debugger;
         }
@@ -1497,16 +1630,16 @@ function declareClass(node, id, superId, body, action, scope) {
       deferredScopes.forEach(deferredScope => deferredScope());
     },
   });
-  assign(scope, "assignments", classAssignKey, theClass);
+  assign(scope, 'assignments', classAssignKey, theClass);
   return theClass;
 }
 
 function dealWithNestedObjectPattern(property, object, scope, deep, search) {
-  if (property.type === "ObjectProperty") {
+  if (property.type === 'ObjectProperty') {
     const value = property.value;
-    
+
     dealWithNestedObjectPattern(value, object, scope, false, search);
-  } else if (property.type === "Identifier") {
+  } else if (property.type === 'Identifier') {
     let identifier;
     const name = property.name;
     if (search === true) {
@@ -1519,10 +1652,10 @@ function dealWithNestedObjectPattern(property, object, scope, deep, search) {
       identifier = createAbstractValue();
     }
     if (deep === false) {
-      assign(object, "accessors", name, identifier);
+      assign(object, 'accessors', name, identifier);
     }
-    assign(scope, "assignments", name, identifier);
-  } else if (property.type === "ObjectPattern") {
+    assign(scope, 'assignments', name, identifier);
+  } else if (property.type === 'ObjectPattern') {
     const childProperties = property.properties;
 
     for (let i = 0; i < childProperties.length; i++) {
@@ -1538,8 +1671,14 @@ function dealWithNestedObjectPattern(property, object, scope, deep, search) {
       } else {
         childObject = createAbstractObject();
       }
-      assign(object, "accessors", name, childObject);
-      dealWithNestedObjectPattern(childProperty.value, childObject, scope, true, search);
+      assign(object, 'accessors', name, childObject);
+      dealWithNestedObjectPattern(
+        childProperty.value,
+        childObject,
+        scope,
+        true,
+        search
+      );
     }
   } else {
     debugger;
@@ -1550,29 +1689,35 @@ function declareFuctionParams(func, params, newScope, action) {
   for (let i = 0; i < params.length; i++) {
     const param = params[i];
 
-    if (param.type === "ObjectPattern") {
+    if (param.type === 'ObjectPattern') {
       const paramObject = createObject(null);
       param.properties.forEach(property => {
-        dealWithNestedObjectPattern(property, paramObject, newScope, false, false);
+        dealWithNestedObjectPattern(
+          property,
+          paramObject,
+          newScope,
+          false,
+          false
+        );
       });
       func.params.push(paramObject);
-    } else if (param.type === "Identifier") {
+    } else if (param.type === 'Identifier') {
       const name = param.name;
       const paramObject = createAbstractValue();
-      assign(newScope, "assignments", name, paramObject);
+      assign(newScope, 'assignments', name, paramObject);
       func.params.push(paramObject);
     } else if (param.type === 'AssignmentPattern') {
       const astLeft = param.left;
       const astRight = param.right;
       const name = getNameFromAst(astLeft);
       const paramObject = getOrSetValueFromAst(astRight, newScope, action);
-      assign(newScope, "assignments", name, paramObject);
+      assign(newScope, 'assignments', name, paramObject);
       func.params.push(paramObject);
-    } else if (param.type === "RestElement") {
+    } else if (param.type === 'RestElement') {
       // TODO, need to properly handle this
       const paramObject = createAbstractValue();
       const name = getNameFromAst(param.argument);
-      assign(newScope, "assignments", name, paramObject);
+      assign(newScope, 'assignments', name, paramObject);
       func.restParam = paramObject;
     } else {
       debugger;
@@ -1593,7 +1738,16 @@ function getNextAction(action) {
   }
 }
 
-function declareFunction(node, id, params, body, action, scope, assignToScope, isArrowFunction) {
+function declareFunction(
+  node,
+  id,
+  params,
+  body,
+  action,
+  scope,
+  assignToScope,
+  isArrowFunction
+) {
   const assignKey = getNameFromAst(id);
   const newScope = createScope();
   const func = createFunction(assignKey, node, scope);
@@ -1601,12 +1755,12 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
   newScope.func = func;
   declareFuctionParams(func, params, newScope, action);
   const argumentsObj = createObject();
-  assign(newScope, "assignments", 'arguments', argumentsObj);
+  assign(newScope, 'assignments', 'arguments', argumentsObj);
   node.scope = newScope;
   node.func = func;
   newScope.parentScope = scope;
   if (assignToScope === true) {
-    assign(scope, "assignments", assignKey, func);
+    assign(scope, 'assignments', assignKey, func);
   }
   scope.deferredScopes.push({
     name: getNameFromAst(node.id),
@@ -1618,7 +1772,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
         newScope.func.return = object;
       }
       newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
-    }
+    },
   });
   // a bit hacky, but we do this so we can find out the ref to func later on during serialization
   body.func = func;

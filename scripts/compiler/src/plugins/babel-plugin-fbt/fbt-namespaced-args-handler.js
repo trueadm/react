@@ -76,7 +76,7 @@ let getArgs = {
     }
     let paramArgs = [
       nameAttrValue,
-      paramChildren[0].expression || paramChildren[0]
+      paramChildren[0].expression || paramChildren[0],
     ];
 
     if (options.properties.length > 0) {
@@ -166,8 +166,9 @@ let getArgs = {
 
     let children = filterWhiteSpaceNodes(node.children);
     let nameChildren = children.filter(function(child) {
-      return child.type === 'JSXText' ||
-        child.type === 'JSXExpressionContainer';
+      return (
+        child.type === 'JSXText' || child.type === 'JSXExpressionContainer'
+      );
     });
     if (nameChildren.length !== 1) {
       throw new Error('fbt:name expects text or an expression, and only one');

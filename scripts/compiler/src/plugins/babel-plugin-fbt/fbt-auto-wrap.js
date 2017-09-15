@@ -6,9 +6,7 @@
 'use strict';
 
 const t = require('babel-core').types;
-const {
-  filterWhiteSpaceNodes,
-} = require('./FbtNodeChecks.js');
+const {filterWhiteSpaceNodes} = require('./FbtNodeChecks.js');
 const {
   normalizeSpaces,
   validateNamespacedFbtElement,
@@ -110,10 +108,12 @@ function createDescriptionsWithStack(node, stack) {
     for (let ii = 0; ii < filteredChildren.length; ++ii) {
       let child = filteredChildren[ii];
       let openingElement = child.openingElement;
-      if (child.type === 'JSXElement' &&
+      if (
+        child.type === 'JSXElement' &&
         openingElement.name &&
-        validateNamespacedFbtElement(openingElement.name)
-        === 'implicitParamMarker') {
+        validateNamespacedFbtElement(openingElement.name) ===
+          'implicitParamMarker'
+      ) {
         child.implicitDesc = collectTokenStringFromStack(stack, 0);
       }
       createDescriptionsWithStack(child, stack);

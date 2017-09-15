@@ -64,7 +64,6 @@ let childToParent;
 
 module.exports = function fbt(babel) {
   return {
-
     pre() {
       this.opts.fbtSentinel = this.opts.fbtSentinel || '__FBT__';
       fbtMethodCallVisitors.setEnumManifest(this.opts.fbtEnumManifest);
@@ -75,7 +74,6 @@ module.exports = function fbt(babel) {
     },
 
     visitor: {
-
       /**
        * Transform jsx-style <fbt> to fbt() calls.
        */
@@ -90,30 +88,29 @@ module.exports = function fbt(babel) {
 
         giveParentPhraseLocation(node, phrases.length);
 
-        let children = filterWhiteSpaceNodes(node.children)
-          .map(transformNamespacedFbtElement);
+        let children = filterWhiteSpaceNodes(node.children).map(
+          transformNamespacedFbtElement
+        );
 
         let text = children.length > 1
           ? createConcatFromExpressions(children)
           : children[0];
 
-        let args = [
-          text,
-          getDescAttributeValue(node),
-        ];
+        let args = [text, getDescAttributeValue(node)];
 
         // Optional attributes to be passed as options.
         var attrs = node.openingElement.attributes;
         if (attrs.length > 1) {
           args.push(
-            getOptionsFromAttributes(attrs, ValidFbtOptions, FbtRequiredAttributes)
+            getOptionsFromAttributes(
+              attrs,
+              ValidFbtOptions,
+              FbtRequiredAttributes
+            )
           );
         }
 
-        let callNode = t.callExpression(
-          t.identifier('fbt'),
-          args
-        );
+        let callNode = t.callExpression(t.identifier('fbt'), args);
         if (path.parentPath.node.type === 'JSXElement') {
           callNode = t.jSXExpressionContainer(callNode);
         }
@@ -171,8 +168,8 @@ module.exports = function fbt(babel) {
         if (options.subject) {
           methodsState.hasTable = true;
         }
-        let isTable = Object.keys(variations).length > 0 ||
-          methodsState.hasTable;
+        let isTable =
+          Object.keys(variations).length > 0 || methodsState.hasTable;
 
         for (var key in FbtBooleanOptions) {
           if (options.hasOwnProperty(key)) {
@@ -235,7 +232,7 @@ module.exports = function fbt(babel) {
           }
         }
 
-        let  argsOutput = {
+        let argsOutput = {
           type: phrase.type,
           jsfbt: phrase.jsfbt,
           desc: phrase.desc,
@@ -246,8 +243,8 @@ module.exports = function fbt(babel) {
         let args = [
           t.stringLiteral(
             this.opts.fbtSentinel +
-            JSON.stringify(argsOutput) +
-            this.opts.fbtSentinel
+              JSON.stringify(argsOutput) +
+              this.opts.fbtSentinel
           ),
         ];
 
@@ -255,13 +252,12 @@ module.exports = function fbt(babel) {
           args.push(t.arrayExpression(runtimeArgs));
         }
 
-        path.replaceWith(t.callExpression(
-          t.memberExpression(
-            t.identifier('fbt'),
-            t.identifier('_')
-          ),
-          args
-        ));
+        path.replaceWith(
+          t.callExpression(
+            t.memberExpression(t.identifier('fbt'), t.identifier('_')),
+            args
+          )
+        );
       },
     },
   };
@@ -284,7 +280,10 @@ function initDefaultOptions(state) {
 }
 
 function getDescAttributeValue(node) {
-  let descAttr = getAttributeByNameOrThrow(node.openingElement.attributes, 'desc');
+  let descAttr = getAttributeByNameOrThrow(
+    node.openingElement.attributes,
+    'desc'
+  );
   if (!descAttr) {
     throw new Error(`<fbt> requires a "desc" attribute`);
   }
@@ -315,7 +314,7 @@ function appendOptions(node, fbtArg, options) {
  * Returns the AST node associated with the key provided, or null if it doesn't exist.
  */
 function getOptionAST(options, name) {
-  let props = options && options.properties || [];
+  let props = (options && options.properties) || [];
   for (var ii = 0; ii < props.length; ii++) {
     let option = props[ii];
     let curName = option.key.name || option.key.value;
@@ -352,11 +351,7 @@ function toFbtNamespacedCall(node) {
     name = 'param';
   }
   return t.callExpression(
-    t.memberExpression(
-      t.identifier('fbt'),
-      t.identifier(name),
-      false
-    ),
+    t.memberExpression(t.identifier('fbt'), t.identifier(name), false),
     args
   );
 }
@@ -381,9 +376,7 @@ function extractTableTexts(node, variations, texts) {
     }
     extractTableTexts(node.left, variations, texts);
     extractTableTexts(node.right, variations, texts);
-
   } else if (node.type === 'StringLiteral') {
-
     // If we already collected a literal part previously, and
     // current part is a literal as well, just concatenate them.
     let previousText = texts[texts.length - 1];
@@ -392,7 +385,6 @@ function extractTableTexts(node, variations, texts) {
     } else {
       texts.push(node.value);
     }
-
   } else if (node.type === 'CallExpression') {
     if (node.callee.property.name === 'param') {
       texts.push(variations[node.arguments[0].value]);
@@ -404,22 +396,26 @@ function extractTableTexts(node, variations, texts) {
     } else if (node.callee.property.name === 'plural') {
       let singular = node.arguments[0].value;
       let opts = collectOptions(node.arguments[2], ValidPluralOptions);
-      let defaultToken = opts.showCount && opts.showCount !== 'no' ?
-          PLURAL_PARAM_TOKEN : null;
+      let defaultToken = opts.showCount && opts.showCount !== 'no'
+        ? PLURAL_PARAM_TOKEN
+        : null;
       if (opts.showCount === 'ifMany' && !opts.many) {
         throw new Error(
           "The 'many' attribute must be set explicitly if showing count only " +
-          " on 'ifMany', since the singular form presumably starts with an article"
+            " on 'ifMany', since the singular form presumably starts with an article"
         );
       }
 
-      let data = Object.assign({
-        type: 'plural',
-        showCount: 'no',
-        name: defaultToken,
-        singular: singular,
-        many: singular + 's',
-      }, opts);
+      let data = Object.assign(
+        {
+          type: 'plural',
+          showCount: 'no',
+          name: defaultToken,
+          singular: singular,
+          many: singular + 's',
+        },
+        opts
+      );
 
       if (data.showCount !== 'no') {
         if (data.showCount === 'yes') {
@@ -428,19 +424,20 @@ function extractTableTexts(node, variations, texts) {
         data.many = '{' + data.name + '} ' + data.many;
       }
       texts.push(data);
-
     } else if (node.callee.property.name === 'pronoun') {
       // Usage: fbt.pronoun(usage, gender [, options])
       let options = collectOptions(node.arguments[2], ValidPronounOptions);
       for (let key of Object.keys(options)) {
         options[key] = getOptionBooleanValue(options, key);
       }
-      let data = Object.assign({
-        type: 'pronoun',
-        usage: node.arguments[0].value,
-      }, options);
+      let data = Object.assign(
+        {
+          type: 'pronoun',
+          usage: node.arguments[0].value,
+        },
+        options
+      );
       texts.push(data);
-
     } else if (node.callee.property.name === 'name') {
       texts.push(variations[node.arguments[0].value]);
     }
@@ -497,13 +494,18 @@ function giveParentPhraseLocation(parentNode, parentIdx) {
 
 function addPhrase(node, phrase, state) {
   let filepath = state.opts.filepath;
-  phrases.push(Object.assign({
-    filepath: filepath,
-    line_beg: node.loc.start.line,
-    col_beg: node.loc.start.column,
-    line_end: node.loc.end.line,
-    col_end: node.loc.end.column,
-  }, phrase));
+  phrases.push(
+    Object.assign(
+      {
+        filepath: filepath,
+        line_beg: node.loc.start.line,
+        col_beg: node.loc.start.column,
+        line_end: node.loc.end.line,
+        col_end: node.loc.end.column,
+      },
+      phrase
+    )
+  );
 }
 
 function addEnclosingString(childIdx, parentIdx) {
