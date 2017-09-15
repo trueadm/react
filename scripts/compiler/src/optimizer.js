@@ -88,7 +88,6 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   if (propsShape !== null) {
     addInferredPropsFromJSXElementCallSites(propsShape, astComponent);
   }
-
   // add children to propsShape as we should assume it might always be there
   propsShape = Object.assign({children: 'any'}, propsShape || {});
   // first we create some AST and convert it... need to do this properly later

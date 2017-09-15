@@ -863,6 +863,10 @@ function traverse(node, action, scope) {
       }
       break;
     }
+    case "YieldExpression": {
+      traverse(node.argument, action, scope);
+      break;
+    }
     case "Super":
     case "RestProperty":
     case "AnyTypeAnnotation":
@@ -1129,6 +1133,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const object = getOrSetValueFromAst(astObject, subject, action);
 
       if (object !== null) {
+        if (astNode.computed === true) {
+          return createAbstractObject();
+        }
         if (astProperty.type === "Identifier" || astProperty.type === "MemberExpression") {
           return getOrSetValueFromAst(astProperty, object, action, newValue);
         } else if (astProperty.type === "NumericLiteral" || astProperty.type === "StringLiteral") {
