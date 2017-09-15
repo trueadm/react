@@ -123,7 +123,8 @@ async function optimizeComponentWithPrepack(
     prepackEvaluatedComponent,
     initialProps,
     moduleEnv,
-    rootConfig
+    rootConfig,
+    false
   );
   const node = serializer.serializeEvaluatedFunction(
     prepackEvaluatedComponent,

@@ -31,7 +31,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue, moduleEnv, rootConfig) {
+async function resolveFragment(arrayValue, moduleEnv, rootConfig, isBranched) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -50,13 +50,14 @@ async function resolveFragment(arrayValue, moduleEnv, rootConfig) {
       elementProperty.descriptor.value = await resolveDeeply(
         elementValue,
         moduleEnv,
-        rootConfig
+        rootConfig,
+        isBranched
       );
     }
   }
 }
 
-async function resolveDeeply(value, moduleEnv, rootConfig) {
+async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -68,12 +69,12 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
     return value;
   } else if (value instanceof AbstractValue) {
     for (let i = 0; i < value.args.length; i++) {
-      value.args[i] = await resolveDeeply(value.args[i], moduleEnv, rootConfig);
+      value.args[i] = await resolveDeeply(value.args[i], moduleEnv, rootConfig, true);
     }
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value, moduleEnv, rootConfig);
+    await resolveFragment(value, moduleEnv, rootConfig, isBranched);
     return value;
   }
   if (isReactElement(value)) {
@@ -86,7 +87,8 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
         const resolvedChildren = await resolveDeeply(
           childrenProperty.descriptor.value,
           moduleEnv,
-          rootConfig
+          rootConfig,
+          isBranched
         );
         childrenProperty.descriptor.value = resolvedChildren;
       }
@@ -99,7 +101,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
       name = type.func.name;
     }
     try {
-      const nextValue = await renderAsDeepAsPossible(type, props, moduleEnv, rootConfig);
+      const nextValue = await renderAsDeepAsPossible(type, props, moduleEnv, rootConfig, isBranched);
       if (nextValue === null) {
         console.log(
           `\nFailed to inline component "${type.intrinsicName}" but failed as the reference wasn't a statically determinable function or class.\n`
@@ -120,7 +122,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
   }
 }
 
-function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
+function createReactClassInstance(componentType, props, moduleEnv, rootConfig, isBranched) {
   // first we find the class object we made during the scan phase, it can be in two places
   let theClass;
   if (componentType.class !== undefined) {
@@ -162,9 +164,17 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
     componentPrototype.has("componentWillUpdate") ||
     componentPrototype.has("componentDidUpdate") ||
     componentPrototype.has("componentWillUnmount") ||
-    componentPrototype.has("shouldComponentUpdate") ||
-    componentPrototype.has("componentWillReceiveProps") ||
-    componentPrototype.has("componentDidCatch")
+    componentPrototype.has("componentDidCatch") ||
+    componentPrototype.has("componentWillReceiveProps")
+  ) {
+    if (isBranched === true) {
+      throw new Error(`Failed to inline component "${theClass.name}" due to the component having lifecycle events when insie a conditional branch.`);
+    }
+    useClassComponent = true;
+  }
+  // TODO do we need to bail on sCU in branches too?
+  if (
+    componentPrototype.has("shouldComponentUpdate")
   ) {
     useClassComponent = true;
   }
@@ -212,13 +222,13 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig) {
   };
 }
 
-function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
+function renderOneLevel(componentType, props, moduleEnv, rootConfig, isBranched) {
   if (isReactClassComponent(componentType)) {
     if (componentType.class !== undefined && componentType.class.bailOut === true) {
-      throw new Error(`Failed to optimize a component tree with a root component of "${componentType.class.name}" due to ${componentType.class.bailOutReason}.`);
+      throw new Error(`\nFailed to inline component "${componentType.class.name}" due to ${componentType.class.bailOutReason}.`);
     }
     // Class Component
-    const {instance, commitToRootConfig} = createReactClassInstance(componentType, props, moduleEnv, rootConfig);
+    const {instance, commitToRootConfig} = createReactClassInstance(componentType, props, moduleEnv, rootConfig, isBranched);
    
     const render = evaluator.get(instance, "render");
     const value = evaluator.call(render, instance, []);
@@ -227,7 +237,7 @@ function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
     return value;
   } else {
     if (componentType.func !== undefined && componentType.func.bailOut === true) {
-      throw new Error(`Failed to optimize a component tree with a root component of "${componentType.func.name}" due to ${componentType.func.bailOutReason}.`);
+      throw new Error(`\nFailed to inline component "${componentType.func.name}" due to ${componentType.func.bailOutReason}.`);
     }
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
@@ -238,9 +248,9 @@ function renderOneLevel(componentType, props, moduleEnv, rootConfig) {
   return null;
 }
 
-async function renderAsDeepAsPossible(componentType, props, moduleEnv, rootConfig) {
-  const result = renderOneLevel(componentType, props, moduleEnv, rootConfig);
-  return await resolveDeeply(result, moduleEnv, rootConfig);
+async function renderAsDeepAsPossible(componentType, props, moduleEnv, rootConfig, isBranched) {
+  const result = renderOneLevel(componentType, props, moduleEnv, rootConfig, isBranched);
+  return await resolveDeeply(result, moduleEnv, rootConfig, isBranched);
 }
 
 exports.renderOneLevel = renderOneLevel;
