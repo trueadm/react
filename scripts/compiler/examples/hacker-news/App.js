@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const React = require('React');
 const HeaderBar = require('HeaderBar');
@@ -14,7 +14,7 @@ class AppBody extends React.Component {
   render() {
     return [
       <HeaderBar />,
-        <tr height="10" />,
+      <tr height="10" />,
       <StoryList stories={this.props.stories} limit={this.props.storyLimit} />,
     ];
   }
@@ -23,7 +23,7 @@ class AppBody extends React.Component {
 function App({stories}) {
   return (
     <center>
-      <table 
+      <table
         id="hnmain"
         border="0"
         cellPadding="0"

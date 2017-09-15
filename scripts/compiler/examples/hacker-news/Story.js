@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const React = require('React');
 const PropTypes = require('PropTypes');
@@ -14,13 +14,12 @@ function timeAge(time) {
 }
 
 function getHostUrl(url) {
-  return (url + '')
-    .replace('https://', '')
-    .replace('http://', '')
-    .split('/')[0]
+  return (url + '').replace('https://', '').replace('http://', '').split('/')[
+    0
+  ];
 }
 
-function Story({ story, rank }) {
+function Story({story, rank}) {
   return [
     <tr className="athing">
       <td
@@ -44,36 +43,35 @@ function Story({ story, rank }) {
       </td>
       <td className="title">
         <a href="#" className="storylink">{story.title}</a>
-        {
-          story.url ? (
-            <span className="sitebit comhead">
+        {story.url
+          ? <span className="sitebit comhead">
               {' ('}<a href="#">{getHostUrl(story.url)}</a>)
             </span>
-          ) : null
-        }
+          : null}
       </td>
     </tr>,
     <tr>
       <td colSpan="2" />
       <td className="subtext">
         <span className="score">{`${story.score} points`}</span>
-        {' by '} 
+        {' by '}
         <a href="#" className="hnuser">{story.by}</a>
         {' '}
         <span className="age">
           <a href="#">{timeAge(story.time)}</a>
         </span>
-        {' | '} 
+        {' | '}
         <a href="#">hide</a>
-        {' | '} 
-        <a href="#">{`${ story.descendants || 0 } comments`}</a>
+        {' | '}
+        <a href="#">{`${story.descendants || 0} comments`}</a>
       </td>
     </tr>,
     <tr
       style={{
         height: 5,
       }}
-      className="spacer" />,
+      className="spacer"
+    />,
   ];
 }
 

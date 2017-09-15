@@ -1,18 +1,15 @@
-
 const React = require('React');
 
 var {doSomething, checkSomething} = require('someLib');
 
-const foo = () => {
-
-};
+const foo = () => {};
 
 function makeThingsBad() {
   doSomething = null;
 }
 
 function Button() {
-  return <span>123</span>
+  return <span>123</span>;
 }
 
 function fixName(name) {
@@ -20,8 +17,8 @@ function fixName(name) {
 }
 
 function MyComponent(props) {
-	if (checkSomething(props.age)) {
-		return (
+  if (checkSomething(props.age)) {
+    return (
       <div>
         <p>
           Age: {doSomething(props.person.age)}
@@ -30,8 +27,8 @@ function MyComponent(props) {
         <Button onClick={props.events.handleShowClick}>Show</Button>
       </div>
     );
-	}
-	return <Button onClick={props.events.handleCloseClick}>Cancel</Button>;
+  }
+  return <Button onClick={props.events.handleCloseClick}>Cancel</Button>;
 }
 
 module.exports = MyComponent;

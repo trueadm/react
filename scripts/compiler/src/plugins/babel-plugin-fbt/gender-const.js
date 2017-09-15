@@ -22,7 +22,7 @@ const GENDER_CONST = {
   FEMALE_PLURAL: 8,
   MALE_PLURAL: 9,
   NEUTER_PLURAL: 10,
-  UNKNOWN_PLURAL: 11
+  UNKNOWN_PLURAL: 11,
 };
 
 const data = {
@@ -38,7 +38,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themself',
     object: 'this',
-    string: 'unknown'
+    string: 'unknown',
   },
   [GENDER_CONST.UNKNOWN_SINGULAR]: {
     is_male: false,
@@ -52,7 +52,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themself',
     object: 'them',
-    string: 'unknown singular'
+    string: 'unknown singular',
   },
   [GENDER_CONST.FEMALE_SINGULAR]: {
     is_male: false,
@@ -66,7 +66,7 @@ const data = {
     possessive: 'her',
     reflexive: 'herself',
     object: 'her',
-    string: 'female singular'
+    string: 'female singular',
   },
   [GENDER_CONST.FEMALE_SINGULAR_GUESS]: {
     is_male: false,
@@ -80,7 +80,7 @@ const data = {
     possessive: 'her',
     reflexive: 'herself',
     object: 'her',
-    string: 'female singular'
+    string: 'female singular',
   },
   [GENDER_CONST.MALE_SINGULAR]: {
     is_male: true,
@@ -94,7 +94,7 @@ const data = {
     possessive: 'his',
     reflexive: 'himself',
     object: 'him',
-    string: 'male singular'
+    string: 'male singular',
   },
   [GENDER_CONST.MALE_SINGULAR_GUESS]: {
     is_male: true,
@@ -108,7 +108,7 @@ const data = {
     possessive: 'his',
     reflexive: 'himself',
     object: 'him',
-    string: 'male singular'
+    string: 'male singular',
   },
   [GENDER_CONST.NEUTER_SINGULAR]: {
     is_male: false,
@@ -122,7 +122,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themself',
     object: 'them',
-    string: 'neuter singular'
+    string: 'neuter singular',
   },
   [GENDER_CONST.MIXED_PLURAL]: {
     is_male: false,
@@ -136,7 +136,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themselves',
     object: 'them',
-    string: 'mixed plural'
+    string: 'mixed plural',
   },
   [GENDER_CONST.FEMALE_PLURAL]: {
     is_male: false,
@@ -150,7 +150,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themselves',
     object: 'them',
-    string: 'female plural'
+    string: 'female plural',
   },
   [GENDER_CONST.MALE_PLURAL]: {
     is_male: true,
@@ -164,7 +164,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themselves',
     object: 'them',
-    string: 'male plural'
+    string: 'male plural',
   },
   [GENDER_CONST.NEUTER_PLURAL]: {
     is_male: false,
@@ -178,7 +178,7 @@ const data = {
     possessive: 'their',
     reflexive: 'themselves',
     object: 'them',
-    string: 'neuter plural'
+    string: 'neuter plural',
   },
   [GENDER_CONST.UNKNOWN_PLURAL]: {
     is_male: false,
@@ -192,12 +192,14 @@ const data = {
     possessive: 'their',
     reflexive: 'themselves',
     object: 'them',
-    string: 'unknown plural'
-  }
+    string: 'unknown plural',
+  },
 };
 
 function getData(gender, usage) {
-  return data[gender] ? data[gender][usage] : data[GENDER_CONST.NOT_A_PERSON][usage];
+  return data[gender]
+    ? data[gender][usage]
+    : data[GENDER_CONST.NOT_A_PERSON][usage];
 }
 
 module.exports.getData = getData;

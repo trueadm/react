@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
-const fs = require("fs");
-const optimizeComponentTree = require("./optimizer").optimizeComponentTree;
-const traverser = require("./traverser");
+const fs = require('fs');
+const optimizeComponentTree = require('./optimizer').optimizeComponentTree;
+const traverser = require('./traverser');
 const babel = require('babel-core');
 const createBundle = require('./bundler').createBundle;
 
@@ -34,7 +34,11 @@ async function compileSource(result) {
   );
   // clear the deferredScopes, as we may have removed some scopes
   moduleScope.deferredScopes = [];
-  traverser.traverse(ast.program, traverser.Actions.ReplaceWithOptimized, moduleScope);
+  traverser.traverse(
+    ast.program,
+    traverser.Actions.ReplaceWithOptimized,
+    moduleScope
+  );
 
   const transformedCode = babel.transformFromAst(ast, {
     presets: [],

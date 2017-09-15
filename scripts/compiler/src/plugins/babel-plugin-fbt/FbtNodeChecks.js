@@ -19,8 +19,7 @@ function isFbtCall(node) {
 }
 
 function isFbtMember(node) {
-  return node.type === 'MemberExpression'
-      && isFbtName(node.object.name);
+  return node.type === 'MemberExpression' && isFbtName(node.object.name);
 }
 
 /**
@@ -29,8 +28,7 @@ function isFbtMember(node) {
 function filterWhiteSpaceNodes(nodes) {
   return nodes.filter(function(node) {
     // Filter whitespace
-    return !(node.type === 'JSXText'
-        && node.value.match(/^\s+$/));
+    return !(node.type === 'JSXText' && node.value.match(/^\s+$/));
   });
 }
 

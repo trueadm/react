@@ -10,7 +10,7 @@ const Actions = {
   ScanInnerScope3: "ScanInnerScope3",
   ReplaceWithOptimized: "ReplaceWithOptimized",
   FindComponents: "FindComponents",
-  FindAndReplace: "FindAndReplace",
+  FindAndReplace: "FindAndReplace"
 };
 
 const Types = {
@@ -32,7 +32,7 @@ const Types = {
   AbstractFunction: "AbstractFunction",
   AbstractValue: "AbstractValue",
   SequenceExpression: "SequenceExpression",
-  JSXElement: "JSXElement",
+  JSXElement: "JSXElement"
 };
 
 const propTypes = createObject(null, {
@@ -49,7 +49,7 @@ const propTypes = createObject(null, {
   oneOf: PropTypes.ONE_OF,
   instanceOf: PropTypes.INSTANCE_OF,
   shape: PropTypes.SHAPE,
-  ReactElement: PropTypes.ELEMENT,
+  ReactElement: PropTypes.ELEMENT
 });
 
 function createJSXElement(astNode, nodeType, props, spreads, key, ref) {
@@ -60,7 +60,7 @@ function createJSXElement(astNode, nodeType, props, spreads, key, ref) {
     props: props,
     ref: ref,
     spreads: spreads,
-    type: Types.JSXElement,
+    type: Types.JSXElement
   };
 }
 
@@ -207,9 +207,9 @@ function createClass(name, astNode, superIdentifier, scope) {
     superIdentifier: superIdentifier,
     thisObject: createObject(null, {
       props: createAbstractObject(null),
-      refs: createAbstractObject(null),
+      refs: createAbstractObject(null)
     }),
-    type: Types.Class,
+    type: Types.Class
   };
 }
 
@@ -319,9 +319,9 @@ function createModuleScope() {
     window: createAbstractObject(),
     document: createAbstractObject(),
     // type stuff
-    ReactElement: 'ReactElement',
-    ReactClass: 'ReactClass',
-    ReactNode: 'ReactNode'
+    ReactElement: "ReactElement",
+    ReactClass: "ReactClass",
+    ReactNode: "ReactNode"
   });
 }
 
@@ -346,7 +346,7 @@ function traverse(node, action, scope) {
   }
   if (action === Actions.FindAndReplace) {
     const callback = scope.findAndReplace[node.type];
-    if (typeof callback === 'function') {
+    if (typeof callback === "function") {
       const callbackVal = callback(node);
       if (callbackVal === true) {
         return undefined;
@@ -492,8 +492,8 @@ function traverse(node, action, scope) {
         const nodeInit = traverse(node.init, action, scope);
         if (nodeInit !== undefined) {
           nodeInit.id = node.id;
-          if (nodeInit.type === 'ClassDeclaration') {
-            nodeInit.type = 'ClassExpression';
+          if (nodeInit.type === "ClassDeclaration") {
+            nodeInit.type = "ClassExpression";
           }
           node.init = nodeInit;
         }
@@ -538,8 +538,20 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, true);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          true
+        );
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       } else {
         traverse(node.id, action, scope);
@@ -579,8 +591,20 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
-      } else if (action === Actions.ReplaceWithOptimized && node.optimized === true) {
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.optimized === true
+      ) {
         return node.optimizedReplacement;
       } else {
         traverse(node.body, action, scope);
@@ -688,8 +712,10 @@ function traverse(node, action, scope) {
         action === Actions.ScanTopLevelScope
       ) {
         assignExpression(node.left, node.right, action, scope);
-      } else if (action === Actions.ReplaceWithOptimized &&
-        node.right.optimized === true) {
+      } else if (
+        action === Actions.ReplaceWithOptimized &&
+        node.right.optimized === true
+      ) {
         return node.right.optimizedReplacement;
       } else {
         traverse(node.left, action, scope);
@@ -727,7 +753,16 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
@@ -849,7 +884,16 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareFunction(node, node.id, node.params, node.body, action, scope, false, false);
+        declareFunction(
+          node,
+          node.id,
+          node.params,
+          node.body,
+          action,
+          scope,
+          false,
+          false
+        );
       } else {
         traverse(node.id, action, scope);
         traverse(node.body, action, scope);
@@ -893,7 +937,7 @@ function getNameFromAst(astNode) {
   if (astNode === null || astNode === undefined) {
     return null;
   }
-  if (typeof astNode === 'number' || typeof astNode === 'string') {
+  if (typeof astNode === "number" || typeof astNode === "string") {
     return astNode;
   }
   const type = astNode.type;
@@ -940,15 +984,15 @@ function handleMultipleValues(value, currentAction) {
 
 function getOrSetValueFromAst(astNode, subject, action, newValue) {
   let type;
-  
-  if (typeof astNode === 'number' || typeof astNode === 'string') {
-    type = 'Identifier';
+
+  if (typeof astNode === "number" || typeof astNode === "string") {
+    type = "Identifier";
   } else {
     type = astNode.type;
   }
   switch (type) {
     case "Super": {
-      return createAbstractFunction('super');
+      return createAbstractFunction("super");
     }
     case "NumericLiteral":
     case "BooleanLiteral":
@@ -967,7 +1011,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         while (subject !== null) {
           if (subject.assignments.has(key)) {
             if (newValue != null) {
-              if (newValue !== undefined && typeof newValue === 'object') {
+              if (newValue !== undefined && typeof newValue === "object") {
                 newValue.action = action;
               }
               assign(subject, "assignments", key, newValue);
@@ -979,7 +1023,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
             subject = subject.parentScope;
           }
         }
-      } else if (subject.type === Types.Object || subject.type === Types.Array) {
+      } else if (
+        subject.type === Types.Object ||
+        subject.type === Types.Array
+      ) {
         let accesorObject;
         if (subject.accessors.has(key)) {
           accesorObject = subject.accessors.get(key);
@@ -988,7 +1035,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           subject.accessors.set(key, accesorObject);
         }
         if (newValue != null) {
-          if (newValue.action !== undefined && typeof newValue === 'object') {
+          if (newValue.action !== undefined && typeof newValue === "object") {
             newValue.action = action;
           }
           assign(subject, "properties", key, newValue);
@@ -1017,7 +1064,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           subject.accessors.set(key, accesorObject);
         }
         return accesorObject;
-      } else if (subject.type === Types.AbstractObject || subject.type === Types.AbstractObjectOrUndefined) {
+      } else if (
+        subject.type === Types.AbstractObject ||
+        subject.type === Types.AbstractObjectOrUndefined
+      ) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractObject();
           subject.accessors.set(key, accesorObject);
@@ -1046,10 +1096,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         // who knows what it could be?
         return createAbstractValue(false);
       } else if (subject.type === Types.Function) {
-        if (key === 'propTypes') {
+        if (key === "propTypes") {
           // debugger;
           subject.propTypes = newValue;
-        } else if (key === 'defaultProps') {
+        } else if (key === "defaultProps") {
           subject.defaultProps = newValue;
         } else {
           return getOrSetValueFromAst(
@@ -1061,20 +1111,36 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         }
       } else if (subject.type === Types.Class) {
         if (newValue !== undefined) {
-          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'propTypes') {
-            subject.propTypes = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          if (
+            newValue.astNode &&
+            newValue.astNode.type === "ObjectExpression" &&
+            key === "propTypes"
+          ) {
+            subject.propTypes = getOrSetValueFromAst(
+              newValue.astNode,
+              subject.scope,
+              action
+            );
           }
-          if (newValue.astNode && newValue.astNode.type === 'ObjectExpression' && key === 'defaultProps') {
-            subject.defaultProps = getOrSetValueFromAst(newValue.astNode, subject.scope, action);
+          if (
+            newValue.astNode &&
+            newValue.astNode.type === "ObjectExpression" &&
+            key === "defaultProps"
+          ) {
+            subject.defaultProps = getOrSetValueFromAst(
+              newValue.astNode,
+              subject.scope,
+              action
+            );
           }
           return subject;
         } else {
           return createAbstractValue();
         }
-      } else if (typeof subject === 'string') {
+      } else if (typeof subject === "string") {
         // this is probably from PropTypes? like isRequired, so we add it on the end
         return `${subject}_${key}`;
-      } else if (subject.type === 'Null') {
+      } else if (subject.type === "Null") {
         return createAbstractValue();
       } else {
         debugger;
@@ -1085,7 +1151,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astElements = astNode.elements;
       const arr = createArray(astNode);
       astElements.forEach((astElement, i) => {
-        getOrSetValueFromAst(i, arr, action, getOrSetValueFromAst(astElement, subject, action));
+        getOrSetValueFromAst(
+          i,
+          arr,
+          action,
+          getOrSetValueFromAst(astElement, subject, action)
+        );
       });
       return arr;
     }
@@ -1136,10 +1207,21 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (astNode.computed === true) {
           return createAbstractObject();
         }
-        if (astProperty.type === "Identifier" || astProperty.type === "MemberExpression") {
+        if (
+          astProperty.type === "Identifier" ||
+          astProperty.type === "MemberExpression"
+        ) {
           return getOrSetValueFromAst(astProperty, object, action, newValue);
-        } else if (astProperty.type === "NumericLiteral" || astProperty.type === "StringLiteral") {
-          return getOrSetValueFromAst(astProperty.value, object, action, newValue);
+        } else if (
+          astProperty.type === "NumericLiteral" ||
+          astProperty.type === "StringLiteral"
+        ) {
+          return getOrSetValueFromAst(
+            astProperty.value,
+            object,
+            action,
+            newValue
+          );
         } else {
           debugger;
         }
@@ -1236,17 +1318,23 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "SequenceExpression": {
       const astExpressions = astNode.expressions;
 
-      return createSequenceExpression(astExpressions,
+      return createSequenceExpression(
+        astExpressions,
         astExpressions.map(astExpression =>
           getOrSetValueFromAst(astExpression, subject, action)
         )
       );
     }
     case "AssignmentExpression": {
-      if (astNode.operator === '=') {
+      if (astNode.operator === "=") {
         if (newValue === undefined) {
           const value = getOrSetValueFromAst(astNode.right, subject, action);
-          const obj = getOrSetValueFromAst(astNode.left, subject, action, value);
+          const obj = getOrSetValueFromAst(
+            astNode.left,
+            subject,
+            action,
+            value
+          );
           return value;
         } else {
           debugger;
@@ -1270,16 +1358,32 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       return createAbstractValue();
     }
     case "ClassExpression": {
-      return declareClass(astNode, astNode.id, astNode.superClass, astNode.body, action, subject);
+      return declareClass(
+        astNode,
+        astNode.id,
+        astNode.superClass,
+        astNode.body,
+        action,
+        subject
+      );
     }
     case "RegExpLiteral": {
       return createAbstractValue();
     }
     case "JSXExpressionContainer": {
-      return getOrSetValueFromAst(astNode.expression, subject, action, newValue);
+      return getOrSetValueFromAst(
+        astNode.expression,
+        subject,
+        action,
+        newValue
+      );
     }
     case "UpdateExpression": {
-      return createUpdateExpression(astNode, getOrSetValueFromAst(astNode.argument, subject, action), astNode.operator);
+      return createUpdateExpression(
+        astNode,
+        getOrSetValueFromAst(astNode.argument, subject, action),
+        astNode.operator
+      );
     }
     default: {
       debugger;
@@ -1294,33 +1398,39 @@ function callJSXElement(astNode, action, subject) {
   let children = null;
   let spreads = null;
   const astOpeningElement = astNode.openingElement;
-  const nodeType = getOrSetValueFromAst(astOpeningElement.name, subject, action) || astOpeningElement.name.name;
+  const nodeType =
+    getOrSetValueFromAst(astOpeningElement.name, subject, action) ||
+    astOpeningElement.name.name;
 
   const astAttributes = astOpeningElement.attributes;
   for (let i = 0; i < astAttributes.length; i++) {
     const astAttribute = astAttributes[i];
 
-    if (astAttribute.type === 'JSXSpreadAttribute') {
+    if (astAttribute.type === "JSXSpreadAttribute") {
       if (spreads === null) {
         spreads = [];
       }
-      const value = getOrSetValueFromAst(astAttribute.argument, subject, action);
+      const value = getOrSetValueFromAst(
+        astAttribute.argument,
+        subject,
+        action
+      );
       value.accessedAsSpread = true;
       spreads.push({
         astNode: astAttribute.argument,
-        value: value,
+        value: value
       });
-    } else if (astAttribute.type === 'JSXAttribute') {
+    } else if (astAttribute.type === "JSXAttribute") {
       if (props === null) {
         props = {};
       }
       const name = astAttribute.name.name;
-      
-      if (name === 'key') {
+
+      if (name === "key") {
         key = getOrSetValueFromAst(astAttribute.value, subject, action);
-      } else if (name === 'children') {
+      } else if (name === "children") {
         children = getOrSetValueFromAst(astAttribute.value, subject, action);
-      } else if (name === 'ref') {
+      } else if (name === "ref") {
         ref = getOrSetValueFromAst(astAttribute.value, subject, action);
       } else {
         props[name] = getOrSetValueFromAst(astAttribute.value, subject, action);
@@ -1343,16 +1453,20 @@ function callJSXElement(astNode, action, subject) {
     }
     props.children = children;
   }
-  const jsxElement = createJSXElement(astNode, nodeType, props, spreads, key, ref);
+  const jsxElement = createJSXElement(
+    astNode,
+    nodeType,
+    props,
+    spreads,
+    key,
+    ref
+  );
   astNode.jsxElement = jsxElement;
-  astNode.scope = subject;  
+  astNode.scope = subject;
   // link the jsxElement to the component itself (unless its an element)
-  if (typeof nodeType !== 'string') {
-    subject.jsxElementIdentifiers.set(
-      nodeType.name,
-      nodeType
-    );
-    if (nodeType.type === 'Class' || nodeType.type === 'Function') {
+  if (typeof nodeType !== "string") {
+    subject.jsxElementIdentifiers.set(nodeType.name, nodeType);
+    if (nodeType.type === "Class" || nodeType.type === "Function") {
       nodeType.jsxElementCallSites.push(jsxElement);
     }
   }
@@ -1374,7 +1488,10 @@ function getCurrentComponentFromScope(scope) {
   currentScope = scope;
   while (currentScope !== null) {
     if (currentScope.func !== null) {
-      if (currentScope.func.return !== null && currentScope.func.name !== null) {
+      if (
+        currentScope.func.return !== null &&
+        currentScope.func.name !== null
+      ) {
         return currentScope.func;
       }
     }
@@ -1385,13 +1502,18 @@ function getCurrentComponentFromScope(scope) {
 
 function checkForBailouts(astNode, scope) {
   // ReactDOM.findDOMNode bail-out
-  if (astNode.type === 'CallExpression') {
-    if (getNameFromAst(astNode.callee) === 'ReactDOM.findDOMNode' && astNode.arguments.length > 0 && getNameFromAst(astNode.arguments[0]) === 'this') {
+  if (astNode.type === "CallExpression") {
+    if (
+      getNameFromAst(astNode.callee) === "ReactDOM.findDOMNode" &&
+      astNode.arguments.length > 0 &&
+      getNameFromAst(astNode.arguments[0]) === "this"
+    ) {
       const component = getCurrentComponentFromScope(scope);
 
       if (component !== null) {
         component.bailOut = true;
-        component.bailOutReason = 'ReactDOM.findDOMNode(this) is currently not supported';
+        component.bailOutReason =
+          "ReactDOM.findDOMNode(this) is currently not supported";
       }
     }
   }
@@ -1447,12 +1569,14 @@ function declareVariable(astNode, id, init, action, scope) {
       ? createUndefined(action)
       : getOrSetValueFromAst(init, scope, action);
     if (value === null) {
-      throw new Error(`Compilation failed, could not find reference "${getNameFromAst(init)}"`);
+      throw new Error(
+        `Compilation failed, could not find reference "${getNameFromAst(init)}"`
+      );
     }
     if (value.func != null) {
       astNode.func = value;
     }
-    if (value.type === 'Function') {
+    if (value.type === "Function") {
       value.name = assignKey;
     }
     assign(scope, "assignments", assignKey, value);
@@ -1471,7 +1595,8 @@ function declareClassMethod(bodyPart, theClass, thisAssignment, scope, action) {
   theClass.methods.set(name, func);
   theClass.thisObject.properties.set(name, func);
   traverse(bodyPart, getNextAction(action), newScope);
-  return () => newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
+  return () =>
+    newScope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
 }
 
 function declareClass(node, id, superId, body, action, scope) {
@@ -1493,16 +1618,24 @@ function declareClass(node, id, superId, body, action, scope) {
       const deferredScopes = [];
       astClassBody.forEach(bodyPart => {
         if (bodyPart.type === "ClassMethod") {
-          if (bodyPart.kind === 'constructor') {
+          if (bodyPart.kind === "constructor") {
             bodyPart.body.class = theClass;
           }
-          deferredScopes.push(declareClassMethod(bodyPart, theClass, thisAssignment, scope, action));
+          deferredScopes.push(
+            declareClassMethod(
+              bodyPart,
+              theClass,
+              thisAssignment,
+              scope,
+              action
+            )
+          );
         } else {
           debugger;
         }
       });
       deferredScopes.forEach(deferredScope => deferredScope());
-    },
+    }
   });
   assign(scope, "assignments", classAssignKey, theClass);
   return theClass;
@@ -1511,7 +1644,7 @@ function declareClass(node, id, superId, body, action, scope) {
 function dealWithNestedObjectPattern(property, object, scope, deep, search) {
   if (property.type === "ObjectProperty") {
     const value = property.value;
-    
+
     dealWithNestedObjectPattern(value, object, scope, false, search);
   } else if (property.type === "Identifier") {
     let identifier;
@@ -1546,7 +1679,13 @@ function dealWithNestedObjectPattern(property, object, scope, deep, search) {
         childObject = createAbstractObject();
       }
       assign(object, "accessors", name, childObject);
-      dealWithNestedObjectPattern(childProperty.value, childObject, scope, true, search);
+      dealWithNestedObjectPattern(
+        childProperty.value,
+        childObject,
+        scope,
+        true,
+        search
+      );
     }
   } else {
     debugger;
@@ -1560,7 +1699,13 @@ function declareFuctionParams(func, params, newScope, action) {
     if (param.type === "ObjectPattern") {
       const paramObject = createObject(null);
       param.properties.forEach(property => {
-        dealWithNestedObjectPattern(property, paramObject, newScope, false, false);
+        dealWithNestedObjectPattern(
+          property,
+          paramObject,
+          newScope,
+          false,
+          false
+        );
       });
       func.params.push(paramObject);
     } else if (param.type === "Identifier") {
@@ -1568,7 +1713,7 @@ function declareFuctionParams(func, params, newScope, action) {
       const paramObject = createAbstractValue();
       assign(newScope, "assignments", name, paramObject);
       func.params.push(paramObject);
-    } else if (param.type === 'AssignmentPattern') {
+    } else if (param.type === "AssignmentPattern") {
       const astLeft = param.left;
       const astRight = param.right;
       const name = getNameFromAst(astLeft);
@@ -1600,7 +1745,16 @@ function getNextAction(action) {
   }
 }
 
-function declareFunction(node, id, params, body, action, scope, assignToScope, isArrowFunction) {
+function declareFunction(
+  node,
+  id,
+  params,
+  body,
+  action,
+  scope,
+  assignToScope,
+  isArrowFunction
+) {
   const assignKey = getNameFromAst(id);
   const newScope = createScope();
   const func = createFunction(assignKey, node, scope);
@@ -1608,7 +1762,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
   newScope.func = func;
   declareFuctionParams(func, params, newScope, action);
   const argumentsObj = createObject();
-  assign(newScope, "assignments", 'arguments', argumentsObj);
+  assign(newScope, "assignments", "arguments", argumentsObj);
   node.scope = newScope;
   node.func = func;
   newScope.parentScope = scope;
@@ -1620,7 +1774,7 @@ function declareFunction(node, id, params, body, action, scope, assignToScope, i
     scopeFunc() {
       const newAction = getNextAction(action);
       traverse(body, newAction, newScope);
-      if (isArrowFunction && body.type !== 'BlockStatement') {
+      if (isArrowFunction && body.type !== "BlockStatement") {
         const object = getOrSetValueFromAst(body, newScope, newAction);
         newScope.func.return = object;
       }
@@ -1648,5 +1802,5 @@ module.exports = {
   createScope: createScope,
   traverse: traverse,
   getOrSetValueFromAst: getOrSetValueFromAst,
-  getNameFromAst: getNameFromAst,
+  getNameFromAst: getNameFromAst
 };

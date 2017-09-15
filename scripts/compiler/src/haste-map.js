@@ -1,27 +1,27 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-"use strict";
+'use strict';
 
-const glob = require("glob");
-const path = require("path");
-const fs = require("fs");
-const sha256 = require("js-sha256");
+const glob = require('glob');
+const path = require('path');
+const fs = require('fs');
+const sha256 = require('js-sha256');
 
-const cacheDirectory = path.join(__dirname, "..", "_cache");
+const cacheDirectory = path.join(__dirname, '..', '_cache');
 const ignore = {
-  'React': true,
-  'ReactDOM': true,
-  'PropTypes': true,
+  React: true,
+  ReactDOM: true,
+  PropTypes: true,
 };
 
 function getCache(pathKey) {
   if (fs.existsSync(cacheDirectory)) {
     const filename = path.join(
       cacheDirectory,
-      sha256(pathKey).substring(0, 10) + ".json"
+      sha256(pathKey).substring(0, 10) + '.json'
     );
     if (fs.existsSync(filename)) {
-      const data = fs.readFileSync(filename, "utf8");
+      const data = fs.readFileSync(filename, 'utf8');
       return JSON.parse(data);
     }
   }
@@ -33,7 +33,7 @@ function updateCache(pathKey, map) {
     fs.mkdirSync(cacheDirectory);
   }
   fs.writeFileSync(
-    path.join(cacheDirectory, sha256(pathKey).substring(0, 10)) + ".json",
+    path.join(cacheDirectory, sha256(pathKey).substring(0, 10)) + '.json',
     JSON.stringify(map)
   );
 }
@@ -46,14 +46,14 @@ function createHasteMap(entryFilePath, destinationBundlePath) {
     hasteMap = {};
     return new Promise((resolve, reject) => {
       glob(
-        processCwd + "/**/*.js",
+        processCwd + '/**/*.js',
         {
-          ignore: "**/node_modules/**/*"
+          ignore: '**/node_modules/**/*',
         },
         (er, files) => {
           for (let i = 0, length = files.length; i < length; i++) {
             const filename = files[i];
-            const file = path.basename(filename, ".js");
+            const file = path.basename(filename, '.js');
             if (!ignore[file]) {
               hasteMap[file] = filename;
             }
@@ -77,5 +77,5 @@ function createHasteMap(entryFilePath, destinationBundlePath) {
 }
 
 module.exports = {
-  createHasteMap: createHasteMap
+  createHasteMap: createHasteMap,
 };

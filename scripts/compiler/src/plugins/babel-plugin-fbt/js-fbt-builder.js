@@ -21,13 +21,10 @@ const JSFbtBuilder = {
       invariant(texts.length === 1, 'Text type is a singleton array');
       return this.normalizeSpaces(texts[0]);
     } else {
-      invariant(
-        type === 'table',
-        'We only expect two types of fbt phrases'
-      );
+      invariant(type === 'table', 'We only expect two types of fbt phrases');
       return {
         t: this.buildTable(texts),
-        m: this.buildMetadata(texts)
+        m: this.buildMetadata(texts),
       };
     }
   },
@@ -44,7 +41,7 @@ const JSFbtBuilder = {
         case 'number':
           metadata.push({
             token: item.token,
-            mask: item.type === 'number' ? VARIATION_NUMBER : VARIATION_GENDER
+            mask: item.type === 'number' ? VARIATION_NUMBER : VARIATION_GENDER,
           });
           break;
 
@@ -53,7 +50,7 @@ const JSFbtBuilder = {
             metadata.push({
               token: item.name,
               mask: VARIATION_NUMBER,
-              singular: true
+              singular: true,
             });
           } else {
             metadata.push(null);
@@ -66,7 +63,6 @@ const JSFbtBuilder = {
             mask: VARIATION_GENDER,
           });
           break;
-
         // We ensure we have placeholders in our metadata because enums and
         // pronoun don't have metadata and will add "levels" to our resulting
         // table. In the example in the docblock of buildTable(), we'd expect
@@ -135,21 +131,20 @@ const JSFbtBuilder = {
         break;
 
       case 'pronoun':
-        Object.keys(GENDER_CONST).forEach(
-          function(key) {
-            const gender = GENDER_CONST[key];
-            if (gender === GENDER_CONST.NOT_A_PERSON && !item.human) {
-              return;
-            }
-            const genderKey = this.getPronounGenderKey(item.usage, gender);
-            const pivotKey = genderKey === GENDER_CONST.UNKNOWN_PLURAL ? '*' : genderKey;
-            const word = genderConst.getData(genderKey, item.usage);
-            textSegments[pivotKey] = item.capitalize ?
-              word.charAt(0).toUpperCase() + word.substr(1) :
-              word;
-          },
-          this
-        );
+        Object.keys(GENDER_CONST).forEach(function(key) {
+          const gender = GENDER_CONST[key];
+          if (gender === GENDER_CONST.NOT_A_PERSON && !item.human) {
+            return;
+          }
+          const genderKey = this.getPronounGenderKey(item.usage, gender);
+          const pivotKey = genderKey === GENDER_CONST.UNKNOWN_PLURAL
+            ? '*'
+            : genderKey;
+          const word = genderConst.getData(genderKey, item.usage);
+          textSegments[pivotKey] = item.capitalize
+            ? word.charAt(0).toUpperCase() + word.substr(1)
+            : word;
+        }, this);
         break;
 
       case 'enum':
@@ -162,7 +157,11 @@ const JSFbtBuilder = {
 
     const table = {};
     for (const key in textSegments) {
-      table[key] = this.buildTableRecursively(prefix + textSegments[key], texts, idx + 1);
+      table[key] = this.buildTableRecursively(
+        prefix + textSegments[key],
+        texts,
+        idx + 1
+      );
     }
     return table;
   },
@@ -171,7 +170,7 @@ const JSFbtBuilder = {
   getPronounGenderKey(usage, gender) {
     switch (gender) {
       case GENDER_CONST.NOT_A_PERSON:
-        return (usage === 'object' || usage === 'reflexive')
+        return usage === 'object' || usage === 'reflexive'
           ? GENDER_CONST.NOT_A_PERSON
           : GENDER_CONST.UNKNOWN_PLURAL;
 
@@ -192,7 +191,7 @@ const JSFbtBuilder = {
 
       case GENDER_CONST.NEUTER_SINGULAR:
       case GENDER_CONST.UNKNOWN_SINGULAR:
-        return (usage === 'reflexive')
+        return usage === 'reflexive'
           ? GENDER_CONST.NOT_A_PERSON
           : GENDER_CONST.UNKNOWN_PLURAL;
     }

@@ -66,7 +66,7 @@ function parse(docblock) {
 
   let result = [];
   let match;
-  while (match = propertyRe.exec(docblock)) {
+  while ((match = propertyRe.exec(docblock))) {
     result.push([match[1], match[2]]);
   }
 

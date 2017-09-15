@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const React = require('React');
 
@@ -16,7 +16,7 @@ function HeaderBar(props) {
           <tr>
             <td style={{width: 18, paddingRight: 4}}>
               <a href="#">
-                <img 
+                <img
                   src="logo.png"
                   width="16"
                   height="16"
