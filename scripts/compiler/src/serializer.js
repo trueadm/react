@@ -50,6 +50,7 @@ function convertExpressionToJSXIdentifier(expr, rootConfig) {
     case "ArrowFunctionExpression":
       return expr;
     default:
+    debugger;
       throw new Error("Invalid JSX Type: " + expr.type);
   }
 }

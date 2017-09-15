@@ -486,7 +486,7 @@ function traverse(node, action, scope) {
         action === Actions.ScanInnerScope3 ||
         action === Actions.ScanTopLevelScope
       ) {
-        declareVariable(node.id, node.init, action, scope);
+        declareVariable(node, node.id, node.init, action, scope);
       } else {
         traverse(node.id, action, scope);
         const nodeInit = traverse(node.init, action, scope);
@@ -1426,7 +1426,7 @@ function callFunction(astNode, callee, args, action, scope) {
   return functionCall;
 }
 
-function declareVariable(id, init, action, scope) {
+function declareVariable(astNode, id, init, action, scope) {
   if (id.type === "ObjectPattern") {
     const astProperties = id.properties;
     const value = getOrSetValueFromAst(init, scope, action);
@@ -1441,6 +1441,9 @@ function declareVariable(id, init, action, scope) {
       : getOrSetValueFromAst(init, scope, action);
     if (value === null) {
       throw new Error(`Compilation failed, could not find reference "${getNameFromAst(init)}"`);
+    }
+    if (value.func != null) {
+      astNode.func = value;
     }
     if (value.type === 'Function') {
       value.name = assignKey;

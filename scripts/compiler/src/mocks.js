@@ -84,30 +84,11 @@ function cloneElement(element, config, children) {
       // Silently steal the ref from the parent.
       ref = config.ref;
       if (typeof ref === 'string') {
-        throw new Error('Failed to inline component due to usage of string refs on cloneElement');
+        // throw new Error('Failed to inline component due to usage of string refs on cloneElement');
       }
     }
     if (config.key !== undefined) {
       key = '' + config.key;
-    }
-
-    // Remaining properties override existing props
-    var defaultProps;
-    if (element.type && element.type.defaultProps) {
-      defaultProps = element.type.defaultProps;
-    }
-    for (propName in config) {
-      if (
-        hasOwnProperty.call(config, propName) &&
-        !RESERVED_PROPS.hasOwnProperty(propName)
-      ) {
-        if (config[propName] === undefined && defaultProps !== undefined) {
-          // Resolve default props
-          props[propName] = defaultProps[propName];
-        } else {
-          props[propName] = config[propName];
-        }
-      }
     }
   }
 
@@ -139,7 +120,17 @@ function cloneElement(element, config, children) {
   };
 }`;
 
+const reactChildrenOnlyCode = `
+function (children) {
+  return children;
+}
+`;
+
 const cloneElement = babylon.parseExpression(cloneElementCode, {
+  plugins: ["flow"],
+});
+
+const reactChildrenOnly = babylon.parseExpression(reactChildrenOnlyCode, {
   plugins: ["flow"],
 });
 
@@ -147,9 +138,20 @@ const cloneElement = babylon.parseExpression(cloneElementCode, {
 function createMockReact(env) {
   const mockReact = evaluator.createAbstractObject('React');
   mockReact.$SetPartial('Component', env.eval(reactClass), mockReact);
+  mockReact.$SetPartial('PureComponent', env.eval(reactClass), mockReact);
   mockReact.$SetPartial('createElement', evaluator.createAbstractFunction('React.createElement'), mockReact);
   mockReact.$SetPartial('cloneElement', env.eval(cloneElement), mockReact);
-  mockReact.$SetPartial('Children', evaluator.createAbstractObject('React.Children'), mockReact);
+  mockReact.$SetPartial('isValidElement', evaluator.createAbstractFunction('React.isValidElement'), mockReact);
+  mockReact.$SetPartial('createFactory', evaluator.createAbstractFunction('React.createFactory'), mockReact);
+
+  const mockReactChildren = evaluator.createAbstractObject('React.Children');
+  mockReactChildren.$SetPartial('only', env.eval(reactChildrenOnly), mockReactChildren);
+  mockReactChildren.$SetPartial('count', evaluator.createAbstractFunction('React.Children.count'), mockReactChildren);
+  mockReactChildren.$SetPartial('map', evaluator.createAbstractFunction('React.Children.map'), mockReactChildren);
+  mockReactChildren.$SetPartial('forEach', evaluator.createAbstractFunction('React.Children.forEach'), mockReactChildren);
+  mockReactChildren.$SetPartial('toArray', evaluator.createAbstractFunction('React.Children.toArray'), mockReactChildren);
+
+  mockReact.$SetPartial('Children', mockReactChildren, mockReact);
   return mockReact;
 }
 

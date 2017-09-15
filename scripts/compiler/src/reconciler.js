@@ -168,7 +168,7 @@ function createReactClassInstance(componentType, props, moduleEnv, rootConfig, i
     componentPrototype.has("componentWillReceiveProps")
   ) {
     if (isBranched === true) {
-      throw new Error(`Failed to inline component "${theClass.name}" due to the component having lifecycle events when insie a conditional branch.`);
+      throw new Error(`Failed to inline component "${theClass.name}" due to the component having lifecycle events when inside a branch.`);
     }
     useClassComponent = true;
   }

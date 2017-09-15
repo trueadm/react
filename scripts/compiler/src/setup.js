@@ -23,12 +23,40 @@ function setupPrepackEnvironment(moduleEnv, declarations) {
     } else {
       try {
         const evaluation = moduleEnv.eval(declaration);
-
-        if (declaration.func !== undefined) {
+        // function component post eval stuff
+        const func = declaration.func;
+        if (func !== undefined) {
           evaluation.func = declaration.func;
+          // if (evaluation.func.name === 'ReactBlueBarLink') {
+          //   debugger;
+          // }
+          if (func.defaultProps !== null) {
+            try {
+              debugger;
+              evaluation.properties.set('defaultProps', moduleEnv.eval(theClass.defaultProps.astNode));
+            } catch (e) {
+              // TODO: what do we do in this case?
+              debugger;
+            }
+          } else {
+            // TODO: I'm nto sure this is helping or actually doing anything, need to explore more
+            // it was many used to stop cloneElement bail outs, but I've commented out copying of defaultProps out of cloneElement for now
+            // which isn't right
+            evaluation.properties.set('defaultProps', evaluator.createAbstractObject('defaultProps'));
+          }
         }
-        if (declaration.class !== undefined) {
-          evaluation.class = declaration.class;
+        // class component post eval stuff
+        const theClass = declaration.class;
+        if (theClass !== undefined) {
+          evaluation.class = theClass;
+          if (theClass.defaultProps !== null) {
+            try {
+              evaluation.properties.get('prototype').descriptor.value.properties.set('defaultProps', moduleEnv.eval(theClass.defaultProps.astNode));
+            } catch (e) {
+              // TODO: what do we do in this case?
+              debugger;
+            }
+          }
         }
         moduleEnv.declare(declarationKey, evaluation);
       } catch (e) {
@@ -77,7 +105,7 @@ function handleAssignmentValue(
         if (astNode.type === "ClassDeclaration") {
           astNode.type = "ClassExpression";
         }
-        declarations[assignmentKey] = assignmentValue.astNode;
+        declarations[assignmentKey] = astNode;
         break;
       }
       case "FunctionCall": {
