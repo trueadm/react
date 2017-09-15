@@ -3,7 +3,8 @@
     "/.module-cache/",
     "<rootDir>/build/",
     "<rootDir>/scripts/rollup/shims/",
-    "<rootDir>/scripts/bench/"
+    "<rootDir>/scripts/bench/",
+    "<rootDir>/scripts/compiler-fixtures/"
   ],
   "rootDir": "../../",
   "transform": {
