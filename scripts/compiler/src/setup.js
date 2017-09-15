@@ -266,12 +266,13 @@ function createPrepackMetadata(moduleScope) {
     ) {
       // NO-OP
     } else if (assignmentKey === "React") {
-      declarations.React = createMockReact();
+      declarations.React = createMockReact(env);
     } else if (assignmentKey === "window") {
       declarations.window = createMockWindow();
+    } else if (assignmentKey === 'ix' || assignmentKey === 'cx') {
+      declarations[assignmentKey] = evaluator.createAbstractFunction(assignmentKey);
     } else if (assignmentKey === 'JSResource') {
-      const val = evaluator.createAbstractFunction('JSResource');
-      declarations.JSResource = val;
+      declarations.JSResource = evaluator.createAbstractFunction('JSResource');
     } else if (
       assignmentKey === "require" &&
       moduleScope.parentScope === null

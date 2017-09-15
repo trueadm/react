@@ -8,66 +8,6 @@ const {
   CreateDataPropertyOrThrow,
 } = require("prepack/lib/methods");
 
-const cloneElementCode = `
-function cloneElement(element, config, children) {
-  var RESERVED_PROPS = {
-    key: true,
-    ref: true,
-    __self: true,
-    __source: true,
-  };
-  
-  var propName;
-
-  // Original props are copied
-  var props = Object.assign({}, element.props);
-
-  // Reserved names are extracted
-  var key = element.key;
-  var ref = element.ref;
-  // Self is preserved since the owner is preserved.
-  var self = element._self;
-  // Source is preserved since cloneElement is unlikely to be targeted by a
-  // transpiler, and the original source is probably a better indicator of the
-  // true owner.
-  var source = element._source;
-
-  // Owner will be preserved, unless ref is overridden
-  var owner = element._owner;
-
-  if (config != null) {
-    if (config.key !== null) {
-      key = '' + config.key;
-    }
-  }
-
-  // Children can be more than one argument, and those are transferred onto
-  // the newly allocated props object.
-  var childrenLength = arguments.length - 2;
-  if (childrenLength === 1) {
-    props.children = children;
-  } else if (childrenLength > 1) {
-    var childArray = Array(childrenLength);
-    for (var i = 0; i < childrenLength; i++) {
-      childArray[i] = arguments[i + 2];
-    }
-    props.children = childArray;
-  }
-
-  return {
-    // This tag allow us to uniquely identify this as a React Element
-    $$typeof: element.$$typeof,
-
-    // Built-in properties that belong on the element
-    type: element.type,
-    key: key,
-    ref: ref,
-    props: props,
-
-    // Record the component responsible for creating this element.
-    _owner: owner,
-  };
-}`;
 
 const reactClass = t.classExpression(t.identifier('component'), null, t.classBody(
   [
@@ -112,17 +52,105 @@ const reactClass = t.classExpression(t.identifier('component'), null, t.classBod
   ]
 ), []);
 
+const cloneElementCode = `
+function cloneElement(element, config, children) {
+  var RESERVED_PROPS = {
+    key: true,
+    ref: true,
+    __self: true,
+    __source: true,
+  };
+  
+  var propName;
+
+  // Original props are copied
+  var props = Object.assign({}, element.props);
+
+  // Reserved names are extracted
+  var key = element.key;
+  var ref = element.ref;
+  // Self is preserved since the owner is preserved.
+  var self = element._self;
+  // Source is preserved since cloneElement is unlikely to be targeted by a
+  // transpiler, and the original source is probably a better indicator of the
+  // true owner.
+  var source = element._source;
+
+  // Owner will be preserved, unless ref is overridden
+  var owner = element._owner;
+
+  if (config != null) {
+    if (config.ref !== undefined) {
+      // Silently steal the ref from the parent.
+      ref = config.ref;
+      if (typeof ref === 'string') {
+        throw new Error('Failed to inline component due to usage of string refs on cloneElement');
+      }
+    }
+    if (config.key !== undefined) {
+      key = '' + config.key;
+    }
+
+    // Remaining properties override existing props
+    var defaultProps;
+    if (element.type && element.type.defaultProps) {
+      defaultProps = element.type.defaultProps;
+    }
+    for (propName in config) {
+      if (
+        hasOwnProperty.call(config, propName) &&
+        !RESERVED_PROPS.hasOwnProperty(propName)
+      ) {
+        if (config[propName] === undefined && defaultProps !== undefined) {
+          // Resolve default props
+          props[propName] = defaultProps[propName];
+        } else {
+          props[propName] = config[propName];
+        }
+      }
+    }
+  }
+
+  // Children can be more than one argument, and those are transferred onto
+  // the newly allocated props object.
+  var childrenLength = arguments.length - 2;
+  if (childrenLength === 1) {
+    props.children = children;
+  } else if (childrenLength > 1) {
+    var childArray = Array(childrenLength);
+    for (var i = 0; i < childrenLength; i++) {
+      childArray[i] = arguments[i + 2];
+    }
+    props.children = childArray;
+  }
+  
+  return {
+    // This tag allow us to uniquely identify this as a React Element
+    $$typeof: element.$$typeof,
+
+    // Built-in properties that belong on the element
+    type: element.type,
+    key: key,
+    ref: ref,
+    props: props,
+
+    // Record the component responsible for creating this element.
+    _owner: owner,
+  };
+}`;
+
 const cloneElement = babylon.parseExpression(cloneElementCode, {
   plugins: ["flow"],
 });
 
-function createMockReact() {
-  return t.objectExpression(
-    [
-      t.objectProperty(t.identifier('Component'), reactClass),
-      t.objectProperty(t.identifier('cloneElement'), cloneElement),
-    ]
-  );
+
+function createMockReact(env) {
+  const mockReact = evaluator.createAbstractObject('React');
+  mockReact.$SetPartial('Component', env.eval(reactClass), mockReact);
+  mockReact.$SetPartial('createElement', evaluator.createAbstractFunction('React.createElement'), mockReact);
+  mockReact.$SetPartial('cloneElement', env.eval(cloneElement), mockReact);
+  mockReact.$SetPartial('Children', evaluator.createAbstractObject('React.Children'), mockReact);
+  return mockReact;
 }
 
 function createMockWindow() {
