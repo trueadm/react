@@ -112,6 +112,9 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
         console.log(
           `\nFailed to inline component "${name}" but failed due to a Prepack evaluation error:\n${x.stack}\n`
         );
+        if (name === 'ReactBlueBarAccountMenuLink') {
+          debugger;
+        }
       }
       if (x.value !== undefined) {
         return await resolveDeeply(x.value, moduleEnv, rootConfig);

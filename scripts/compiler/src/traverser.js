@@ -1374,14 +1374,15 @@ function getCurrentComponentFromScope(scope) {
 }
 
 function checkForBailouts(astNode, scope) {
-  const name = getNameFromAst(astNode);
   // ReactDOM.findDOMNode bail-out
-  if (name === 'ReactDOM.findDOMNode') {
-    const component = getCurrentComponentFromScope(scope);
+  if (astNode.type === 'CallExpression') {
+    if (getNameFromAst(astNode.callee) === 'ReactDOM.findDOMNode' && astNode.arguments.length > 0 && getNameFromAst(astNode.arguments[0]) === 'this') {
+      const component = getCurrentComponentFromScope(scope);
 
-    if (component !== null) {
-      component.bailOut = true;
-      component.bailOutReason = 'ReactDOM.findDOMNode is currently not supported';
+      if (component !== null) {
+        component.bailOut = true;
+        component.bailOutReason = 'ReactDOM.findDOMNode(this) is currently not supported';
+      }
     }
   }
 }
@@ -1389,7 +1390,7 @@ function checkForBailouts(astNode, scope) {
 function callFunction(astNode, callee, args, action, scope) {
   let functionRef = getOrSetValueFromAst(callee, scope, action);
 
-  checkForBailouts(astNode.callee, scope);
+  checkForBailouts(astNode, scope);
   if (functionRef == null) {
     // console.warn(
     //   `Could not find an identifier for function call "${getNameFromAst(callee)}"`

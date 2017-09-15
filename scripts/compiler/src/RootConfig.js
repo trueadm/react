@@ -175,7 +175,7 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           const memberName = nextNode.name;
           const propValue = propsValue.properties.get(memberName);
           let memberNode = null;
-          if (propsValue !== undefined) {
+          if (propValue !== undefined) {
             const value = propValue.descriptor.value;
             if (value.isIntrinsic()) {
               if (value.intrinsicName.indexOf("$F$") === 0) {
@@ -189,7 +189,6 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
                 if (value instanceof UndefinedValue) {
                   return t.identifier('undefined');
                 }
-                debugger;
               }
               memberNode = serializer.convertValueToExpression(value, rootConfig);
             }

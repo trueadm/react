@@ -91,6 +91,14 @@ function convertAccessorsToNestedObject(accessors, propTypes, deepAccessors) {
         // TODO
         // as we are inlikely to know this statically, let's assume any
         value = Types.ANY;
+      } else if (value.type === 'Function') {
+        // if we have an astNode here, pass it back
+        const astNode = value.astNode;
+        if (astNode !== null) {
+          value = () => astNode;
+        } else {
+          debugger;
+        }
       } else if (value.type !== undefined) {
         debugger;
       }
@@ -113,7 +121,9 @@ function convertNestedObjectToAst(object) {
         return t.objectProperty(t.identifier(key), convertNestedObjectToAst(value));
       } else {
         let valueAst = t.nullLiteral();
-        if (typeof value === 'string') {
+        if (typeof value === 'function') {
+          valueAst = value();
+        } else if (typeof value === 'string') {
           valueAst = t.stringLiteral(value);
         } else if (typeof value === 'number') {
           valueAst = t.numericLiteral(value);
