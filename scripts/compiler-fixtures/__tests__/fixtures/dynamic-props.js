@@ -8,26 +8,17 @@
  */
 'use strict';
 
-function A(props) {
-  return <div>Hello {props.x}</div>;
+function Fn(props) {
+  return <div>Hello {props[props.dynamicKey]}</div>;
 }
 
-function B() {
-  return <div>World</div>;
-}
-
-function App() {
-  return (
-    <div>
-      <A x={42} />
-      <B />
-    </div>
-  );
+function App(props) {
+  return <Fn foo="World" dynamicKey={props.dynamicKey} />;
 }
 
 App.getTrials = function*(renderer, Root) {
-  renderer.update(<Root />);
-  yield ['simple render', renderer.toJSON()];
+  renderer.update(<Root dynamicKey="foo" />);
+  yield ['render with dynamic prop access', renderer.toJSON()];
 };
 
 module.exports = App;
