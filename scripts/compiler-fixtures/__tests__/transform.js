@@ -14,9 +14,7 @@ const compile = require('../../compiler/index');
 
 module.exports = async function(src: string) {
   // Put the real compilation call here
-  const newSrc = await compile(src);
-  console.log(newSrc);
-  return newSrc;
+  return await compile(src);
   // Uncomment to see a failure:
   // return src.replace('World', 'Dominic');
 };
