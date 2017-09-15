@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Compiler dynamic-props 1`] = `"Optimized 2 trees"`;
+
+exports[`Compiler simple 1`] = `"Optimized 1 trees"`;
