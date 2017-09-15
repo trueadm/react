@@ -113,11 +113,6 @@ async function resolveDeeply(value, moduleEnv, rootConfig) {
           `\nFailed to inline component "${name}" but failed due to a Prepack evaluation error:\n${x.stack}\n`
         );
       }
-      if (x.value !== undefined) {
-        return await resolveDeeply(x.value, moduleEnv, rootConfig);
-      }
-      // console.log(x.stack + '\n')
-      // If something went wrong, just bail out and return the value we had.
       return value;
     }
   } else {
