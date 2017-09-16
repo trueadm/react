@@ -1,6 +1,16 @@
-let construct_realm = require('prepack/lib/construct_realm').default;
-let {ExecutionContext} = require('prepack/lib/realm');
-let {
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+"use strict";
+
+const construct_realm = require('prepack/lib/construct_realm').default;
+const {ExecutionContext} = require('prepack/lib/realm');
+const {
   NewDeclarativeEnvironment,
   GetValue,
   Get,
@@ -8,24 +18,22 @@ let {
   Construct,
   ToStringPartial,
 } = require('prepack/lib/methods');
-let {AbruptCompletion} = require('prepack/lib/completions');
-let {
-  ArrayValue,
+const {AbruptCompletion} = require('prepack/lib/completions');
+const {
   AbstractObjectValue,
   AbstractValue,
   ObjectValue,
-  NumberValue,
   StringValue,
   FunctionValue,
   BooleanValue,
   UndefinedValue,
   Value,
 } = require('prepack/lib/values');
-let {TypesDomain, ValuesDomain} = require('prepack/lib/domains');
-let {Generator} = require('prepack/lib/utils/generator');
-let buildExpressionTemplate = require('prepack/lib/utils/builder').default;
-let jsxEvaluator = require('./jsx-react-evaluator');
-let {describeLocation} = require('prepack/lib/intrinsics/ecma262/Error.js');
+const {TypesDomain, ValuesDomain} = require('prepack/lib/domains');
+const {Generator} = require('prepack/lib/utils/generator');
+const buildExpressionTemplate = require('prepack/lib/utils/builder').default;
+const jsxEvaluator = require('./jsx-react-evaluator');
+const {describeLocation} = require('prepack/lib/intrinsics/ecma262/Error.js');
 const t = require('babel-types');
 
 let preludeGenerator = null;

@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
 const t = require('babel-types');
@@ -5,13 +13,31 @@ const evaluator = require('./evaluator');
 const fs = require('fs');
 const babylon = require('babylon');
 const traverser = require('./traverser');
-const createMockReact = require('./mocks').createMockReact;
-const createMockWindow = require('./mocks').createMockWindow;
-const convertAccessorsToNestedObject = require('./types')
-  .convertAccessorsToNestedObject;
-const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
-const setAbstractPropsUsingNestedObject = require('./types')
-  .setAbstractPropsUsingNestedObject;
+const mocks = require('./mocks');
+const {
+  convertAccessorsToNestedObject,
+  convertNestedObjectToAst,
+  setAbstractPropsUsingNestedObject,
+ } = require('./types');
+
+const blacklist = {
+  Array: true,
+  Object: true,
+  Promise: true,
+  Date: true,
+  Error: true,
+  String: true,
+  Number: true,
+  RegExp: true,
+  Symbol: true,
+  Function: true,
+  Boolean: true,
+  eval: true,
+  console: true,
+  parseInt: true,
+  parseFloat: true,
+  document: true,
+};
 
 function setupPrepackEnvironment(moduleEnv, declarations) {
   // eval and declare all declarations
@@ -164,11 +190,11 @@ function handleAssignmentValue(
                 break;
               }
             }
-            console.warn(
+            console.log(
               `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
             );
           } else {
-            console.warn(
+            console.log(
               `Found a nondeterministic function call (treating as abstract)`
             );
           }
@@ -290,29 +316,16 @@ function createPrepackMetadata(moduleScope) {
 
   assignmentKeys.forEach(assignmentKey => {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
-    if (
-      assignmentKey === 'Array' ||
-      assignmentKey === 'Object' ||
-      assignmentKey === 'Promise' ||
-      assignmentKey === 'Date' ||
-      assignmentKey === 'Error' ||
-      assignmentKey === 'String' ||
-      assignmentKey === 'Number' ||
-      assignmentKey === 'RegExp' ||
-      assignmentKey === 'Symbol' ||
-      assignmentKey === 'Function' ||
-      assignmentKey === 'Boolean' ||
-      assignmentKey === 'eval' ||
-      assignmentKey === 'console' ||
-      assignmentKey === 'parseInt' ||
-      assignmentKey === 'parseFloat' ||
-      assignmentKey === 'document'
-    ) {
+    if (blacklist[assignmentKey] === true) {
       // NO-OP
     } else if (assignmentKey === 'React') {
-      declarations.React = createMockReact(env);
+      declarations.React = mocks.createMockReact(env);
+    } else if (assignmentKey === 'Redux') {
+      declarations.window = mocks.createMockRedux(env);
+    } else if (assignmentKey === 'ReactRedux') {
+      declarations.window = mocks.createMockReactRedux(env);
     } else if (assignmentKey === 'window') {
-      declarations.window = createMockWindow();
+      declarations.window = mocks.createMockWindow();
     } else if (assignmentKey === 'ix' || assignmentKey === 'cx') {
       declarations[assignmentKey] = evaluator.createAbstractFunction(
         assignmentKey
@@ -385,6 +398,6 @@ function setupSource(source, destinationBundlePath) {
 }
 
 module.exports = {
-  setupBundle: setupBundle,
-  setupSource: setupSource,
+  setupBundle,
+  setupSource,
 };

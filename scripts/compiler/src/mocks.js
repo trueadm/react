@@ -1,152 +1,33 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
-const t = require('babel-types');
-const babylon = require('babylon');
 const evaluator = require('./evaluator');
+const reactClassMock = require('./mocks/reactClass');
+const cloneElementMock = require('./mocks/cloneElement');
+const reactChildrenMock = require('./mocks/reactChildren');
+const reduxMock = require('./mocks/redux');
 const {
   ObjectCreate,
   CreateDataPropertyOrThrow,
 } = require('prepack/lib/methods');
 
-const reactClass = t.classExpression(
-  t.identifier('component'),
-  null,
-  t.classBody([
-    t.classMethod(
-      'constructor',
-      t.identifier('constructor'),
-      [t.identifier('props'), t.identifier('context')],
-      t.blockStatement([
-        // this.props = props
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            t.memberExpression(t.thisExpression(), t.identifier('props')),
-            t.identifier('props')
-          )
-        ),
-        // this.context = context
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            t.memberExpression(t.thisExpression(), t.identifier('context')),
-            t.identifier('context')
-          )
-        ),
-        // this.state = {}
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            t.memberExpression(t.thisExpression(), t.identifier('state')),
-            t.objectExpression([])
-          )
-        ),
-        // this.ref = {}
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            t.memberExpression(t.thisExpression(), t.identifier('refs')),
-            t.objectExpression([])
-          )
-        ),
-      ])
-    ),
-  ]),
-  []
-);
-
-const cloneElementCode = `
-function cloneElement(element, config, children) {
-  var RESERVED_PROPS = {
-    key: true,
-    ref: true,
-    __self: true,
-    __source: true,
-  };
-  
-  var propName;
-
-  // Original props are copied
-  var props = Object.assign({}, element.props);
-
-  // Reserved names are extracted
-  var key = element.key;
-  var ref = element.ref;
-  // Self is preserved since the owner is preserved.
-  var self = element._self;
-  // Source is preserved since cloneElement is unlikely to be targeted by a
-  // transpiler, and the original source is probably a better indicator of the
-  // true owner.
-  var source = element._source;
-
-  // Owner will be preserved, unless ref is overridden
-  var owner = element._owner;
-
-  if (config != null) {
-    if (config.ref !== undefined) {
-      // Silently steal the ref from the parent.
-      ref = config.ref;
-      if (typeof ref === 'string') {
-        // throw new Error('Failed to inline component due to usage of string refs on cloneElement');
-      }
-    }
-    if (config.key !== undefined) {
-      key = '' + config.key;
-    }
-  }
-
-  // Children can be more than one argument, and those are transferred onto
-  // the newly allocated props object.
-  var childrenLength = arguments.length - 2;
-  if (childrenLength === 1) {
-    props.children = children;
-  } else if (childrenLength > 1) {
-    var childArray = Array(childrenLength);
-    for (var i = 0; i < childrenLength; i++) {
-      childArray[i] = arguments[i + 2];
-    }
-    props.children = childArray;
-  }
-  
-  return {
-    // This tag allow us to uniquely identify this as a React Element
-    $$typeof: element.$$typeof,
-
-    // Built-in properties that belong on the element
-    type: element.type,
-    key: key,
-    ref: ref,
-    props: props,
-
-    // Record the component responsible for creating this element.
-    _owner: owner,
-  };
-}`;
-
-const reactChildrenOnlyCode = `
-function (children) {
-  return children;
-}
-`;
-
-const cloneElement = babylon.parseExpression(cloneElementCode, {
-  plugins: ['flow'],
-});
-
-const reactChildrenOnly = babylon.parseExpression(reactChildrenOnlyCode, {
-  plugins: ['flow'],
-});
-
 function createMockReact(env) {
   const mockReact = evaluator.createAbstractObject('React');
-  mockReact.$SetPartial('Component', env.eval(reactClass), mockReact);
-  mockReact.$SetPartial('PureComponent', env.eval(reactClass), mockReact);
+  mockReact.$SetPartial('Component', env.eval(reactClassMock), mockReact);
+  mockReact.$SetPartial('PureComponent', env.eval(reactClassMock), mockReact);
   mockReact.$SetPartial(
     'createElement',
     evaluator.createAbstractFunction('React.createElement'),
     mockReact
   );
-  mockReact.$SetPartial('cloneElement', env.eval(cloneElement), mockReact);
+  mockReact.$SetPartial('cloneElement', env.eval(cloneElementMock), mockReact);
   mockReact.$SetPartial(
     'isValidElement',
     evaluator.createAbstractFunction('React.isValidElement'),
@@ -161,7 +42,7 @@ function createMockReact(env) {
   const mockReactChildren = evaluator.createAbstractObject('React.Children');
   mockReactChildren.$SetPartial(
     'only',
-    env.eval(reactChildrenOnly),
+    env.eval(reactChildrenMock.reactChildrenOnly),
     mockReactChildren
   );
   mockReactChildren.$SetPartial(
@@ -192,7 +73,6 @@ function createMockReact(env) {
 function createMockWindow() {
   const realm = evaluator.realm;
   const windowObject = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
-  // const windowObject = evaluator.createObject('window');
   const locationObject = evaluator.createAbstractObject('window.location');
   locationObject.$SetPartial(
     'host',
@@ -208,7 +88,19 @@ function createMockWindow() {
   return windowObject;
 }
 
+function createMockRedux(env) {
+  const mockRedux = evaluator.createAbstractObject('Redux');
+  mockRedux.$SetPartial('createStore', env.eval(reduxMock.reduxCreateStore), mockRedux);
+  return mockRedux;
+}
+
+function createMockReactRedux(env) {
+  
+}
+
 module.exports = {
-  createMockWindow: createMockWindow,
-  createMockReact: createMockReact,
+  createMockWindow,
+  createMockReact,
+  createMockRedux,
+  createMockReactRedux,
 };

@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+"use strict";
+
 const {
   AbstractValue,
   ArrayValue,
@@ -6,18 +16,15 @@ const {
   ObjectValue,
   NumberValue,
   StringValue,
-  SymbolValue,
   NullValue,
   UndefinedValue,
 } = require('prepack/lib/values');
-const convertAccessorsToNestedObject = require('./types')
-  .convertAccessorsToNestedObject;
-const convertNestedObjectWithPrefixesToAst = require('./types')
-  .convertNestedObjectWithPrefixesToAst;
+const {
+  convertAccessorsToNestedObject,
+  convertNestedObjectWithPrefixesToAst,
+} = require('./types');
 const t = require('babel-types');
-const {GetValue} = require('prepack/lib/methods');
-
-let evaluator = require('./evaluator');
+const evaluator = require('./evaluator');
 
 function isReactElement(value) {
   return value instanceof ObjectValue && value.properties.has('$$typeof');

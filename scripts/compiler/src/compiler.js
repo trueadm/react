@@ -1,7 +1,15 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
 const fs = require('fs');
-const optimizeComponentTree = require('./optimizer').optimizeComponentTree;
+const {optimizeComponentTree} = require('./optimizer');
 const traverser = require('./traverser');
 const babel = require('babel-core');
 const createBundle = require('./bundler').createBundle;
@@ -52,6 +60,6 @@ async function compileSource(result) {
 }
 
 module.exports = {
-  compileBundle: compileBundle,
-  compileSource: compileSource,
+  compileBundle,
+  compileSource,
 };

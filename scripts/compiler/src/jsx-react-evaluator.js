@@ -1,14 +1,22 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+"use strict";
+
 const {
   ConcreteValue,
   NumberValue,
   StringValue,
-  UndefinedValue,
 } = require('prepack/lib/values');
 const {
   ArrayCreate,
   CreateDataPropertyOrThrow,
   GetValue,
-  SetValue,
   ObjectCreate,
   ResolveBinding,
   Set,
@@ -17,14 +25,15 @@ const {
 const evaluator = require('./evaluator');
 const traverser = require('./traverser');
 const t = require('babel-types');
-const convertAccessorsToNestedObject = require('./types')
-  .convertAccessorsToNestedObject;
-const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
+const {
+  convertNestedObjectToAst,
+  convertAccessorsToNestedObject,
+} = require('./types');
 
 let reactElementSymbol = undefined;
-let reactElementSymbolKey = 'react.element';
+const reactElementSymbolKey = 'react.element';
 
-let RESERVED_PROPS = {
+const RESERVED_PROPS = {
   key: true,
   ref: true,
   __self: true,

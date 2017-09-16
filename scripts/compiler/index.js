@@ -1,8 +1,16 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
-const setupSource = require('./src/setup').setupSource;
-const compileSource = require('./src/compiler').compileSource;
-const getOptimizedTrees = require('./src/optimizer').getOptimizedTrees;
+const {setupSource} = require('./src/setup');
+const {compileSource} = require('./src/compiler');
+const {getOptimizedTrees} = require('./src/optimizer');
 
 async function compileSourceEntry(source) {
   return setupSource(source).then(compileSource).then(code => ({

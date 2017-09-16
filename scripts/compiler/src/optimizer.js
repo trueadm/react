@@ -1,16 +1,21 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
-const t = require('babel-types');
-const evaluator = require('./evaluator');
 const reconciler = require('./reconciler');
 const serializer = require('./serializer');
 const traverser = require('./traverser');
-const Types = require('./types').Types;
-const convertAccessorsToNestedObject = require('./types')
-  .convertAccessorsToNestedObject;
-const convertNestedObjectToAst = require('./types').convertNestedObjectToAst;
-const setAbstractPropsUsingNestedObject = require('./types')
-  .setAbstractPropsUsingNestedObject;
+const {
+  convertAccessorsToNestedObject,
+  convertNestedObjectToAst,
+  setAbstractPropsUsingNestedObject,
+ } = require('./types');
 const RootConfig = require('./RootConfig');
 
 function convertToExpression(node) {
@@ -310,6 +315,6 @@ function getOptimizedTrees() {
 }
 
 module.exports = {
-  optimizeComponentTree: optimizeComponentTree,
-  getOptimizedTrees: getOptimizedTrees,
+  optimizeComponentTree,
+  getOptimizedTrees,
 };

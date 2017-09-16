@@ -1,9 +1,17 @@
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 'use strict';
 
-const setupBundle = require('./src/setup').setupBundle;
-const compileBundle = require('./src/compiler').compileBundle;
-const createHasteMap = require('./src/haste-map').createHasteMap;
-const createBundle = require('./src/bundler').createBundle;
+const {setupBundle} = require('./src/setup');
+const {compileBundle} = require('./src/compiler');
+const {createHasteMap} = require('./src/haste-map');
+const {createBundle} = require('./src/bundler');
 const optimizer = require('./src/optimizer');
 const argv = require('minimist')(process.argv.slice(2));
 const path = require('path');
