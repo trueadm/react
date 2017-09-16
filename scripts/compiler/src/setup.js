@@ -227,9 +227,13 @@ function handleAssignmentValue(
         break;
       }
       case 'AbstractValue': {
-        declarations[assignmentKey] = evaluator.createAbstractValue(
-          assignmentKey
-        );
+        if (assignmentValue.astNode != null) {
+          declarations[assignmentKey] = assignmentValue.astNode;
+        } else {
+          declarations[assignmentKey] = evaluator.createAbstractValue(
+            assignmentKey
+          );
+        }
         break;
       }
       case 'AbstractObjectOrUndefined': {
@@ -315,15 +319,16 @@ function createPrepackMetadata(moduleScope) {
   const env = new evaluator.ModuleEnvironment();
 
   assignmentKeys.forEach(assignmentKey => {
+
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
     if (blacklist[assignmentKey] === true) {
       // NO-OP
     } else if (assignmentKey === 'React') {
       declarations.React = mocks.createMockReact(env);
     } else if (assignmentKey === 'Redux') {
-      declarations.window = mocks.createMockRedux(env);
+      declarations.Redux = mocks.createMockRedux(env);
     } else if (assignmentKey === 'ReactRedux') {
-      declarations.window = mocks.createMockReactRedux(env);
+      declarations.ReactRedux = mocks.createMockReactRedux(env);
     } else if (assignmentKey === 'window') {
       declarations.window = mocks.createMockWindow();
     } else if (assignmentKey === 'ix' || assignmentKey === 'cx') {

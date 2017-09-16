@@ -9,6 +9,7 @@
 "use strict";
 
 const PropTypes = require("./types").Types;
+const t = require('babel-types');
 
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
@@ -158,13 +159,14 @@ function createAbstractObject() {
   };
 }
 
-function createAbstractValue(crossModule) {
+function createAbstractValue(crossModule, astNode) {
   return {
     accessedAsSpread: false,
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
-    crossModule: crossModule,
+    astNode,
+    crossModule,
     type: Types.AbstractValue
   };
 }
@@ -1569,7 +1571,7 @@ function declareVariable(astNode, id, init, action, scope) {
     const value = getOrSetValueFromAst(init, scope, action);
 
     astProperties.forEach(astProperty => {
-      dealWithNestedObjectPattern(astProperty, value, scope, false, true);
+      dealWithNestedObjectPattern(init, astProperty, value, scope, false, true);
     });
   } else {
     const assignKey = getNameFromAst(id);
@@ -1649,29 +1651,29 @@ function declareClass(node, id, superId, body, action, scope) {
   return theClass;
 }
 
-function dealWithNestedObjectPattern(property, object, scope, deep, search) {
-  if (property.type === "ObjectProperty") {
-    const value = property.value;
+function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep, search) {
+  if (astProperty.type === "ObjectProperty") {
+    const astValue = astProperty.value;
 
-    dealWithNestedObjectPattern(value, object, scope, false, search);
-  } else if (property.type === "Identifier") {
+    dealWithNestedObjectPattern(astObject, astValue, object, scope, false, search);
+  } else if (astProperty.type === "Identifier") {
     let identifier;
-    const name = property.name;
+    const name = astProperty.name;
     if (search === true) {
       if (object.type === Types.Object) {
         identifier = object.properties.get(name);
       } else {
-        identifier = createAbstractValue();
+        identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty));
       }
     } else {
-      identifier = createAbstractValue();
+      identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty));
     }
     if (deep === false) {
       assign(object, "accessors", name, identifier);
     }
     assign(scope, "assignments", name, identifier);
-  } else if (property.type === "ObjectPattern") {
-    const childProperties = property.properties;
+  } else if (astProperty.type === "ObjectPattern") {
+    const childProperties = astProperty.properties;
 
     for (let i = 0; i < childProperties.length; i++) {
       const childProperty = childProperties[i];
@@ -1688,6 +1690,7 @@ function dealWithNestedObjectPattern(property, object, scope, deep, search) {
       }
       assign(object, "accessors", name, childObject);
       dealWithNestedObjectPattern(
+        astObject,
         childProperty.value,
         childObject,
         scope,
@@ -1706,8 +1709,9 @@ function declareFuctionParams(func, params, newScope, action) {
 
     if (param.type === "ObjectPattern") {
       const paramObject = createObject(null);
-      param.properties.forEach(property => {
+      param.properties.forEach((property, i) => {
         dealWithNestedObjectPattern(
+          t.identifier(`arg${i}`),
           property,
           paramObject,
           newScope,
