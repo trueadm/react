@@ -286,11 +286,11 @@ async function optimizeComponentTree(
         e.stack &&
         e.stack.indexOf('not yet supported on abstract value props') !== -1
       ) {
-        console.warn(
+        console.log(
           `\nFailed to optimize a component tree with a root component of "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`
         );
       } else {
-        console.warn(
+        console.log(
           `\nFailed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n${e.stack}\n`
         );
       }

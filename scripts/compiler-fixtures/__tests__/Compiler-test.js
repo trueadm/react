@@ -76,8 +76,7 @@ describe('Compiler', () => {
     await runFixture('fixtures/simple.js');
   });
 
-  // Bug?
-  xit('dynamic-props', async () => {
+  it('dynamic-props', async () => {
     await runFixture('fixtures/dynamic-props.js');
   });
 });

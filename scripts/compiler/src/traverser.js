@@ -1227,7 +1227,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           debugger;
         }
       } else {
-        // console.warn(
+        // console.log(
         //   `Could not find an identifier for "${getNameFromAst(astObject)}.${getNameFromAst(astProperty)}"`
         // );
         return null;
@@ -1525,7 +1525,7 @@ function callFunction(astNode, callee, args, action, scope) {
 
   checkForBailouts(astNode, scope);
   if (functionRef == null) {
-    // console.warn(
+    // console.log(
     //   `Could not find an identifier for function call "${getNameFromAst(callee)}"`
     // );
     const abstractValue = createAbstractValue(false);
