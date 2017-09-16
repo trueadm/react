@@ -95,7 +95,8 @@ function createMockRedux(env) {
 }
 
 function createMockReactRedux(env) {
-  
+  const mockReactRedux = evaluator.createAbstractObject('ReactRedux');
+  return mockReactRedux;
 }
 
 module.exports = {
