@@ -11,7 +11,7 @@
 // Example: remove the first {props.dynamicKey} from the function Fn below and see the change in output
 
 function Fn(props) {
-  return <div>{props.dynamicKey}Hello {props[props.dynamicKey]}</div>;
+  return <div>Hello {props[props.dynamicKey]}</div>;
 }
 
 function App(props) {

@@ -1205,6 +1205,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
 
       if (object !== null) {
         if (astNode.computed === true) {
+          getOrSetValueFromAst(astProperty, subject, action);
           return createAbstractObject();
         }
         if (
