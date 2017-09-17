@@ -174,8 +174,10 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
             const value = propValue.descriptor.value;
             if (value.isIntrinsic()) {
               if (value.intrinsicName.indexOf('$F$') === 0) {
-                memberNode = serializer.convertPrefixPlaceholderToExpression(
-                  value.intrinsicName
+                memberNode = serializer.convertStringToExpressionWithDelimiter(
+                  value.intrinsicName,
+                  '$_$',
+                  3
                 );
               }
             }

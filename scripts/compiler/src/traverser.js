@@ -9,7 +9,7 @@
 "use strict";
 
 const PropTypes = require("./types").Types;
-const t = require('babel-types');
+const t = require("babel-types");
 
 const Actions = {
   ScanTopLevelScope: "ScanTopLevelScope",
@@ -1219,8 +1219,12 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astObject = astNode.object;
       const astProperty = astNode.property;
       const object = getOrSetValueFromAst(astObject, subject, action);
-      if (getNameFromAst(astProperty) === 'bind') {
-        if (object.type === Types.Function || object.type === Types.AbstractFunction || object.type === Types.AbstractValue) {
+      if (getNameFromAst(astProperty) === "bind") {
+        if (
+          object.type === Types.Function ||
+          object.type === Types.AbstractFunction ||
+          object.type === Types.AbstractValue
+        ) {
           object.bound = true;
           return object;
         } else {
@@ -1234,6 +1238,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
           return createAbstractObject();
         }
         if (
+          astProperty.type === "JSXIdentifier" ||
           astProperty.type === "Identifier" ||
           astProperty.type === "MemberExpression"
         ) {
@@ -1280,6 +1285,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     }
     case "NewExpression": {
       const object = getOrSetValueFromAst(astNode.callee, subject, action);
+      if (!object) {
+        debugger;
+      }
       object.accessedAsConstructor = true;
       return object;
     }
@@ -1441,6 +1449,10 @@ function callJSXElement(astNode, action, subject) {
         subject,
         action
       );
+      if (!value) {
+        debugger;
+        getOrSetValueFromAst(astAttribute.argument, subject, action);
+      }
       value.accessedAsSpread = true;
       spreads.push({
         astNode: astAttribute.argument,
@@ -1671,11 +1683,25 @@ function declareClass(node, id, superId, body, action, scope) {
   return theClass;
 }
 
-function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep, search) {
+function dealWithNestedObjectPattern(
+  astObject,
+  astProperty,
+  object,
+  scope,
+  deep,
+  search
+) {
   if (astProperty.type === "ObjectProperty") {
     const astValue = astProperty.value;
 
-    dealWithNestedObjectPattern(astObject, astValue, object, scope, false, search);
+    dealWithNestedObjectPattern(
+      astObject,
+      astValue,
+      object,
+      scope,
+      false,
+      search
+    );
   } else if (astProperty.type === "Identifier") {
     let identifier;
     const name = astProperty.name;
@@ -1683,10 +1709,16 @@ function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep
       if (object.type === Types.Object) {
         identifier = object.properties.get(name);
       } else {
-        identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty));
+        identifier = createAbstractValue(
+          false,
+          t.memberExpression(astObject, astProperty)
+        );
       }
     } else {
-      identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty));
+      identifier = createAbstractValue(
+        false,
+        t.memberExpression(astObject, astProperty)
+      );
     }
     if (deep === false) {
       assign(object, "accessors", name, identifier);
@@ -1718,7 +1750,7 @@ function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep
         search
       );
     }
-  } else if (astProperty.type === 'AssignmentPattern') {
+  } else if (astProperty.type === "AssignmentPattern") {
     // TODO: this needs more work
     let identifier;
     const name = astProperty.left.name;
@@ -1726,10 +1758,16 @@ function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep
       if (object.type === Types.Object) {
         identifier = object.properties.get(name);
       } else {
-        identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty.left));
+        identifier = createAbstractValue(
+          false,
+          t.memberExpression(astObject, astProperty.left)
+        );
       }
     } else {
-      identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty.left));
+      identifier = createAbstractValue(
+        false,
+        t.memberExpression(astObject, astProperty.left)
+      );
     }
     if (deep === false) {
       assign(object, "accessors", name, identifier);
@@ -1852,5 +1890,5 @@ module.exports = {
   traverse,
   getOrSetValueFromAst,
   getNameFromAst,
-  handleMultipleValues,
+  handleMultipleValues
 };

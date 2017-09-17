@@ -48,15 +48,7 @@ async function compileSource(result) {
     moduleScope
   );
 
-  const transformedCode = babel.transformFromAst(ast, {
-    presets: [],
-    plugins: [
-      // this doesn't seem to do DCE on JSX :(
-      // ['minify-dead-code-elimination', {"optimizeRawSize": true}]
-    ],
-  }).code;
-
-  return transformedCode;
+  return babel.transformFromAst(ast).code;
 }
 
 module.exports = {

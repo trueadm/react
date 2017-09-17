@@ -20,6 +20,7 @@ const {
 } = require('prepack/lib/values');
 const t = require('babel-types');
 const evaluator = require('./evaluator');
+const traverser = require('./traverser');
 
 function getFunctionReferenceName(functionValue) {
   let name = null;
@@ -253,8 +254,8 @@ function toIdentififer(string) {
   return t.identifier(string);
 }
 
-function convertPrefixPlaceholderToExpression(placeholder) {
-  const parts = placeholder.substr(3).split('$_$');
+function convertStringToExpressionWithDelimiter(placeholder, delimiter, startPosition) {
+  const parts = placeholder.substr(startPosition).split(delimiter);
   let astNode = null;
   while (parts.length > 0) {
     if (parts.length === 1) {
@@ -313,7 +314,7 @@ function convertValueToExpression(value, rootConfig) {
         }
       }
       if (intrinsicName.indexOf('$F$') === 0) {
-        return convertPrefixPlaceholderToExpression(intrinsicName);
+        return convertStringToExpressionWithDelimiter(intrinsicName, '$_$', 3);
       }
       if (
         rootConfig.useClassComponent === false &&
@@ -328,7 +329,11 @@ function convertValueToExpression(value, rootConfig) {
     return value.buildNode(serializedArgs);
   }
   if (value.isIntrinsic()) {
-    return t.identifier(value.intrinsicName);
+    if (value.intrinsicName.indexOf('.') === -1) {
+      return t.identifier(value.intrinsicName);
+    } else {
+      return convertStringToExpressionWithDelimiter(value.intrinsicName, '.', 0);
+    }
   }
   if (value instanceof FunctionValue) {
     // TODO: Get a proper reference from a lexical map of names instead.
@@ -389,6 +394,38 @@ function createClassConstructorBody(rootConfig) {
   return t.blockStatement(bodyBlock);
 }
 
+function removeDeadCodeFromClassAst(classAst, parentScope) {
+  const scope = traverser.createScope();
+  scope.parentScope = parentScope;
+  scope.func = {};
+  traverser.traverse(classAst, traverser.Actions.ScanTopLevelScope, scope);
+  scope.deferredScopes.forEach(deferredScope => deferredScope.scopeFunc());
+  const astBody = classAst.body.body;
+  Array.from(classAst.class.methods.values()).forEach(method => {
+    const name = method.name;
+    if (
+      name !== 'render' &&
+      name !== 'constructor' &&
+      name !== 'componentWillMount' &&
+      name !== 'componentDidMount' &&
+      name !== 'componentWillUpdate' &&
+      name !== 'componentDidUpdate' &&
+      name !== 'componentWillUnmount' &&
+      name !== 'shouldComponentUpdate' &&
+      name !== 'componentWillReceiveProps' &&
+      name !== 'componentDidCatch'
+    ) {
+      if (method.callSites.length === 0) {
+        const indexToRemove = astBody.indexOf(method.astNode);
+        if (indexToRemove !== -1) {
+          astBody.splice(indexToRemove, 1);
+        }
+      }
+    }
+  });
+  return classAst;
+}
+
 function serializeEvaluatedFunction(
   functionValue,
   args,
@@ -428,13 +465,19 @@ function serializeEvaluatedFunction(
       // put in the optimized render method
       t.classMethod('method', t.identifier('render'), [], renderBody)
     );
-    return t.classDeclaration(
+    let scope;
+    if (functionValue.class !== undefined) {
+      scope = functionValue.class.scope;
+    } else if (functionValue.func !== undefined) {
+      scope = functionValue.func.scope;
+    }
+    // DCE
+    return removeDeadCodeFromClassAst(t.classDeclaration(
       t.identifier(name),
       t.memberExpression(t.identifier('React'), t.identifier('Component')),
       t.classBody(classBody),
       []
-    );
-    // TODO: do a full run through of the "processed AST" at this point and DCE properties/methods?
+    ), scope);
   }
   return t.functionDeclaration(t.identifier(name), params, renderBody);
 }
@@ -443,4 +486,4 @@ exports.convertValueToExpression = convertValueToExpression;
 
 exports.serializeEvaluatedFunction = serializeEvaluatedFunction;
 
-exports.convertPrefixPlaceholderToExpression = convertPrefixPlaceholderToExpression;
+exports.convertStringToExpressionWithDelimiter = convertStringToExpressionWithDelimiter;
