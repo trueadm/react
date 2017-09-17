@@ -127,6 +127,7 @@ function evaluateJSXValue(value, strictCode, env, realm) {
     case 'JSXElement':
       return GetValue(realm, env.evaluate(value, strictCode));
     default:
+    debugger;
       throw new Error('Unkonw JSX value type: ' + value.type);
   }
 }

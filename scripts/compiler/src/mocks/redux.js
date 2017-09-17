@@ -3,7 +3,7 @@
 const babylon = require('babylon');
 
 const reduxCreateStoreCode = `
-function createStore(reducer, preloadedState, enhancer) {
+function (reducer, preloadedState, enhancer) {
 	const funcToString = Function.prototype.toString
 	const hasOwnProperty = Object.prototype.hasOwnProperty
 	const objectCtorString = funcToString.call(Object)

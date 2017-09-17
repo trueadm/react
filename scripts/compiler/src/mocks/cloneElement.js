@@ -11,7 +11,7 @@
 const babylon = require('babylon');
 
 const cloneElementCode = `
-function cloneElement(element, config, children) {
+function (element, config, children) {
   var RESERVED_PROPS = {
     key: true,
     ref: true,

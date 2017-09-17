@@ -6,24 +6,25 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-'use strict';
+"use strict";
 
-const t = require('babel-types');
-const evaluator = require('./evaluator');
-const fs = require('fs');
-const babylon = require('babylon');
-const traverser = require('./traverser');
-const mocks = require('./mocks');
+const t = require("babel-types");
+const evaluator = require("./evaluator");
+const fs = require("fs");
+const babylon = require("babylon");
+const traverser = require("./traverser");
+const mocks = require("./mocks");
 const {
   convertAccessorsToNestedObject,
   convertNestedObjectToAst,
   setAbstractPropsUsingNestedObject,
- } = require('./types');
+} = require("./types");
 
 const blacklist = {
   Array: true,
   Object: true,
   Promise: true,
+  Math: true,
   Date: true,
   Error: true,
   String: true,
@@ -33,10 +34,21 @@ const blacklist = {
   Function: true,
   Boolean: true,
   eval: true,
+  uneval: true,
+  decodeURI: true,
+  encodeURI: true,
+  decodeURIComponent: true,
+  encodeURIComponent: true,
   console: true,
+  performance: true,
+  debugger: true,
+  isNaN: true,
+  isFinite: true,
   parseInt: true,
   parseFloat: true,
   document: true,
+  Element: true,
+  Node: true
 };
 
 function setupPrepackEnvironment(moduleEnv, declarations) {
@@ -53,29 +65,13 @@ function setupPrepackEnvironment(moduleEnv, declarations) {
         const func = declaration.func;
         if (func !== undefined) {
           evaluation.func = declaration.func;
-          // if (evaluation.func.name === 'ReactBlueBarLink') {
-          //   debugger;
-          // }
-          if (func.defaultProps !== null) {
-            try {
-              debugger;
-              evaluation.properties.set(
-                'defaultProps',
-                moduleEnv.eval(theClass.defaultProps.astNode)
-              );
-            } catch (e) {
-              // TODO: what do we do in this case?
-              debugger;
-            }
-          } else {
-            // TODO: I'm nto sure this is helping or actually doing anything, need to explore more
-            // it was many used to stop cloneElement bail outs, but I've commented out copying of defaultProps out of cloneElement for now
-            // which isn't right
-            evaluation.properties.set(
-              'defaultProps',
-              evaluator.createAbstractObject('defaultProps')
-            );
-          }
+          // TODO: I'm nto sure this is helping or actually doing anything, need to explore more
+          // it was many used to stop cloneElement bail outs, but I've commented out copying of defaultProps out of cloneElement for now
+          // which isn't right
+          evaluation.properties.set(
+            "defaultProps",
+            evaluator.createAbstractObject("defaultProps")
+          );
         }
         // class component post eval stuff
         const theClass = declaration.class;
@@ -84,9 +80,9 @@ function setupPrepackEnvironment(moduleEnv, declarations) {
           if (theClass.defaultProps !== null) {
             try {
               evaluation.properties
-                .get('prototype')
+                .get("prototype")
                 .descriptor.value.properties.set(
-                  'defaultProps',
+                  "defaultProps",
                   moduleEnv.eval(theClass.defaultProps.astNode)
                 );
             } catch (e) {
@@ -115,17 +111,17 @@ function handleAssignmentValue(
   env
 ) {
   if (assignmentValue === null) {
-    declarations[assignmentKey] = t.identifier('undefined');
-  } else if (typeof assignmentValue === 'string') {
+    declarations[assignmentKey] = t.identifier("undefined");
+  } else if (typeof assignmentValue === "string") {
     declarations[assignmentKey] = t.stringLiteral(assignmentValue);
-  } else if (typeof assignmentValue === 'number') {
+  } else if (typeof assignmentValue === "number") {
     declarations[assignmentKey] = t.numericLiteral(assignmentValue);
-  } else if (typeof assignmentValue === 'boolean') {
+  } else if (typeof assignmentValue === "boolean") {
     declarations[assignmentKey] = t.booleanLiteral(assignmentValue);
   } else if (assignmentValue.type !== undefined) {
     const type = assignmentValue.type;
     switch (type) {
-      case 'Function': {
+      case "Function": {
         const astNode = assignmentValue.astNode;
         if (astNode === null) {
           // some mystery here, so return abstract unknown
@@ -137,18 +133,18 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'Class': {
+      case "Class": {
         let astNode = assignmentValue.astNode;
         // TODO:
         // if the astNode is a ClassDecleration, we need to make the astNode
         // a ClassExpression for Prepack to play ball with it
-        if (astNode.type === 'ClassDeclaration') {
-          astNode.type = 'ClassExpression';
+        if (astNode.type === "ClassDeclaration") {
+          astNode.type = "ClassExpression";
         }
         declarations[assignmentKey] = astNode;
         break;
       }
-      case 'FunctionCall': {
+      case "FunctionCall": {
         if (assignmentValue.accessedAsConstructor === true) {
           declarations[assignmentKey] = evaluator.createAbstractFunction(
             assignmentKey
@@ -156,12 +152,12 @@ function handleAssignmentValue(
           break;
         }
         const identifier = assignmentValue.identifier;
-        if (identifier.type === 'AbstractFunction') {
+        if (identifier.type === "AbstractFunction") {
           if (identifier.name) {
             // for requires, we can try and guess an abstract shape to help prepack
             // we do this by using the accessors (all the references to properties in the scope)
             // we can use our type conversion to work out the shape, conver to AST, then add values
-            if (identifier.name === 'require') {
+            if (identifier.name === "require") {
               const accessors = assignmentValue.accessors;
 
               if (accessors !== undefined && accessors.size > 0) {
@@ -171,9 +167,9 @@ function handleAssignmentValue(
                   true
                 );
                 // small hack to make fbt better
-                if (assignmentKey === 'fbt') {
-                  estimatedShape._ = 'func_isRequired';
-                  estimatedShape.param = 'func_isRequired';
+                if (assignmentKey === "fbt") {
+                  estimatedShape._ = "func_isRequired";
+                  estimatedShape.param = "func_isRequired";
                 }
                 const estimatedShapeAst = convertNestedObjectToAst(
                   estimatedShape
@@ -190,6 +186,10 @@ function handleAssignmentValue(
                 break;
               }
             }
+            if (assignmentValue.astNode != null && identifier.name !== 'require') {
+              declarations[assignmentKey] = assignmentValue.astNode;
+              break;
+            }
             console.log(
               `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
             );
@@ -202,7 +202,7 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          if (assignmentValue.identifier.type !== 'AbstractValue') {
+          if (assignmentValue.identifier.type !== "AbstractValue") {
             declarations[assignmentKey] = assignmentValue.astNode;
           } else {
             declarations[assignmentKey] = evaluator.createAbstractFunction(
@@ -212,21 +212,21 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'Undefined': {
-        declarations[assignmentKey] = t.identifier('undefined');
+      case "Undefined": {
+        declarations[assignmentKey] = t.identifier("undefined");
         break;
       }
-      case 'Null': {
+      case "Null": {
         declarations[assignmentKey] = t.nullLiteral();
         break;
       }
-      case 'AbstractObject': {
+      case "AbstractObject": {
         declarations[assignmentKey] = evaluator.createAbstractObject(
           assignmentKey
         );
         break;
       }
-      case 'AbstractValue': {
+      case "AbstractValue": {
         if (assignmentValue.astNode != null) {
           declarations[assignmentKey] = assignmentValue.astNode;
         } else {
@@ -236,19 +236,19 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'AbstractObjectOrUndefined': {
+      case "AbstractObjectOrUndefined": {
         declarations[assignmentKey] = evaluator.createAbstractObjectOrUndefined(
           assignmentKey
         );
         break;
       }
-      case 'AbstractFunction': {
+      case "AbstractFunction": {
         declarations[assignmentKey] = evaluator.createAbstractFunction(
           assignmentKey
         );
         break;
       }
-      case 'Object': {
+      case "Object": {
         const astNode = assignmentValue.astNode;
         if (astNode !== null) {
           declarations[assignmentKey] = astNode;
@@ -259,11 +259,11 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'SequenceExpression':
-      case 'UnaryExpression':
-      case 'LogicExpression':
-      case 'ConditionalExpression':
-      case 'MathExpression': {
+      case "SequenceExpression":
+      case "UnaryExpression":
+      case "LogicExpression":
+      case "ConditionalExpression":
+      case "MathExpression": {
         if (assignmentValue.astNode !== null) {
           declarations[assignmentKey] = assignmentValue.astNode;
         } else {
@@ -273,7 +273,7 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'Array': {
+      case "Array": {
         if (assignmentValue.astNode !== null) {
           declarations[assignmentKey] = assignmentValue.astNode;
         } else {
@@ -283,7 +283,7 @@ function handleAssignmentValue(
         }
         break;
       }
-      case 'JSXElement': {
+      case "JSXElement": {
         if (assignmentValue.astNode !== null) {
           declarations[assignmentKey] = assignmentValue.astNode;
         } else {
@@ -319,31 +319,30 @@ function createPrepackMetadata(moduleScope) {
   const env = new evaluator.ModuleEnvironment();
 
   assignmentKeys.forEach(assignmentKey => {
-
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
     if (blacklist[assignmentKey] === true) {
       // NO-OP
-    } else if (assignmentKey === 'React') {
+    } else if (assignmentKey === "React") {
       declarations.React = mocks.createMockReact(env);
-    } else if (assignmentKey === 'Redux') {
+    } else if (assignmentKey === "Redux") {
       declarations.Redux = mocks.createMockRedux(env);
-    } else if (assignmentKey === 'ReactRedux') {
+    } else if (assignmentKey === "ReactRedux") {
       declarations.ReactRedux = mocks.createMockReactRedux(env);
-    } else if (assignmentKey === 'window') {
+    } else if (assignmentKey === "window") {
       declarations.window = mocks.createMockWindow();
-    } else if (assignmentKey === 'ix' || assignmentKey === 'cx') {
+    } else if (assignmentKey === "ix" || assignmentKey === "cx") {
       declarations[assignmentKey] = evaluator.createAbstractFunction(
         assignmentKey
       );
-    } else if (assignmentKey === 'JSResource') {
-      declarations.JSResource = evaluator.createAbstractFunction('JSResource');
+    } else if (assignmentKey === "JSResource") {
+      declarations.JSResource = evaluator.createAbstractFunction("JSResource");
     } else if (
-      assignmentKey === 'require' &&
+      assignmentKey === "require" &&
       moduleScope.parentScope === null
     ) {
-      declarations.require = evaluator.createAbstractFunction('require');
-    } else if (assignmentKey === 'module' && moduleScope.parentScope === null) {
-      const exportValues = assignmentValue.properties.get('exports');
+      declarations.require = evaluator.createAbstractFunction("require");
+    } else if (assignmentKey === "module" && moduleScope.parentScope === null) {
+      const exportValues = assignmentValue.properties.get("exports");
 
       if (exportValues.length === 0) {
         throw new Error('Entry file does not contain a valid "module.exports"');
@@ -373,19 +372,19 @@ function createPrepackMetadata(moduleScope) {
   setupPrepackEnvironment(env, declarations);
   return {
     defaultExport: defaultExport,
-    env: env,
+    env: env
   };
 }
 
 function setupBundle(destinationBundlePath) {
-  const source = fs.readFileSync(destinationBundlePath, 'utf8');
+  const source = fs.readFileSync(destinationBundlePath, "utf8");
   return setupSource(source, destinationBundlePath);
 }
 
 function setupSource(source, destinationBundlePath) {
   const ast = babylon.parse(source, {
     filename: destinationBundlePath,
-    plugins: ['jsx', 'flow'],
+    plugins: ["jsx", "flow"]
   });
   const moduleScope = traverser.createModuleScope();
   traverser.traverse(
@@ -393,16 +392,17 @@ function setupSource(source, destinationBundlePath) {
     traverser.Actions.ScanTopLevelScope,
     moduleScope
   );
+  mocks.scanMocks(moduleScope);
 
   return Promise.resolve({
     ast: ast,
     prepackMetadata: createPrepackMetadata(moduleScope),
     destinationBundlePath: destinationBundlePath,
-    moduleScope,
+    moduleScope
   });
 }
 
 module.exports = {
   setupBundle,
-  setupSource,
+  setupSource
 };

@@ -14,6 +14,7 @@ const cloneElementMock = require('./mocks/cloneElement');
 const reactChildrenMock = require('./mocks/reactChildren');
 const reduxMock = require('./mocks/redux');
 const reactReduxMock = require('./mocks/reactRedux');
+const traverser = require("./traverser");
 const {
   ObjectCreate,
   CreateDataPropertyOrThrow,
@@ -101,9 +102,16 @@ function createMockReactRedux(env) {
   return mockReactRedux;
 }
 
+function scanMocks(scope) {
+  scope.deferredScopes = [];
+  traverser.traverse(reactReduxMock.reactReduxConnect, traverser.Actions.ScanTopLevelScope, scope);
+  scope.deferredScopes.map(deferredScope => deferredScope.scopeFunc());
+}
+
 module.exports = {
   createMockWindow,
   createMockReact,
   createMockRedux,
   createMockReactRedux,
+  scanMocks,
 };

@@ -153,6 +153,8 @@ function createReactClassInstance(
     theClass = componentType.class;
   } else if (componentType.$ECMAScriptCode.class) {
     theClass = componentType.$ECMAScriptCode.class;
+  } else {
+    debugger;
   }
   // add a rootConfig entry
   const {rootConfigEntry, entryKey} = rootConfig.addEntry(props, theClass);
@@ -225,6 +227,7 @@ function createReactClassInstance(
       if (
         componentPrototype.has(key) &&
         thisObject.properties.has(key) &&
+        thisObject.properties.get(key).callSites !== undefined &&
         thisObject.properties.get(key).callSites.length > 0
       ) {
         // NO-OP

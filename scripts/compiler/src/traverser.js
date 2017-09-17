@@ -920,6 +920,7 @@ function traverse(node, action, scope) {
       traverse(node.argument, action, scope);
       break;
     }
+    case "EmptyStatement":
     case "Super":
     case "RestProperty":
     case "AnyTypeAnnotation":
@@ -960,7 +961,7 @@ function getNameFromAst(astNode) {
     }
     case "NewExpression":
     case "CallExpression": {
-      return `new ${getNameFromAst(astNode.callee)}()`;
+      return getNameFromAst(astNode.callee);
     }
     case "MemberExpression":
     case "JSXMemberExpression": {
@@ -1586,7 +1587,7 @@ function declareVariable(astNode, id, init, action, scope) {
     if (value.func != null) {
       astNode.func = value;
     }
-    if (value.type === "Function") {
+    if (value.type === "Function" || value.type === "Class") {
       value.name = assignKey;
     }
     assign(scope, "assignments", assignKey, value);
@@ -1698,6 +1699,23 @@ function dealWithNestedObjectPattern(astObject, astProperty, object, scope, deep
         search
       );
     }
+  } else if (astProperty.type === 'AssignmentPattern') {
+    // TODO: this needs more work
+    let identifier;
+    const name = astProperty.left.name;
+    if (search === true) {
+      if (object.type === Types.Object) {
+        identifier = object.properties.get(name);
+      } else {
+        identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty.left));
+      }
+    } else {
+      identifier = createAbstractValue(false, t.memberExpression(astObject, astProperty.left));
+    }
+    if (deep === false) {
+      assign(object, "accessors", name, identifier);
+    }
+    assign(scope, "assignments", name, identifier);
   } else {
     debugger;
   }

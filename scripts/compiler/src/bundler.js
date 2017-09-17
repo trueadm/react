@@ -47,11 +47,11 @@ function createBundle(result) {
         noWrap: true,
       }),
     ],
+    onwarn() {},
   };
   if (hasteMap !== null) {
     config.plugins.unshift(alias(hasteMap));
   } else {
-    config.onwarn = function() {};
     babelPlugins.push(
       require('../node_modules/babel-plugin-transform-react-remove-prop-types')
         .default

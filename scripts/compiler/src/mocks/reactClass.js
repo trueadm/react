@@ -3,7 +3,7 @@
 const t = require('babel-types');
 
 module.exports = t.classExpression(
-  t.identifier('component'),
+  null,
   null,
   t.classBody([
     t.classMethod(

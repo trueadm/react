@@ -3,7 +3,7 @@
 const babylon = require('babylon');
 
 const reactReduxConnectCode = `
-function connect(mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
+function (mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 	const funcToString = Function.prototype.toString
 	const hasOwnProperty = Object.prototype.hasOwnProperty
 	const objectCtorString = funcToString.call(Object)
@@ -121,9 +121,6 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 					props = proxy(stateOrDispatch, ownProps)
 				}
 	
-				if (process.env.NODE_ENV !== 'production') 
-					verifyPlainObject(props, displayName, methodName)
-	
 				return props
 			}
 	
@@ -186,9 +183,6 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 				} else {
 					hasRunOnce = true
 					mergedProps = nextMergedProps
-	
-					if (process.env.NODE_ENV !== 'production')
-						verifyPlainObject(mergedProps, displayName, 'mergeProps')
 				}
 	
 				return mergedProps
@@ -229,19 +223,434 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 		areMergedPropsEqual = shallowEqual
 	} = _ref,
 	extraOptions = _objectWithoutProperties(_ref, ['pure', 'areStatesEqual', 'areOwnPropsEqual', 'areStatePropsEqual', 'areMergedPropsEqual']);
+	function pureFinalPropsSelectorFactory(
+		mapStateToProps,
+		mapDispatchToProps,
+		mergeProps,
+		dispatch,
+		{ areStatesEqual, areOwnPropsEqual, areStatePropsEqual }
+	) {
+		let hasRunAtLeastOnce = false
+		let state
+		let ownProps
+		let stateProps
+		let dispatchProps
+		let mergedProps
+	
+		function handleFirstCall(firstState, firstOwnProps) {
+			state = firstState
+			ownProps = firstOwnProps
+			stateProps = mapStateToProps(state, ownProps)
+			dispatchProps = mapDispatchToProps(dispatch, ownProps)
+			mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+			hasRunAtLeastOnce = true
+			return mergedProps
+		}
+	
+		function handleNewPropsAndNewState() {
+			stateProps = mapStateToProps(state, ownProps)
+	
+			if (mapDispatchToProps.dependsOnOwnProps)
+				dispatchProps = mapDispatchToProps(dispatch, ownProps)
+	
+			mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+			return mergedProps
+		}
+	
+		function handleNewProps() {
+			if (mapStateToProps.dependsOnOwnProps)
+				stateProps = mapStateToProps(state, ownProps)
+	
+			if (mapDispatchToProps.dependsOnOwnProps)
+				dispatchProps = mapDispatchToProps(dispatch, ownProps)
+	
+			mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+			return mergedProps
+		}
+	
+		function handleNewState() {
+			const nextStateProps = mapStateToProps(state, ownProps)
+			const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
+			stateProps = nextStateProps
+			
+			if (statePropsChanged)
+				mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+	
+			return mergedProps
+		}
+	
+		function handleSubsequentCalls(nextState, nextOwnProps) {
+			const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps)
+			const stateChanged = !areStatesEqual(nextState, state)
+			state = nextState
+			ownProps = nextOwnProps
+	
+			if (propsChanged && stateChanged) return handleNewPropsAndNewState()
+			if (propsChanged) return handleNewProps()
+			if (stateChanged) return handleNewState()
+			return mergedProps
+		}
+	
+		return function pureFinalPropsSelector(nextState, nextOwnProps) {
+			return hasRunAtLeastOnce
+				? handleSubsequentCalls(nextState, nextOwnProps)
+				: handleFirstCall(nextState, nextOwnProps)
+		}
+	}
+	function impureFinalPropsSelectorFactory(
+		mapStateToProps,
+		mapDispatchToProps,
+		mergeProps,
+		dispatch
+	) {
+		return function impureFinalPropsSelector(state, ownProps) {
+			return mergeProps(
+				mapStateToProps(state, ownProps),
+				mapDispatchToProps(dispatch, ownProps),
+				ownProps
+			)
+		}
+	}
+	function selectorFactory(dispatch, _ref) {
+		var {
+			initMapStateToProps,
+			initMapDispatchToProps,
+			initMergeProps
+		} = _ref,
+				options = _objectWithoutProperties(_ref, ['initMapStateToProps', 'initMapDispatchToProps', 'initMergeProps']);
+	
+		const mapStateToProps = initMapStateToProps(dispatch, options);
+		const mapDispatchToProps = initMapDispatchToProps(dispatch, options);
+		const mergeProps = initMergeProps(dispatch, options);
+	
+		const selectorFactory = options.pure ? pureFinalPropsSelectorFactory : impureFinalPropsSelectorFactory;
+	
+		return selectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, options);
+	}
+	var defineProperty = Object.defineProperty;
+	var getOwnPropertyNames = Object.getOwnPropertyNames;
+	var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+	var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+	var getPrototypeOf = Object.getPrototypeOf;
+	var objectPrototype = getPrototypeOf && getPrototypeOf(Object);
+	var REACT_STATICS = {
+			childContextTypes: true,
+			contextTypes: true,
+			defaultProps: true,
+			displayName: true,
+			getDefaultProps: true,
+			mixins: true,
+			propTypes: true,
+			type: true
+	};
+
+	var KNOWN_STATICS = {
+		name: true,
+		length: true,
+		prototype: true,
+		caller: true,
+		callee: true,
+		arguments: true,
+		arity: true
+	};
+	function hoistStatics(targetComponent, sourceComponent, blacklist) {
+    if (typeof sourceComponent !== 'string') { // don't hoist over string (html) components
+
+        if (objectPrototype) {
+            var inheritedComponent = getPrototypeOf(sourceComponent);
+            if (inheritedComponent && inheritedComponent !== objectPrototype) {
+							hoistStatics(targetComponent, inheritedComponent, blacklist);
+            }
+        }
+
+        var keys = getOwnPropertyNames(sourceComponent);
+
+        if (getOwnPropertySymbols) {
+            keys = keys.concat(getOwnPropertySymbols(sourceComponent));
+        }
+
+        for (var i = 0; i < keys.length; ++i) {
+            var key = keys[i];
+            if (!REACT_STATICS[key] && !KNOWN_STATICS[key] && (!blacklist || !blacklist[key])) {
+                var descriptor = getOwnPropertyDescriptor(sourceComponent, key);
+                try { // Avoid failures from read-only properties
+                    defineProperty(targetComponent, key, descriptor);
+                } catch (e) {}
+            }
+        }
+
+        return targetComponent;
+    }
+
+    return targetComponent;
+};
+	var dummyState = {}
+	function noop() {}
+	function makeSelectorStateful(sourceSelector, store) {
+		const selector = {
+			run: function runComponentSelector(props) {
+				try {
+					const nextProps = sourceSelector(store.getState(), props)
+					if (nextProps !== selector.props || selector.error) {
+						selector.shouldComponentUpdate = true
+						selector.props = nextProps
+						selector.error = null
+					}
+				} catch (error) {
+					selector.shouldComponentUpdate = true
+					selector.error = error
+				}
+			}
+		}
+	
+		return selector
+	}
+	var CLEARED = null
+	var nullListeners = { notify() {} }
+	function createListenerCollection() {
+		// the current/next pattern is copied from redux's createStore code.
+		// TODO: refactor+expose that code to be reusable here?
+		let current = []
+		let next = []
+	
+		return {
+			clear() {
+				next = CLEARED
+				current = CLEARED
+			},
+	
+			notify() {
+				const listeners = current = next
+				for (let i = 0; i < listeners.length; i++) {
+					listeners[i]()
+				}
+			},
+	
+			get() {
+				return next
+			},
+	
+			subscribe(listener) {
+				let isSubscribed = true
+				if (next === current) next = current.slice()
+				next.push(listener)
+	
+				return function unsubscribe() {
+					if (!isSubscribed || current === CLEARED) return
+					isSubscribed = false
+	
+					if (next === current) next = current.slice()
+					next.splice(next.indexOf(listener), 1)
+				}
+			}
+		}
+	}
+	var Subscription = class {
+		constructor(store, parentSub, onStateChange) {
+			this.store = store
+			this.parentSub = parentSub
+			this.onStateChange = onStateChange
+			this.unsubscribe = null
+			this.listeners = nullListeners
+		}
+	
+		addNestedSub(listener) {
+			this.trySubscribe()
+			return this.listeners.subscribe(listener)
+		}
+	
+		notifyNestedSubs() {
+			this.listeners.notify()
+		}
+	
+		isSubscribed() {
+			return Boolean(this.unsubscribe)
+		}
+	
+		trySubscribe() {
+			if (!this.unsubscribe) {
+				this.unsubscribe = this.parentSub
+					? this.parentSub.addNestedSub(this.onStateChange)
+					: this.store.subscribe(this.onStateChange)
+	 
+				this.listeners = createListenerCollection()
+			}
+		}
+	
+		tryUnsubscribe() {
+			if (this.unsubscribe) {
+				this.unsubscribe()
+				this.unsubscribe = null
+				this.listeners.clear()
+				this.listeners = nullListeners
+			}
+		}
+	}
+	function connectHOC(
+		selectorFactory,
+		_ref = {}) {
+			var {
+				getDisplayName = name => \`ConnectAdvanced(\${name})\`,
+				methodName = 'connectAdvanced',
+				renderCountProp = undefined,
+				shouldHandleStateChanges = true,
+				storeKey = 'store',
+				withRef = false
+			} = _ref,
+			connectOptions = _objectWithoutProperties(_ref, ['getDisplayName', 'methodName', 'renderCountProp', 'shouldHandleStateChanges', 'storeKey', 'withRef']);
+		
+			var subscriptionKey = storeKey + 'Subscription';
+		
+			return function wrapWithConnect(WrappedComponent) {
+
+				var wrappedComponentName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
+		
+				var displayName = getDisplayName(wrappedComponentName);
+		
+				var selectorFactoryOptions = _extends({}, connectOptions, {
+					getDisplayName,
+					methodName,
+					renderCountProp,
+					shouldHandleStateChanges,
+					storeKey,
+					withRef,
+					displayName,
+					wrappedComponentName,
+					WrappedComponent
+				});
+		
+				var Connect = class extends React.Component {
+					constructor(props, context) {
+						super(props, context);
+						this.state = {};
+						this.renderCount = 0;
+						this.store = props[storeKey] || context[storeKey];
+						this.propsMode = Boolean(props[storeKey]);
+						this.setWrappedInstance = this.setWrappedInstance.bind(this);
+						this.initSelector();
+						this.initSubscription();
+					}
+		
+					getChildContext() {
+						const subscription = this.propsMode ? null : this.subscription;
+						return { [subscriptionKey]: subscription || this.context[subscriptionKey] };
+					}
+		
+					componentDidMount() {
+						if (!shouldHandleStateChanges) return;
+						this.subscription.trySubscribe();
+						this.selector.run(this.props);
+						if (this.selector.shouldComponentUpdate) this.forceUpdate();
+					}
+		
+					componentWillReceiveProps(nextProps) {
+						this.selector.run(nextProps);
+					}
+		
+					shouldComponentUpdate() {
+						return this.selector.shouldComponentUpdate;
+					}
+		
+					componentWillUnmount() {
+						if (this.subscription) this.subscription.tryUnsubscribe();
+						this.subscription = null;
+						this.notifyNestedSubs = noop;
+						this.store = null;
+						this.selector.run = noop;
+						this.selector.shouldComponentUpdate = false;
+					}
+		
+					getWrappedInstance() {
+						return this.wrappedInstance;
+					}
+		
+					setWrappedInstance(ref) {
+						this.wrappedInstance = ref;
+					}
+		
+					initSelector() {
+						const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions);
+						this.selector = makeSelectorStateful(sourceSelector, this.store);
+						this.selector.run(this.props);
+					}
+		
+					initSubscription() {
+						if (!shouldHandleStateChanges) return;
+						const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey];
+						this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this));
+						this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription);
+					}
+		
+					onStateChange() {
+						this.selector.run(this.props);
+		
+						if (!this.selector.shouldComponentUpdate) {
+							this.notifyNestedSubs();
+						} else {
+							this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate;
+							this.setState({dummyState});
+						}
+					}
+		
+					notifyNestedSubsOnComponentDidUpdate() {
+						this.componentDidUpdate = undefined;
+						this.notifyNestedSubs();
+					}
+		
+					isSubscribed() {
+						return Boolean(this.subscription) && this.subscription.isSubscribed();
+					}
+		
+					addExtraProps(props) {
+						const withExtras = _extends({}, props);
+						if (withRef) withExtras.ref = this.setWrappedInstance;
+						if (renderCountProp) withExtras[renderCountProp] = this.renderCount++;
+						if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription;
+						return withExtras;
+					}
+		
+					render() {
+						const selector = this.selector;
+						selector.shouldComponentUpdate = false;
+		
+						if (selector.error) {
+							throw selector.error;
+						} else {
+							return <WrappedComponent {...this.addExtraProps(selector.props)} />;
+						}
+					}
+				}
+		
+				Connect.WrappedComponent = WrappedComponent;
+				Connect.displayName = displayName;
+		
+				return Connect;
+			};
+		}
 
 	var initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories, 'mapStateToProps');
 	var initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories, 'mapDispatchToProps');
 	var initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps');
 
-	return function(Component) {
-		return Component;
-	}
+	return connectHOC(selectorFactory, _extends({
+		methodName: 'connect',
+		getDisplayName: name => \`Connect(\${name})\`,
+		shouldHandleStateChanges: Boolean(mapStateToProps),
+		initMapStateToProps,
+		initMapDispatchToProps,
+		initMergeProps,
+		pure,
+		areStatesEqual,
+		areOwnPropsEqual,
+		areStatePropsEqual,
+		areMergedPropsEqual
+
+	}, extraOptions));
 }
 `;
 
 const reactReduxConnect = babylon.parseExpression(reactReduxConnectCode, {
-  plugins: ['flow'],
+  plugins: ['flow', 'jsx'],
 });
 
 module.exports = {
