@@ -26,6 +26,10 @@ async function compileBundle(result) {
   });
 }
 
+function removeDeadCode(code) {
+  return code;
+}
+
 async function compileSource(result) {
   const prepackMetadata = result.prepackMetadata;
   const defaultExportComponent = prepackMetadata.defaultExport.astNode;
@@ -48,7 +52,8 @@ async function compileSource(result) {
     moduleScope
   );
 
-  return babel.transformFromAst(ast).code;
+  const code = babel.transformFromAst(ast).code;
+  return removeDeadCode(code);
 }
 
 module.exports = {
