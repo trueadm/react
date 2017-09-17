@@ -44,7 +44,13 @@ module.exports = t.classExpression(
           )
         ),
       ])
-    ),
+		),
+		t.classMethod(
+			'method',
+			t.identifier('getChildContext'),
+			[],
+			t.blockStatement([]),
+		),
   ]),
   []
 );

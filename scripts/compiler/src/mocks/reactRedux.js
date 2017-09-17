@@ -613,11 +613,11 @@ function (mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 						const selector = this.selector;
 						selector.shouldComponentUpdate = false;
 		
-						if (selector.error) {
-							throw selector.error;
-						} else {
+						// if (selector.error) {
+						// 	throw selector.error;
+						// } else {
 							return <WrappedComponent {...this.addExtraProps(selector.props)} />;
-						}
+						// }
 					}
 				}
 		

@@ -299,7 +299,7 @@ class RootConfig {
           if (
             methods.has(name) &&
             thisObject.properties.has(name) &&
-            thisObject.properties.get(name).callSites.length > 0
+            traverser.handleMultipleValues(thisObject.properties.get(name)).callSites.length > 0
           ) {
             // strip out render methods entirely
             if (name.startsWith('_render') || name.startsWith('render')) {

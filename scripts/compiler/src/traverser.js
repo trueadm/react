@@ -165,6 +165,7 @@ function createAbstractValue(crossModule, astNode) {
     accessedAsSpreadProps: new Map(),
     accessors: new Map(),
     action: null,
+    bound: false,
     astNode,
     crossModule,
     type: Types.AbstractValue
@@ -174,6 +175,7 @@ function createAbstractValue(crossModule, astNode) {
 function createAbstractFunction(name) {
   return {
     action: null,
+    bound: false,
     callSites: [],
     name: name,
     type: Types.AbstractFunction
@@ -186,6 +188,7 @@ function createFunction(name, astNode, scope) {
     astNode: astNode,
     bailOut: false,
     bailOutReason: null,
+    bound: false,
     callSites: [],
     defaultProps: null,
     jsxElementCallSites: [],
@@ -956,6 +959,10 @@ function getNameFromAst(astNode) {
     case "JSXIdentifier": {
       return astNode.name;
     }
+    case "StringLiteral":
+    case "NumericLiteral": {
+      return astNode.value;
+    }
     case "ThisExpression": {
       return "this";
     }
@@ -1212,6 +1219,14 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       const astObject = astNode.object;
       const astProperty = astNode.property;
       const object = getOrSetValueFromAst(astObject, subject, action);
+      if (getNameFromAst(astProperty) === 'bind') {
+        if (object.type === Types.Function || object.type === Types.AbstractFunction || object.type === Types.AbstractValue) {
+          object.bound = true;
+          return object;
+        } else {
+          debugger;
+        }
+      }
 
       if (object !== null) {
         if (astNode.computed === true) {
@@ -1541,16 +1556,20 @@ function callFunction(astNode, callee, args, action, scope) {
     const abstractValue = createAbstractValue(false);
     scope.calls.push(abstractValue);
     return abstractValue;
-  } else if (functionRef.type === Types.Undefined) {
-    throw new Error(
-      `Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
-    );
-  } else if (functionRef.type === Types.Null) {
-    throw new Error(
-      `Could not call an  identifier that is "null" for function call "${getNameFromAst(callee)}"`
-    );
-  } else if (functionRef.type === Types.FunctionCall) {
-    functionRef = createAbstractFunction(getNameFromAst(callee));
+  } else {
+    if (functionRef.bound === true) {
+      return functionRef;
+    } else if (functionRef.type === Types.Undefined) {
+      throw new Error(
+        `Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
+      );
+    } else if (functionRef.type === Types.Null) {
+      throw new Error(
+        `Could not call an  identifier that is "null" for function call "${getNameFromAst(callee)}"`
+      );
+    } else if (functionRef.type === Types.FunctionCall) {
+      functionRef = createAbstractFunction(getNameFromAst(callee));
+    }
   }
   const functionCall = createFunctionCall(functionRef, astNode);
   functionCall.args = args.map(astArgument =>
@@ -1833,4 +1852,5 @@ module.exports = {
   traverse,
   getOrSetValueFromAst,
   getNameFromAst,
+  handleMultipleValues,
 };

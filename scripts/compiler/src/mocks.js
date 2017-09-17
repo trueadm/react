@@ -12,7 +12,6 @@ const evaluator = require('./evaluator');
 const reactClassMock = require('./mocks/reactClass');
 const cloneElementMock = require('./mocks/cloneElement');
 const reactChildrenMock = require('./mocks/reactChildren');
-const reduxMock = require('./mocks/redux');
 const reactReduxMock = require('./mocks/reactRedux');
 const traverser = require("./traverser");
 const {
@@ -92,7 +91,7 @@ function createMockWindow() {
 
 function createMockRedux(env) {
   const mockRedux = evaluator.createAbstractObject('Redux');
-  mockRedux.$SetPartial('createStore', env.eval(reduxMock.reduxCreateStore), mockRedux);
+  mockRedux.$SetPartial('createStore', evaluator.createAbstractFunction('Redux.createStore'), mockRedux);
   return mockRedux;
 }
 
