@@ -624,7 +624,7 @@ function (mapStateToProps, mapDispatchToProps, mergeProps, _ref = {}) {
 				Connect.WrappedComponent = WrappedComponent;
 				Connect.displayName = displayName;
 		
-				return Connect;
+				return hoistStatics(Connect, WrappedComponent)
 			};
 		}
 
