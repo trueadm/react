@@ -434,6 +434,7 @@ function serializeEvaluatedFunction(
       t.classBody(classBody),
       []
     );
+    // TODO: do a full run through of the "processed AST" at this point and DCE properties/methods?
   }
   return t.functionDeclaration(t.identifier(name), params, renderBody);
 }
