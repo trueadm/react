@@ -52,8 +52,7 @@ async function compileSource(result) {
     moduleScope
   );
 
-  const code = babel.transformFromAst(ast).code;
-  return removeDeadCode(code);
+  return removeDeadCode(babel.transformFromAst(ast).code);
 }
 
 module.exports = {

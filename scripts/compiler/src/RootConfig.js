@@ -231,6 +231,8 @@ function cloneAst(astNode) {
     ) {
       // these are all the custom properties we add to AST nodes to help get access to things (monkey-patchy), we want to skip cloninig them when cloining
       newNode[key] = cloneAst(value);
+    } else {
+      newNode[key] = value;
     }
   }
   return newNode;
