@@ -99,11 +99,14 @@ function mergeLifecycleMethod(
     const nextPropsName = lifecycleMethod.params[0].name;
     propsAliases[nextPropsName] = true;
   }
-  lifecycleMethod.body.body.forEach(lifecycleStatement => {
-    lifecycleMethods[name].body.body.push(
-      addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry, rootConfig, propsAliases)
-    );
-  });
+  // we don't merge sCU
+  if (name !== 'shouldComponentUpdate') {
+    lifecycleMethod.body.body.forEach(lifecycleStatement => {
+      lifecycleMethods[name].body.body.push(
+        addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry, rootConfig, propsAliases)
+      );
+    });
+  }
 }
 
 function findFirstMemberNodeOfMemberExpression(node) {
