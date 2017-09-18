@@ -103,13 +103,23 @@ function addKeyToElement(astElement, key) {
 // to static children that won't ever collide
 function applyKeysToNestedArray(expr) {
   const astElements = expr.elements;
-  const randomHashString = Math.random().toString(36).substring(0, 3);
+  const randomHashString = Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3);
 
   for (let i = 0; i < astElements.length; i++) {
     const astElement = astElements[i];
 
     if (astElement.type === 'JSXElement') {
       addKeyToElement(astElement, `.${randomHashString}.${i}`);
+    } else if (astElement.type === 'ArrayExpression') {
+      applyKeysToNestedArray(astElement);
+    } else if (astElement.type === 'ConditionalExpression') {
+      // it's common for conditions to be in an array, which means we need to check them for keys too
+      if (astElement.alternate.type === 'JSXElement') {
+        addKeyToElement(astElement.alternate, `.${randomHashString}.$f.${i}`);
+      }
+      if (astElement.consequent.type === 'JSXElement') {
+        addKeyToElement(astElement.consequent, `.${randomHashString}.$t.${i}`);
+      }
     }
   }
 }
@@ -309,6 +319,10 @@ function convertValueToExpression(value, rootConfig) {
             convertValueToExpression(derivedArgValue, rootConfig)
           );
           if (typeof value._buildNode === 'function') {
+            if (JSON.stringify(value.buildNode(derivedArgs)).indexOf('dataTestID') !== -1) {
+              debugger;
+            }
+            
             return value.buildNode(derivedArgs);
           } else {
             debugger;
@@ -327,6 +341,9 @@ function convertValueToExpression(value, rootConfig) {
         // hack for now
         const node = value.buildNode(serializedArgs);
         node.object = t.identifier('props');
+        if (JSON.stringify(node).indexOf('dataTestID') !== -1) {
+          debugger;
+        }
         return node;
       }
     }

@@ -48,6 +48,14 @@ function (element, config, children) {
     if (config.key !== undefined) {
       key = '' + config.key;
     }
+    for (propName in config) {
+      if (
+        Object.hasOwnProperty.call(config, propName) &&
+        !RESERVED_PROPS.hasOwnProperty(propName)
+      ) {
+        props[propName] = config[propName];
+      }
+    }
   }
 
   // Children can be more than one argument, and those are transferred onto

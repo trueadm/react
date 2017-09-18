@@ -308,6 +308,9 @@ function renderOneLevel(
         `\nFailed to inline component "${componentType.func.name}" due to ${componentType.func.bailOutReason}.`
       );
     }
+    if (componentType.func !== undefined && componentType.func.name === 'ReactBlueBarFlyout') {
+      // debugger;
+    }
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
     if (componentType.$Call !== undefined) {

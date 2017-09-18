@@ -29,6 +29,11 @@ function createMockReact(env) {
     mockReact
   );
   mockReact.$SetPartial('cloneElement', env.eval(cloneElementMock), mockReact);
+  // mockReact.$SetPartial(
+  //   'cloneElement',
+  //   evaluator.createAbstractFunction('React.cloneElement'),
+  //   mockReact
+  // );
   mockReact.$SetPartial(
     'isValidElement',
     evaluator.createAbstractFunction('React.isValidElement'),
