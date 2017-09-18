@@ -103,7 +103,7 @@ function addKeyToElement(astElement, key) {
 // to static children that won't ever collide
 function applyKeysToNestedArray(expr) {
   const astElements = expr.elements;
-  const randomHashString = Math.random().toString(36).substring(5);
+  const randomHashString = Math.random().toString(36).substring(0, 3);
 
   for (let i = 0; i < astElements.length; i++) {
     const astElement = astElements[i];
@@ -288,7 +288,11 @@ function convertValueToExpression(value, rootConfig) {
       alreadyGatheredArgs.set(value, serializedArgs);
       for (let i = 0; i < value.args.length; i++) {
         const abstractArg = value.args[i];
-        serializedArgs.push(convertValueToExpression(abstractArg, rootConfig));
+        const node = convertValueToExpression(abstractArg, rootConfig);
+        if (node.type === 'ArrayExpression') {
+          applyKeysToNestedArray(node);
+        }
+        serializedArgs.push(node);
       }
     } else {
       serializedArgs = alreadyGatheredArgs.get(value);
