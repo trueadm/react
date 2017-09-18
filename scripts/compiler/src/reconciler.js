@@ -114,7 +114,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       name = type.func.name;
     }
     if (!(ref instanceof NullValue)) {
-      console.log(`\nFailed to inline component "${name}" has there was a ref on the ReactElement, this is not supported on components.\n`);
+      console.log(`\nFailed to inline component "${name}" as there was a ref on the ReactElement, this is not supported on components.`);
       return value;
     }
     try {
@@ -127,7 +127,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       );
       if (nextValue === null) {
         console.log(
-          `\nFailed to inline component "${type.intrinsicName}" as the reference wasn't a statically determinable function or class.\n`
+          `\nFailed to inline component "${type.intrinsicName}" as the reference wasn't a statically determinable function or class.`
         );
         return value;
       }
@@ -220,7 +220,7 @@ function createReactClassInstance(
   ) {
     if (isBranched === true) {
       throw new Error(
-        `Failed to inline component "${theClass.name}" due to the component having lifecycle events when inside a branch.`
+        `\nFailed to inline component "${theClass.name}" due to the component having lifecycle events when inside a branch.`
       );
     }
     useClassComponent = true;
