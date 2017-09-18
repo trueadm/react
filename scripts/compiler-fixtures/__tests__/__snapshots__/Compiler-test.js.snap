@@ -2,4 +2,6 @@
 
 exports[`Compiler dynamic-props 1`] = `"Optimized 1 trees"`;
 
+exports[`Compiler return-text 1`] = `"Optimized 1 trees"`;
+
 exports[`Compiler simple 1`] = `"Optimized 1 trees"`;

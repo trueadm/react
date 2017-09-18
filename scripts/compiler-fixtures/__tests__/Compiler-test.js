@@ -75,6 +75,7 @@ describe('Compiler', () => {
   // It appears the the compiler has shared state that breaks test isolation.
   beforeEach(() => {
     jest.resetModules();
+    require('ReactFeatureFlags').disableNewFiberFeatures = false;
     React = require('ReactEntry');
     ReactTestRenderer = require('ReactTestRendererFiberEntry');
     compile = require('../../compiler/index');
@@ -86,6 +87,10 @@ describe('Compiler', () => {
 
   it('dynamic-props', async () => {
     await runFixture('fixtures/dynamic-props.js');
+  });
+
+  it('return-text', async () => {
+    await runFixture('fixtures/return-text.js');
   });
 
   // Difference in behavior. Before compilation, it fails,
