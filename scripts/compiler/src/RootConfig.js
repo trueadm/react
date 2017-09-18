@@ -89,9 +89,15 @@ function mergeLifecycleMethod(
     );
     prototypeProperties.push(lifecycleMethods[name]);
   }
+  // we pass in nextProps, so we need to treat this as a props alias for the properties of this.props
+  let propsAliases = {};
+  if (name === 'componentWillReceiveProps' && lifecycleMethod.params.length > 0) {
+    const nextPropsName = lifecycleMethod.params[0].name;
+    propsAliases[nextPropsName] = true;
+  }
   lifecycleMethod.body.body.forEach(lifecycleStatement => {
     lifecycleMethods[name].body.body.push(
-      addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry, rootConfig)
+      addPrefixesToAstNodes(cloneAst(lifecycleStatement), entry, rootConfig, propsAliases)
     );
   });
 }
@@ -137,7 +143,43 @@ const blacklist = {
   defaultProps: true
 };
 
-function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
+function renamePropsObject(node, firstNode, propsValue, rootConfig) {
+  // we need to replace with correct props
+  const nextNode = getNextMemberNodeOfMemberExpression(node, firstNode);
+  const lastNode = getNextMemberNodeOfMemberExpression(node, nextNode);
+  const memberName = nextNode.name;
+  const propValue = propsValue.properties.get(memberName);
+  let memberNode = null;
+  if (propValue !== undefined) {
+    const value = propValue.descriptor.value;
+    if (value.isIntrinsic()) {
+      if (value.intrinsicName.indexOf("$F$") === 0) {
+        memberNode = serializer.convertStringToExpressionWithDelimiter(
+          value.intrinsicName,
+          "$_$",
+          3
+        );
+      }
+    }
+    if (memberNode === null) {
+      if (typeof value.buildNode !== "function") {
+        if (value instanceof UndefinedValue) {
+          return t.identifier("undefined");
+        }
+      }
+      memberNode = serializer.convertValueToExpression(
+        value,
+        rootConfig
+      );
+    }
+    if (lastNode !== null) {
+      return t.memberExpression(memberNode, lastNode);
+    }
+    return memberNode;
+  }
+}
+
+function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
   const thisAccessors = entry.theClass.thisObject.accessors;
   const prefix = entry.key;
   const propsValue = entry.props;
@@ -171,7 +213,16 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
       }
     },
     MemberExpression(node) {
-      if (node.object.type === "ThisExpression") {
+      if (node.object.type === 'Identifier' && propsAliases[node.object.name]) {
+        // this handles props aliases
+        const newNode = renamePropsObject(node, node.object, propsValue, rootConfig);
+        // we now get back this.props.X.Y.Z, we need to replace this.props with the propAlias
+        let parentNode = findFirstMemberNodeOfMemberExpression(newNode).parentNode.parentNode;
+        // replace this.props -> nextProps or whatever is in propsAliases
+        parentNode.object = node.object;
+        // replace the original node with the new parent node
+        return parentNode;
+      } else if (node.object.type === "ThisExpression") {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
 
@@ -189,42 +240,10 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           property.name = prefix + property.name;
           return true;
         } else if (name === "props") {
-          // we need to replace with correct props
-          const nextNode = getNextMemberNodeOfMemberExpression(node, firstNode);
-          const lastNode = getNextMemberNodeOfMemberExpression(node, nextNode);
-          const memberName = nextNode.name;
-          const propValue = propsValue.properties.get(memberName);
-          let memberNode = null;
-          if (propValue !== undefined) {
-            const value = propValue.descriptor.value;
-            if (value.isIntrinsic()) {
-              if (value.intrinsicName.indexOf("$F$") === 0) {
-                memberNode = serializer.convertStringToExpressionWithDelimiter(
-                  value.intrinsicName,
-                  "$_$",
-                  3
-                );
-              }
-            }
-            if (memberNode === null) {
-              if (typeof value.buildNode !== "function") {
-                if (value instanceof UndefinedValue) {
-                  return t.identifier("undefined");
-                }
-              }
-              memberNode = serializer.convertValueToExpression(
-                value,
-                rootConfig
-              );
-            }
-            if (lastNode !== null) {
-              return t.memberExpression(memberNode, lastNode);
-            }
-            return memberNode;
-          }
+          return renamePropsObject(node, firstNode, propsValue, rootConfig);
         }
       }
-    }
+    },
   };
   traverser.traverse(entryNode, traverser.Actions.FindAndReplace, scope);
   return entryNode;
@@ -345,7 +364,8 @@ class RootConfig {
               addPrefixesToAstNodes(
                 cloneAst(prototypeProperty.body),
                 entry,
-                this
+                this,
+                {}
               )
             )
           );
@@ -367,7 +387,8 @@ class RootConfig {
         addPrefixesToAstNodes(
           t.blockStatement(constructorProperties),
           entry,
-          this
+          this,
+          {}
         );
         filterConstructorProperties(
           constructorProperties,
@@ -393,7 +414,8 @@ class RootConfig {
               addPrefixesToAstNodes(
                 cloneAst(originalProperty.value),
                 entry,
-                this
+                this,
+                {}
               )
             )
           );
