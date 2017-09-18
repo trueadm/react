@@ -89,6 +89,10 @@ describe('Compiler', () => {
     await runFixture('fixtures/dynamic-props.js');
   });
 
+  it('lifecycle-siblings', async () => {
+    await runFixture('fixtures/lifecycle-siblings.js');
+  });
+
   it('return-text', async () => {
     await runFixture('fixtures/return-text.js');
   });
