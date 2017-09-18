@@ -47,7 +47,7 @@ class B extends React.Component {
     this.props.log.push(`B.componentDidMount(${this.props.arg})`);
   }
   componentWillUpdate(nextProps) {
-    this.props.log.push(`B.componentDidUpdate(${this.props.arg}, ${nextProps.arg})`);
+    this.props.log.push(`B.componentWillUpdate(${this.props.arg}, ${nextProps.arg})`);
   }
   componentDidUpdate(prevProps) {
     this.props.log.push(`B.componentDidUpdate(${prevProps.arg}, ${this.props.arg})`);
