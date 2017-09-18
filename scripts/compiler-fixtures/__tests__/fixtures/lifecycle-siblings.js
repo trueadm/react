@@ -70,15 +70,15 @@ function App(props) {
 }
 
 App.getTrials = function*(renderer, Root) {
-  const firstLog = [];
-  renderer.update(<Root log={firstLog} arg={2} />);
+  const log = [];
+  renderer.update(<Root log={log} arg={2} />);
   yield ['render 20 and 200 (render)', renderer.toJSON()];
-  yield ['render 20 and 200 (log)', firstLog];
+  yield ['render 20 and 200 (log)', log];
 
-  const secondLog = [];
-  renderer.update(<Root log={secondLog} arg={3} />);
+  log.length = 0;
+  renderer.update(<Root log={log} arg={3} />);
   yield ['render 30 and 300 (render)', renderer.toJSON()];
-  yield ['render 30 and 300 (log)', secondLog];
+  yield ['render 30 and 300 (log)', log];
 };
 
 module.exports = App;
