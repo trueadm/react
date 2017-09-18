@@ -1,27 +1,42 @@
 'use strict';
 
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- */
-// Example: remove the first {props.dynamicKey} from the function Fn below and see the change in output
+var React = require('React');
 
-function Fn(props) {
-  return <div>Hello {props[props.dynamicKey]}</div>;
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.props.log.push(`A.ctor(${this.props.arg * 10})`);
+    this.props.log.push(`B.ctor(${this.props.arg * 100})`);
+  }
+
+  componentWillMount() {
+    this.props.log.push(`A.componentWillMount(${this.props.arg * 10})`);this.props.log.push(`B.componentWillMount(${this.props.arg * 100})`);
+  }
+
+  componentDidMount() {
+    this.props.log.push(`A.componentDidMount(${this.props.arg * 10})`);this.props.log.push(`B.componentDidMount(${this.props.arg * 100})`);
+  }
+
+  componentWillUpdate(nextProps) {
+    this.props.log.push(`A.componentDidUpdate(${this.props.arg * 10}, ${nextProps.arg * 10})`);this.props.log.push(`B.componentDidUpdate(${this.props.arg * 100}, ${nextProps.arg * 100})`);
+  }
+
+  componentDidUpdate(prevProps) {
+    this.props.log.push(`A.componentDidUpdate(${prevProps.arg * 10}, ${this.props.arg * 10})`);this.props.log.push(`B.componentDidUpdate(${prevProps.arg * 100}, ${this.props.arg * 100})`);
+  }
+
+  componentWillUnmount() {
+    this.props.log.push(`A.componentWillUnmount(${this.props.arg * 10})`);this.props.log.push(`B.componentWillUnmount(${this.props.arg * 100})`);
+  }
+
+  render() {
+    return <div>
+      {this.props.arg * 10}
+      {this.props.arg * 100}
+    </div>;
+  }
+
 }
-
-function App(props) {
-  return <Fn foo="World" dynamicKey={props.dynamicKey} />;
-}
-
-App.getTrials = function* (renderer, Root) {
-  renderer.update(<Root dynamicKey="foo" />);
-  yield ['render with dynamic prop access', renderer.toJSON()];
-};
 
 var test = App;
 

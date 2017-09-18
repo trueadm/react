@@ -95,7 +95,7 @@ describe('Compiler', () => {
   });
 
   // These look like bugs to me.
-  xit('lifecycle-siblings', async () => {
+  it('lifecycle-siblings', async () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
   xit('lifecycle-children', async () => {

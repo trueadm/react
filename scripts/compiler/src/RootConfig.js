@@ -91,7 +91,11 @@ function mergeLifecycleMethod(
   }
   // we pass in nextProps, so we need to treat this as a props alias for the properties of this.props
   let propsAliases = {};
-  if (name === 'componentWillReceiveProps' && lifecycleMethod.params.length > 0) {
+  if ((
+    name === 'componentWillReceiveProps' ||
+    name === 'componentWillUpdate' ||
+    name === 'componentDidUpdate'
+   ) && lifecycleMethod.params.length > 0) {
     const nextPropsName = lifecycleMethod.params[0].name;
     propsAliases[nextPropsName] = true;
   }
@@ -175,6 +179,7 @@ function renamePropsObject(node, firstNode, propsValue, rootConfig) {
     if (lastNode !== null) {
       return t.memberExpression(memberNode, lastNode);
     }
+    // debugger;
     return memberNode;
   }
 }
@@ -215,13 +220,18 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
     MemberExpression(node) {
       if (node.object.type === 'Identifier' && propsAliases[node.object.name]) {
         // this handles props aliases
-        const newNode = renamePropsObject(node, node.object, propsValue, rootConfig);
+        const newNode = cloneAst(renamePropsObject(node, node.object, propsValue, rootConfig));
         // we now get back this.props.X.Y.Z, we need to replace this.props with the propAlias
-        let parentNode = findFirstMemberNodeOfMemberExpression(newNode).parentNode.parentNode;
-        // replace this.props -> nextProps or whatever is in propsAliases
-        parentNode.object = node.object;
-        // replace the original node with the new parent node
-        return parentNode;
+        const subScope = traverser.createModuleScope();
+        subScope.findAndReplace = {
+          MemberExpression(subNode) {
+            if (subNode.object.type === 'ThisExpression' && subNode.property.type === 'Identifier' && subNode.property.name === 'props') {
+              return node.object;
+            }
+          },
+        };
+        traverser.traverse(newNode, traverser.Actions.FindAndReplace, subScope);
+        return newNode;
       } else if (node.object.type === "ThisExpression") {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);

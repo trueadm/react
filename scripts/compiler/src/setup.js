@@ -323,11 +323,11 @@ function createPrepackMetadata(moduleScope) {
     const assignmentValue = moduleScope.assignments.get(assignmentKey);
     if (blacklist[assignmentKey] === true) {
       // NO-OP
-    } else if (assignmentKey === "React") {
+    } else if (assignmentKey === "React" || assignmentKey === "react") {
       declarations.React = mocks.createMockReact(env);
-    } else if (assignmentKey === "Redux") {
+    } else if (assignmentKey === "Redux" || assignmentKey === "redux") {
       declarations.Redux = mocks.createMockRedux(env);
-    } else if (assignmentKey === "ReactRedux") {
+    } else if (assignmentKey === "ReactRedux" || assignmentKey === "react-redux") {
       declarations.ReactRedux = mocks.createMockReactRedux(env);
     } else if (assignmentKey === "window") {
       declarations.window = mocks.createMockWindow();

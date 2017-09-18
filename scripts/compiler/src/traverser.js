@@ -456,8 +456,14 @@ function traverse(node, action, scope) {
           action
         );
       } else {
-        traverse(node.object, action, scope);
-        traverse(node.property, action, scope);
+        const object = traverse(node.object, action, scope);
+        if (object !== undefined) {
+          node.object = object;
+        }
+        const property = traverse(node.property, action, scope);
+        if (property !== undefined) {
+          node.property = object;
+        }
       }
       break;
     }
@@ -698,7 +704,10 @@ function traverse(node, action, scope) {
       }
       const expressions = node.expressions;
       for (let i = 0; i < expressions.length; i++) {
-        traverse(expressions[i], action, scope);
+        const expression = traverse(expressions[i], action, scope);
+        if (expression !== undefined) {
+          expressions[i] = expression;
+        }
       }
       break;
     }
