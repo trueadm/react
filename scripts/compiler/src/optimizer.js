@@ -128,8 +128,8 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
   return initialProps;
 }
 
-function createRootConfig() {
-  return new RootConfig();
+function createRootConfig(moduleEnv) {
+  return new RootConfig(moduleEnv);
 }
 
 async function optimizeComponentWithPrepack(
@@ -139,7 +139,7 @@ async function optimizeComponentWithPrepack(
   moduleScope
 ) {
   // create an abstract props object
-  const rootConfig = createRootConfig();
+  const rootConfig = createRootConfig(moduleEnv);
   const initialProps = createAbstractPropsObject(
     astComponent.scope,
     astComponent,

@@ -6,14 +6,12 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-'use strict';
+"use strict";
 
-const {
-  UndefinedValue,
-} = require('prepack/lib/values');
-const traverser = require('./traverser');
-const t = require('babel-types');
-const serializer = require('./serializer');
+const { UndefinedValue } = require("prepack/lib/values");
+const traverser = require("./traverser");
+const t = require("babel-types");
+const serializer = require("./serializer");
 
 // this can be done better
 function filterConstructorProperties(object, constructorProperties) {
@@ -23,14 +21,14 @@ function filterConstructorProperties(object, constructorProperties) {
         filterConstructorProperties(child, constructorProperties);
       });
       return;
-    } else if (object.type === 'ExpressionStatement') {
+    } else if (object.type === "ExpressionStatement") {
       const expression = object.expression;
 
       filterConstructorProperties(expression, constructorProperties);
       return;
-    } else if (object.type === 'ReturnStatement') {
+    } else if (object.type === "ReturnStatement") {
       // remove return statements
-      if (object.argument.type === 'SequenceExpression') {
+      if (object.argument.type === "SequenceExpression") {
         filterConstructorProperties(
           object.argument.expressions,
           constructorProperties
@@ -41,32 +39,32 @@ function filterConstructorProperties(object, constructorProperties) {
       return;
     } else if (
       // remove Super(...)
-      object.type === 'CallExpression' &&
-      object.callee.type === 'Super'
+      object.type === "CallExpression" &&
+      object.callee.type === "Super"
     ) {
       return;
-    } else if (object.type === 'AssignmentExpression') {
+    } else if (object.type === "AssignmentExpression") {
       // remove ... = Super(...)
       if (
-        object.right.type === 'CallExpression' &&
-        object.right.callee.type === 'Super'
+        object.right.type === "CallExpression" &&
+        object.right.callee.type === "Super"
       ) {
         return;
       }
       // remove this.state = ...
       if (
-        object.left.type === 'MemberExpression' &&
-        object.left.object.type === 'ThisExpression' &&
-        object.left.property.type === 'Identifier' &&
-        object.left.property.name === 'state'
+        object.left.type === "MemberExpression" &&
+        object.left.object.type === "ThisExpression" &&
+        object.left.property.type === "Identifier" &&
+        object.left.property.name === "state"
       ) {
         return;
       }
-    } else if (object.type === 'Identifier') {
+    } else if (object.type === "Identifier") {
       // NO-OP
       return;
     }
-    if (object.type.indexOf('Expression') !== -1) {
+    if (object.type.indexOf("Expression") !== -1) {
       constructorProperties.push(t.expressionStatement(object));
     } else {
       constructorProperties.push(object);
@@ -99,9 +97,9 @@ function mergeLifecycleMethod(
 }
 
 function findFirstMemberNodeOfMemberExpression(node) {
-  while (node.type !== 'Identifier') {
-    if (node.type === 'MemberExpression') {
-      if (node.object.type === 'ThisExpression') {
+  while (node.type !== "Identifier") {
+    if (node.type === "MemberExpression") {
+      if (node.object.type === "ThisExpression") {
         node.property.parentNode = node;
         node = node.property;
       } else {
@@ -136,7 +134,7 @@ const blacklist = {
   setState: true,
   forceUpdate: true,
   displayName: true,
-  defaultProps: true,
+  defaultProps: true
 };
 
 function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
@@ -145,8 +143,35 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
   const propsValue = entry.props;
   const scope = traverser.createModuleScope();
   scope.findAndReplace = {
+    CallExpression(node) {
+      // prefix setState calls
+      if (
+        node.callee.type === "MemberExpression" &&
+        node.callee.object.type === "ThisExpression" &&
+        node.callee.property.type === "Identifier" &&
+        node.callee.property.name === "setState"
+      ) {
+        const args = node.arguments;
+        // TODO need to handle way more setState cases than this
+        // when the argument is an object
+        if (args.length > 0 && args[0].type === 'ObjectExpression') {
+          args[0] = t.objectExpression(
+            args[0].properties.map(property => {
+              if (property.type === 'ObjectProperty') {
+                if (property.key.type === 'Identifier') {
+                  return t.objectProperty(t.identifier(prefix + property.key.name), property.value);
+                }
+                debugger;
+              } else {
+                debugger;
+              }
+            })
+          );
+        }
+      }
+    },
     MemberExpression(node) {
-      if (node.object.type === 'ThisExpression') {
+      if (node.object.type === "ThisExpression") {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
 
@@ -155,15 +180,15 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           firstNode.name = prefix + name;
         }
         return true;
-      } else if (node.object.type === 'MemberExpression') {
+      } else if (node.object.type === "MemberExpression") {
         // handle this.state and this.props
         const firstNode = findFirstMemberNodeOfMemberExpression(node.object);
         const name = firstNode.name;
-        if (name === 'state') {
+        if (name === "state") {
           const property = getNextMemberNodeOfMemberExpression(node, firstNode);
           property.name = prefix + property.name;
           return true;
-        } else if (name === 'props') {
+        } else if (name === "props") {
           // we need to replace with correct props
           const nextNode = getNextMemberNodeOfMemberExpression(node, firstNode);
           const lastNode = getNextMemberNodeOfMemberExpression(node, nextNode);
@@ -173,18 +198,18 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           if (propValue !== undefined) {
             const value = propValue.descriptor.value;
             if (value.isIntrinsic()) {
-              if (value.intrinsicName.indexOf('$F$') === 0) {
+              if (value.intrinsicName.indexOf("$F$") === 0) {
                 memberNode = serializer.convertStringToExpressionWithDelimiter(
                   value.intrinsicName,
-                  '$_$',
+                  "$_$",
                   3
                 );
               }
             }
             if (memberNode === null) {
-              if (typeof value.buildNode !== 'function') {
+              if (typeof value.buildNode !== "function") {
                 if (value instanceof UndefinedValue) {
-                  return t.identifier('undefined');
+                  return t.identifier("undefined");
                 }
               }
               memberNode = serializer.convertValueToExpression(
@@ -199,7 +224,7 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig) {
           }
         }
       }
-    },
+    }
   };
   traverser.traverse(entryNode, traverser.Actions.FindAndReplace, scope);
   return entryNode;
@@ -221,13 +246,13 @@ function cloneAst(astNode) {
         arr[i] = cloneAst(value[i]);
       }
     } else if (
-      typeof value === 'object' &&
+      typeof value === "object" &&
       value !== null &&
-      key !== 'class' &&
-      key !== 'func' &&
-      key !== 'scope' &&
-      key !== 'loc' &&
-      key !== 'jsxElement'
+      key !== "class" &&
+      key !== "func" &&
+      key !== "scope" &&
+      key !== "loc" &&
+      key !== "jsxElement"
     ) {
       // these are all the custom properties we add to AST nodes to help get access to things (monkey-patchy), we want to skip cloninig them when cloining
       newNode[key] = cloneAst(value);
@@ -239,27 +264,28 @@ function cloneAst(astNode) {
 }
 
 class RootConfig {
-  constructor() {
+  constructor(moduleEnv) {
     this._entries = new Set();
     this._entriesCache = null;
+    this.moduleEnv = moduleEnv;
     this.useClassComponent = false;
   }
   addEntry(props, theClass) {
     const key =
-      Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 3) + '_';
+      Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3) + "_";
     const entry = {
       constructorProperties: null,
       key: key,
       props: props,
       prototypeProperties: null,
       state: null,
-      theClass: theClass,
+      theClass: theClass
     };
 
     this._entries.add(entry);
     return {
       rootConfigEntry: entry,
-      entryKey: key,
+      entryKey: key
     };
   }
   _getEntries() {
@@ -281,14 +307,14 @@ class RootConfig {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
           if (
-            name === 'componentWillMount' ||
-            name === 'componentDidMount' ||
-            name === 'componentWillUpdate' ||
-            name === 'componentDidUpdate' ||
-            name === 'componentWillUnmount' ||
-            name === 'shouldComponentUpdate' ||
-            name === 'componentWillReceiveProps' ||
-            name === 'componentDidCatch'
+            name === "componentWillMount" ||
+            name === "componentDidMount" ||
+            name === "componentWillUpdate" ||
+            name === "componentDidUpdate" ||
+            name === "componentWillUnmount" ||
+            name === "shouldComponentUpdate" ||
+            name === "componentWillReceiveProps" ||
+            name === "componentDidCatch"
           ) {
             mergeLifecycleMethod(
               name,
@@ -303,10 +329,11 @@ class RootConfig {
           if (
             methods.has(name) &&
             thisObject.properties.has(name) &&
-            traverser.handleMultipleValues(thisObject.properties.get(name)).callSites.length > 0
+            traverser.handleMultipleValues(thisObject.properties.get(name))
+              .callSites.length > 0
           ) {
             // strip out render methods entirely
-            if (name.startsWith('_render') || name.startsWith('render')) {
+            if (name.startsWith("_render") || name.startsWith("render")) {
               return;
             }
           }

@@ -97,7 +97,8 @@ function createMockRedux(env) {
 
 function createMockReactRedux(env) {
   const mockReactRedux = evaluator.createAbstractObject('ReactRedux');
-  mockReactRedux.$SetPartial('connect', env.eval(reactReduxMock.reactReduxConnect), mockReactRedux);
+  mockReactRedux.$SetPartial('connect', evaluator.createAbstractFunction('ReactRedux.connect'), mockReactRedux);
+  // mockReactRedux.$SetPartial('connect', env.eval(reactReduxMock.reactReduxConnect), mockReactRedux);
   return mockReactRedux;
 }
 

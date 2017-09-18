@@ -186,10 +186,11 @@ function handleAssignmentValue(
                 break;
               }
             }
-            if (assignmentValue.astNode != null && identifier.name !== 'require') {
-              declarations[assignmentKey] = assignmentValue.astNode;
-              break;
-            }
+            // TODO bringing this in allows us to work ReactRedux etc, but it breaks for non pure functions
+            // if (assignmentValue.astNode != null && identifier.name !== 'require') {
+            //   declarations[assignmentKey] = assignmentValue.astNode;
+            //   break;
+            // }
             console.log(
               `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
             );
