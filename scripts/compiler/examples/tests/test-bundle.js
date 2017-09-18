@@ -18,7 +18,7 @@ class App extends React.Component {
   }
 
   componentWillUpdate(nextProps) {
-    this.props.log.push(`A.componentDidUpdate(${this.props.arg * 10}, ${nextProps.arg * 10})`);this.props.log.push(`B.componentDidUpdate(${this.props.arg * 100}, ${nextProps.arg * 100})`);
+    this.props.log.push(`A.componentDidUpdate(${this.props.arg * 10}, ${nextProps.arg * 10})`);this.props.log.push(`B.componentWillUpdate(${this.props.arg * 100}, ${nextProps.arg * 100})`);
   }
 
   componentDidUpdate(prevProps) {

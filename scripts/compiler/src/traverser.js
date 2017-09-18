@@ -519,10 +519,22 @@ function traverse(node, action, scope) {
       break;
     }
     case "ForStatement": {
-      traverse(node.init, action, scope);
-      traverse(node.test, action, scope);
-      traverse(node.update, action, scope);
-      traverse(node.body, action, scope);
+      const init = traverse(node.init, action, scope);
+      if (init !== undefined) {
+        node.init = init;
+      }
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = test;
+      }
+      const update = traverse(node.update, action, scope);
+      if (update !== undefined) {
+        node.update = update;
+      }
+      const body = traverse(node.body, action, scope);
+      if (body !== undefined) {
+        node.body = body;
+      }
       break;
     }
     case "ForInStatement": {
@@ -578,13 +590,25 @@ function traverse(node, action, scope) {
       break;
     }
     case "DoWhileStatement": {
-      traverse(node.body, action, scope);
-      traverse(node.test, action, scope);
+      const body = traverse(node.body, action, scope);
+      if (body !== undefined) {
+        node.body = body;
+      }
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = test;
+      }
       break;
     }
     case "WhileStatement": {
-      traverse(node.body, action, scope);
-      traverse(node.test, action, scope);
+      const body = traverse(node.body, action, scope);
+      if (body !== undefined) {
+        node.body = body;
+      }
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = test;
+      }
       break;
     }
     case "IfStatement": {
@@ -630,7 +654,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "SwitchStatement": {
-      traverse(node.discriminant, action, scope);
+      const discriminant = traverse(node.discriminant, action, scope);
+      if (discriminant !== undefined) {
+        node.discriminant = discriminant;
+      }
       const cases = node.cases;
       for (let i = 0; i < cases.length; i++) {
         traverse(cases[i], action, scope);
@@ -638,7 +665,10 @@ function traverse(node, action, scope) {
       break;
     }
     case "SwitchCase": {
-      traverse(node.test, action, scope);
+      const test = traverse(node.test, action, scope);
+      if (test !== undefined) {
+        node.test = test;
+      }
       const consequents = node.consequent;
       for (let i = 0; i < consequents.length; i++) {
         traverse(consequents[i], action, scope);
@@ -669,7 +699,10 @@ function traverse(node, action, scope) {
     }
     case "ObjectProperty": {
       traverse(node.key, action, scope);
-      traverse(node.value, action, scope);
+      const value = traverse(node.value, action, scope);
+      if (value !== undefined) {
+        node.value = value;
+      }
       break;
     }
     case "ObjectExpression": {
@@ -712,13 +745,25 @@ function traverse(node, action, scope) {
       break;
     }
     case "LogicalExpression": {
-      traverse(node.left, action, scope);
-      traverse(node.right, action, scope);
+      const left = traverse(node.left, action, scope);
+      if (left !== undefined) {
+        node.left = left;
+      }
+      const right = traverse(node.right, action, scope);
+      if (right !== undefined) {
+        node.right = right;
+      }
       break;
     }
     case "UnaryExpression": {
-      traverse(node.expression, action, scope);
-      traverse(node.argument, action, scope);
+      const expression = traverse(node.expression, action, scope);
+      if (expression !== undefined) {
+        node.expression = expression;
+      }
+      const argument = traverse(node.argument, action, scope);
+      if (argument !== undefined) {
+        node.argument = argument;
+      }
       break;
     }
     case "TemplateElement": {
@@ -796,11 +841,17 @@ function traverse(node, action, scope) {
       break;
     }
     case "SpreadElement": {
-      traverse(node.argument, action, scope);
+      const argument = traverse(node.argument, action, scope);
+      if (argument !== undefined) {
+        node.argument = node.argument;
+      }
       break;
     }
     case "SpreadProperty": {
-      traverse(node.argument, action, scope);
+      const argument = traverse(node.argument, action, scope);
+      if (argument !== undefined) {
+        node.argument = node.argument;
+      }
       break;
     }
     case "FunctionDeclaration": {
@@ -894,7 +945,10 @@ function traverse(node, action, scope) {
     case "SequenceExpression": {
       const expressions = node.expressions;
       for (let i = 0; i < expressions.length; i++) {
-        traverse(expressions[i], action, scope);
+        const expression = traverse(expressions[i], action, scope);
+        if (expression !== undefined) {
+          expressions[i] = expression;
+        }
       }
       break;
     }
@@ -924,7 +978,10 @@ function traverse(node, action, scope) {
     case "ClassBody": {
       const body = node.body;
       for (let i = 0; i < body.length; i++) {
-        traverse(body[i], action, scope);
+        const bodyPart = traverse(body[i], action, scope);
+        if (bodyPart !== undefined) {
+          body[i] = bodyPart;
+        }
       }
       break;
     }
