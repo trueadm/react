@@ -23,10 +23,18 @@ function runSource(code) {
     presets: ['babel-preset-react'],
     plugins: ['transform-object-rest-spread'],
   }).code;
-  const fn = new Function('React', 'module', codeAfterBabel);
-  let module = {exports: null};
-  fn(React, module);
-  return module.exports;
+  const fn = new Function('require', 'module', codeAfterBabel);
+  const moduleShim = {exports: null};
+  const requireShim = name => {
+    switch (name) {
+      case 'react':
+        return React;
+      default:
+        throw new Error(`Unrecognized import: "${name}".`);
+    }
+  };
+  fn(requireShim, moduleShim);
+  return moduleShim.exports;
 }
 
 async function runFixture(name) {

@@ -8,6 +8,8 @@
  */
 'use strict';
 
+var React = require('react');
+
 function Fn(props) {
   return <div>Hello {props[props.dynamicKey]}</div>;
 }
