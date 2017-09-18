@@ -31,7 +31,10 @@ class A extends React.Component {
     this.props.log.push(`A.componentWillUnmount(${this.props.arg})`);
   }
   render() {
-    return this.props.arg;
+    return [
+      this.props.arg,
+      this.props.children
+    ];
   }
 }
 
@@ -56,27 +59,26 @@ class B extends React.Component {
     this.props.log.push(`B.componentWillUnmount(${this.props.arg})`);
   }
   render() {
-    return this.props.arg;
+    return [
+      this.props.arg,
+      this.props.children
+    ];
   }
 }
 
 function App(props) {
-  return (
-    <div>
-      <A arg={props.arg * 10} log={props.log} />
-      <B arg={props.arg * 100} log={props.log} />
-    </div>
-  );
+  const child = <B arg={props.arg * 100} log={props.log}>{props.arg}</B>;
+  return <A arg={props.arg * 10} log={props.log}>{child}</A>;
 }
 
 App.getTrials = function*(renderer, Root) {
   const firstLog = [];
-  renderer.update(<Root log={firstLog} arg={2} />);
+  renderer.update(<Root arg={2} log={firstLog} />);
   yield ['render 20 and 200 (render)', renderer.toJSON()];
   yield ['render 20 and 200 (log)', firstLog];
 
   const secondLog = [];
-  renderer.update(<Root log={secondLog} arg={3} />);
+  renderer.update(<Root arg={3} log={secondLog} />);
   yield ['render 30 and 300 (render)', renderer.toJSON()];
   yield ['render 30 and 300 (log)', secondLog];
 };
