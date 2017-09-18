@@ -784,8 +784,14 @@ function traverse(node, action, scope) {
       ) {
         return node.right.optimizedReplacement;
       } else {
-        traverse(node.left, action, scope);
-        traverse(node.right, action, scope);
+        const left = traverse(node.left, action, scope);
+        if (left !== undefined) {
+          node.left = left;
+        }
+        const right = traverse(node.right, action, scope);
+        if (right !== undefined) {
+          node.right = right;
+        }
       }
       break;
     }
