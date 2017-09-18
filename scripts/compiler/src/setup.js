@@ -265,13 +265,13 @@ function handleAssignmentValue(
       case "LogicExpression":
       case "ConditionalExpression":
       case "MathExpression": {
-        if (assignmentValue.astNode !== null) {
-          declarations[assignmentKey] = assignmentValue.astNode;
-        } else {
-          declarations[assignmentKey] = evaluator.createAbstractValue(
-            assignmentKey
-          );
-        }
+        // if (assignmentValue.astNode !== null) {
+        //   declarations[assignmentKey] = assignmentValue.astNode;
+        //   break;
+        // }
+        declarations[assignmentKey] = evaluator.createAbstractValue(
+          assignmentKey
+        );
         break;
       }
       case "Array": {

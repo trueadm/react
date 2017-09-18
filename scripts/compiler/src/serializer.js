@@ -116,9 +116,13 @@ function applyKeysToNestedArray(expr) {
       // it's common for conditions to be in an array, which means we need to check them for keys too
       if (astElement.alternate.type === 'JSXElement') {
         addKeyToElement(astElement.alternate, `.${randomHashString}.$f.${i}`);
+      } else if (astElement.alternate.type === 'ArrayExpression') {
+        applyKeysToNestedArray(astElement.alternate);
       }
       if (astElement.consequent.type === 'JSXElement') {
         addKeyToElement(astElement.consequent, `.${randomHashString}.$t.${i}`);
+      } else if (astElement.consequent.type === 'ArrayExpression') {
+        applyKeysToNestedArray(astElement.consequent);
       }
     }
   }
@@ -379,7 +383,9 @@ function convertValueToExpression(value, rootConfig) {
       return convertReactElementToJSXExpression(value, rootConfig);
     }
     if (value instanceof ArrayValue) {
-      return convertArrayValueToArrayLiteral(value, rootConfig);
+      const expr = convertArrayValueToArrayLiteral(value, rootConfig);
+      applyKeysToNestedArray(expr);
+      return expr;
     }
     // TODO: Handle all the object special cases.
     return convertObjectValueToObjectLiteral(value, rootConfig);

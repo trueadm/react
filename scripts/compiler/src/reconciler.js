@@ -122,16 +122,22 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       );
       if (nextValue === null) {
         console.log(
-          `\nFailed to inline component "${type.intrinsicName}" but failed as the reference wasn't a statically determinable function or class.\n`
+          `\nFailed to inline component "${type.intrinsicName}" as the reference wasn't a statically determinable function or class.\n`
         );
         return value;
       }
       return nextValue;
     } catch (x) {
       if (name !== undefined) {
-        console.log(
-          `\nFailed to inline component "${name}" but failed due to a Prepack evaluation error:\n${x.stack}\n`
-        );
+        if (x.stack.indexOf('Failed to') === -1) {
+          console.log(
+            `\nFailed to inline component "${name}" due to a Prepack evaluation error:\n${x.stack}\n`
+          );
+        } else {
+          console.log(
+            `\nFailed to inline component "${name}" due to:\n${x.stack}\n`
+          );
+        }
       }
       return value;
     }

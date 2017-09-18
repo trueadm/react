@@ -375,6 +375,8 @@ module.exports = function(ast, strictCode, env, realm) {
     }
     if (ref === realm.intrinsics.undefined) {
       ref = realm.intrinsics.null;
+    } else if (ref !== realm.intrinsics.null && !(type instanceof StringValue)) {
+      throw new Error(`\n<${traverser.getNameFromAst(openingElement.name)} /> has a ref on the ReactElement, this is not supported.\n`);
     }
 
     if (key !== realm.intrinsics.null && key instanceof ConcreteValue) {
