@@ -92,6 +92,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
   if (isReactElement(value)) {
     const type = value.properties.get('type').descriptor.value;
     const props = value.properties.get('props').descriptor.value;
+    const ref = value.properties.get('ref').descriptor.value;
     if (type instanceof StringValue) {
       // Terminal host component. Start evaluating its children.
       const childrenProperty = props.properties.get('children');
@@ -111,6 +112,10 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       name = type.properties.get('name').descriptor.value.value;
     } else if (type.func) {
       name = type.func.name;
+    }
+    if (!(ref instanceof NullValue)) {
+      console.log(`\nFailed to inline component "${name}" has there was a ref on the ReactElement, this is not supported on components.\n`);
+      return value;
     }
     try {
       const nextValue = await renderAsDeepAsPossible(
