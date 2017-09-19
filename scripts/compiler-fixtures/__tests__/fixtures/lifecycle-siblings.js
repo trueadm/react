@@ -81,6 +81,10 @@ App.getTrials = function*(renderer, Root) {
   renderer.update(<Root log={log} arg={3} />);
   yield ['render 30 and 300 (render)', renderer.toJSON()];
   yield ['render 30 and 300 (log)', log];
+
+  log.length = 0;
+  renderer.update(null);
+  yield ['unmount (log)', log];  
 };
 
 module.exports = App;
