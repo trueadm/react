@@ -52,6 +52,55 @@ function getReactElementSymbol(realm) {
   return reactElementSymbol;
 }
 
+// takan from Babel so we get it right
+function cleanJSXElementLiteralChild(
+  child,
+  args
+) {
+  const lines = child.value.split(/\r\n|\n|\r/);
+
+  let lastNonEmptyLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].match(/[^ \t]/)) {
+      lastNonEmptyLine = i;
+    }
+  }
+
+  let str = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    const isFirstLine = i === 0;
+    const isLastLine = i === lines.length - 1;
+    const isLastNonEmptyLine = i === lastNonEmptyLine;
+
+    // replace rendered whitespace tabs with spaces
+    let trimmedLine = line.replace(/\t/g, " ");
+
+    // trim whitespace touching a newline
+    if (!isFirstLine) {
+      trimmedLine = trimmedLine.replace(/^[ ]+/, "");
+    }
+
+    // trim whitespace touching an endline
+    if (!isLastLine) {
+      trimmedLine = trimmedLine.replace(/[ ]+$/, "");
+    }
+
+    if (trimmedLine) {
+      if (!isLastNonEmptyLine) {
+        trimmedLine += " ";
+      }
+
+      str += trimmedLine;
+    }
+  }
+
+  if (str) args.push(t.stringLiteral(str));
+}
+
 function createReactElement(realm, type, key, ref, props) {
   let obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
   CreateDataPropertyOrThrow(
@@ -337,13 +386,29 @@ function evaluateJSXChildren(children, strictCode, env, realm) {
     return evaluateJSXValue(children[0], strictCode, env, realm);
   }
   let array = ArrayCreate(realm, 0);
+  let dynamicChildrenLength = children.length;
+  let dynamicIterator = 0;
+  let lastChildValue = null;
   for (let i = 0; i < children.length; i++) {
     let value = evaluateJSXValue(children[i], strictCode, env, realm);
-    CreateDataPropertyOrThrow(realm, array, '' + i, value);
+    if (value instanceof StringValue) {
+      const lines = [];
+      cleanJSXElementLiteralChild({value: value.value}, lines);
+      if (lines.length === 0) {
+        dynamicChildrenLength--;
+        // this is a space full of whitespace, so let's proceed
+        continue;
+      }
+    }
+    lastChildValue = value;
+    CreateDataPropertyOrThrow(realm, array, '' + dynamicIterator, value);
+    dynamicIterator++;
+  }
+  if (dynamicChildrenLength === 1) {
+    return lastChildValue;
   }
 
-  Set(realm, array, 'length', new NumberValue(realm, children.length), false);
-
+  Set(realm, array, 'length', new NumberValue(realm, dynamicChildrenLength), false);
   return array;
 }
 

@@ -40,7 +40,8 @@ const Types = {
   AbstractFunction: "AbstractFunction",
   AbstractValue: "AbstractValue",
   SequenceExpression: "SequenceExpression",
-  JSXElement: "JSXElement"
+  JSXElement: "JSXElement",
+  RegExp: "RegExp",
 };
 
 const propTypes = createObject(null, {
@@ -275,6 +276,19 @@ function createObject(astNode, properties) {
     );
   }
   return object;
+}
+
+function createRegExp(astNode, pattern) {
+  return {
+    accessedAsConstructor: false,
+    accessedAsSpread: false,
+    accessedAsSpreadProps: new Map(),
+    accessors: new Map(),
+    action: null,
+    astNode,
+    pattern,
+    type: Types.RegExp,
+  };
 }
 
 function createArray(astNode, properties) {
@@ -1094,6 +1108,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
     case "Identifier": {
       const key = getNameFromAst(astNode);
 
+      if (!subject) {
+        throw new Error(`- AST traversal failed during getOrSetValueFromAst() because a null/undefined subject. (hint: key was "${key}")`);
+      }
       if (key === "undefined") {
         return createUndefined(action);
       } else if (subject.type === Types.Scope) {
@@ -1198,6 +1215,15 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
             newValue
           );
         }
+      } else if (subject.type === Types.RegExp) {
+        if (!subject.accessors.has(key)) {
+          const accesorObject = createAbstractValue();
+          subject.accessors.set(key, accesorObject);
+        } else {
+          return subject.accessors.get(key);
+        }
+        // who knows what it could be?
+        return createAbstractValue(false);
       } else if (subject.type === Types.Class) {
         if (newValue !== undefined) {
           if (
@@ -1474,7 +1500,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
       );
     }
     case "RegExpLiteral": {
-      return createAbstractValue();
+      return createRegExp(astNode, astNode.pattern);
     }
     case "JSXExpressionContainer": {
       return getOrSetValueFromAst(
@@ -1869,7 +1895,7 @@ function declareFuctionParams(func, params, newScope, action) {
       func.params.push(paramObject);
     } else if (param.type === "Identifier") {
       const name = param.name;
-      const paramObject = createAbstractValue();
+      const paramObject = createAbstractValue(false, param);
       assign(newScope, "assignments", name, paramObject);
       func.params.push(paramObject);
     } else if (param.type === "AssignmentPattern") {

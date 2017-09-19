@@ -190,41 +190,6 @@ function __makeSimple(object) {
   );
 }
 
-function __optional(value) {
-  if (!realm.useAbstractInterpretation) {
-    throw realm.createErrorThrowCompletion(
-      realm.intrinsics.TypeError,
-      'realm is not partial'
-    );
-  }
-  if (value instanceof AbstractValue && value.isIntrinsic()) {
-    let result = AbstractValue.createFromConditionalOp(
-      realm,
-      value,
-      value,
-      realm.intrinsics.undefined
-    );
-    let condition = AbstractValue.createFromBinaryOp(
-      realm,
-      '!==',
-      result,
-      realm.intrinsics.undefined
-    );
-    condition.types = new TypesDomain(BooleanValue);
-    result.args[0] = condition;
-    result.intrinsicName = value.intrinsicName;
-    if (value.intrinsicName === undefined) {
-      throw new Error('Name is not known');
-    }
-    result._buildNode = t.identifier(value.intrinsicName);
-    return result;
-  }
-  throw realm.createErrorThrowCompletion(
-    realm.intrinsics.TypeError,
-    'not an intrinsic abstract value'
-  );
-}
-
 function createAbstractNumber(nameString) {
   return __abstract('number', nameString);
 }
@@ -259,6 +224,17 @@ function createAbstractObject(nameString) {
   );
 }
 
+function createAbstractRegExp(nameString) {
+  return __makeSimple(
+    __makePartial(
+      __abstract(
+        ObjectCreate(realm, realm.intrinsics.RegExp),
+        nameString
+      )
+    )
+  );
+}
+
 function createAbstractFunction(nameString) {
   return __makeSimple(__makePartial(__abstract('function', nameString)));
 }
@@ -268,7 +244,7 @@ function createAbstractValue(nameString) {
 }
 
 function createAbstractObjectOrUndefined(nameString) {
-  return __optional(createAbstractObject(nameString));
+  return createAbstractObject(nameString);
 }
 
 function getError(completionValue) {
@@ -417,6 +393,8 @@ exports.get = get;
 exports.getPreludeGenerator = getPreludeGenerator;
 
 exports.createAbstractBoolean = createAbstractBoolean;
+
+exports.createAbstractRegExp = createAbstractRegExp;
 
 exports.createAbstractArray = createAbstractArray;
 

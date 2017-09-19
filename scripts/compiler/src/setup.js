@@ -260,15 +260,18 @@ function handleAssignmentValue(
         }
         break;
       }
+      case "RegExp": {
+        declarations[assignmentKey] = evaluator.createAbstractRegExp(
+          assignmentKey
+        );
+        break;
+      }
       case "SequenceExpression":
       case "UnaryExpression":
       case "LogicExpression":
       case "ConditionalExpression":
       case "MathExpression": {
-        // if (assignmentValue.astNode !== null) {
-        //   declarations[assignmentKey] = assignmentValue.astNode;
-        //   break;
-        // }
+        // TODO maybe not an object?
         declarations[assignmentKey] = evaluator.createAbstractValue(
           assignmentKey
         );

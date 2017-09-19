@@ -11,12 +11,17 @@
 const reconciler = require('./reconciler');
 const serializer = require('./serializer');
 const traverser = require('./traverser');
+const chalk = require('chalk');
 const {
   convertAccessorsToNestedObject,
   convertNestedObjectToAst,
   setAbstractPropsUsingNestedObject,
  } = require('./types');
 const RootConfig = require('./RootConfig');
+
+let optimizedTrees = 0;
+let processedTrees = 0;
+const alreadyTried = new Map();
 
 function convertToExpression(node) {
   if (node.type === 'FunctionDeclaration') {
@@ -50,7 +55,7 @@ function addInferredPropsFromJSXElementCallSites(props, astComponent) {
             if (value.type === 'FunctionCall') {
               // bail-out, we can't track through function calls
               throw new Error(
-                'Failed to optimize a component tree due to object spread/rest on props at root.'
+                '- Object spread/rest used on a ReactElement in the root render'
               );
             }
 
@@ -84,7 +89,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
     if (propsInScope !== undefined) {
       if (propsInScope.accessedAsSpread === true) {
         throw new Error(
-          `Failed to optimize a component tree with a root component of "${func.name}" due to object spread/rest on props at root.`
+          '- Object spread/rest used on a ReactElement in the root render'
         );
       }
       propsShape = convertAccessorsToNestedObject(
@@ -99,7 +104,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
     if (propsOnClass !== undefined) {
       if (propsOnClass.accessedAsSpread === true) {
         throw new Error(
-          `Failed to optimize a component tree with a root component of "${theClass.name}" due to object spread/rest on props at root.`
+          '- Object spread/rest used on a ReactElement in the root render'
         );
       }
       propsShape = convertAccessorsToNestedObject(
@@ -168,10 +173,6 @@ async function optimizeComponentWithPrepack(
   return convertToExpression(node);
 }
 
-let optimizedTrees = 0;
-let processedCount = 0;
-const alreadyTried = new Map();
-
 async function findNonOptimizedComponents(
   ast,
   astComponent,
@@ -232,7 +233,7 @@ async function optimizeComponentTree(
   ) {
     const func = astComponent.func;
     if (func.return === null) {
-      if (processedCount === 0) {
+      if (processedTrees === 0) {
         throw new Error(
           'Cannot find exported React component to optimize. Try simplifiying the exports.'
         );
@@ -266,7 +267,7 @@ async function optimizeComponentTree(
   }
   if (alreadyTried.has(name) === false) {
     alreadyTried.set(name, true);
-    processedCount++;
+    processedTrees++;
     try {
       const optimizedAstComponent = await optimizeComponentWithPrepack(
         ast,
@@ -283,20 +284,24 @@ async function optimizeComponentTree(
         moduleEnv,
         moduleScope
       );
-      console.log(
-        `Successfully optimized a component tree with a root component of "${name}".`
-      );
+      // console.log(
+      //   chalk.green(`Successfully optimized a component tree with a root component of "${name}".`)
+      // );
     } catch (e) {
       if (
         e.stack &&
         e.stack.indexOf('not yet supported on abstract value props') !== -1
       ) {
         console.log(
-          `\nFailed to optimize a component tree with a root component of "${name}". This is likely due to lack of Flow types for props or React component propTypes.\n`
+          `Failed to optimize a component tree with a root component of "${name}". This is likely due to lack of Flow types for props or React component propTypes.`
+        );
+      } else if (e.stack.indexOf('A fatal error occurred while prepacking') !== -1 || e.stack.indexOf('Invariant Violation') !== -1) {
+        console.log(
+          `Failed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n- ${e.stack}`
         );
       } else {
         console.log(
-          `\nFailed to optimize a component tree with a root component of "${name}" due to a Prepack evaluation error:\n${e.stack}\n`
+          `Failed to optimize a component tree with a root component of "${name}" due to:\n${e.message}`
         );
       }
       // find all direct child components in the tree of this component

@@ -16,27 +16,30 @@ const {
   NullValue,
   NumberValue,
   SymbolValue,
-  UndefinedValue,
-} = require('prepack/lib/values');
-const t = require('babel-types');
-const evaluator = require('./evaluator');
-const traverser = require('./traverser');
+  UndefinedValue
+} = require("prepack/lib/values");
+const t = require("babel-types");
+const evaluator = require("./evaluator");
+const traverser = require("./traverser");
 
 function getFunctionReferenceName(functionValue) {
   let name = null;
   if (functionValue.__originalName) {
     name = functionValue.__originalName;
   }
-  const namer = functionValue.properties.get('name');
+  const namer = functionValue.properties.get("name");
   if (namer && namer.descriptor.value.value) {
     name = namer.descriptor.value.value;
   }
 
   if (name !== null) {
-    const hasThis =
+    if (
       functionValue.$HomeObject !== undefined &&
-      functionValue.$HomeObject.properties.has(name);
-    return `${hasThis ? 'this.' : ''}${name}`;
+      functionValue.$HomeObject.properties.has(name)
+    ) {
+      return `this.${name}`;
+    }
+    return name;
   }
   // debugger;
   return null;
@@ -44,25 +47,25 @@ function getFunctionReferenceName(functionValue) {
 
 function convertExpressionToJSXIdentifier(expr, rootConfig) {
   switch (expr.type) {
-    case 'ThisExpression':
-      return t.jSXIdentifier('this');
-    case 'Identifier':
+    case "ThisExpression":
+      return t.jSXIdentifier("this");
+    case "Identifier":
       return t.jSXIdentifier(expr.name);
-    case 'StringLiteral':
+    case "StringLiteral":
       return t.jSXIdentifier(expr.value);
-    case 'MemberExpression':
+    case "MemberExpression":
       if (expr.computed) {
-        throw new Error('Cannot inline computed expressions in JSX type.');
+        throw new Error("Cannot inline computed expressions in JSX type.");
       }
       return t.jSXMemberExpression(
         convertExpressionToJSXIdentifier(expr.object),
         convertExpressionToJSXIdentifier(expr.property)
       );
-    case 'ArrowFunctionExpression':
+    case "ArrowFunctionExpression":
       return expr;
     default:
       debugger;
-      throw new Error('Invalid JSX Type: ' + expr.type);
+      throw new Error("Invalid JSX Type: " + expr.type);
   }
 }
 
@@ -70,7 +73,7 @@ function convertKeyValueToJSXAttribute(key, value, rootConfig) {
   let expr = convertValueToExpression(value, rootConfig);
   return t.jSXAttribute(
     t.jSXIdentifier(key),
-    expr.type === 'StringLiteral' ? expr : t.jSXExpressionContainer(expr)
+    expr.type === "StringLiteral" ? expr : t.jSXExpressionContainer(expr)
   );
 }
 
@@ -82,9 +85,9 @@ function addKeyToElement(astElement, key) {
     const astAttribute = astAttributes[i];
 
     if (
-      astAttribute.type === 'JSXAttribute' &&
-      astAttribute.name.type === 'JSXIdentifier' &&
-      astAttribute.name.name === 'key'
+      astAttribute.type === "JSXAttribute" &&
+      astAttribute.name.type === "JSXIdentifier" &&
+      astAttribute.name.name === "key"
     ) {
       existingKey = astAttribute.value;
     }
@@ -93,7 +96,7 @@ function addKeyToElement(astElement, key) {
     // do nothing for now
   } else {
     astAttributes.push(
-      t.jSXAttribute(t.jSXIdentifier('key'), t.stringLiteral(key))
+      t.jSXAttribute(t.jSXIdentifier("key"), t.stringLiteral(key))
     );
   }
 }
@@ -103,25 +106,28 @@ function addKeyToElement(astElement, key) {
 // to static children that won't ever collide
 function applyKeysToNestedArray(expr) {
   const astElements = expr.elements;
-  const randomHashString = Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3);
+  const randomHashString = Math.random()
+    .toString(36)
+    .replace(/[^a-z]+/g, "")
+    .substring(0, 2);
 
   for (let i = 0; i < astElements.length; i++) {
     const astElement = astElements[i];
 
-    if (astElement.type === 'JSXElement') {
-      addKeyToElement(astElement, `.${randomHashString}.${i}`);
-    } else if (astElement.type === 'ArrayExpression') {
+    if (astElement.type === "JSXElement") {
+      addKeyToElement(astElement, `${randomHashString}${i}`);
+    } else if (astElement.type === "ArrayExpression") {
       applyKeysToNestedArray(astElement);
-    } else if (astElement.type === 'ConditionalExpression') {
+    } else if (astElement.type === "ConditionalExpression") {
       // it's common for conditions to be in an array, which means we need to check them for keys too
-      if (astElement.alternate.type === 'JSXElement') {
-        addKeyToElement(astElement.alternate, `.${randomHashString}.$f.${i}`);
-      } else if (astElement.alternate.type === 'ArrayExpression') {
+      if (astElement.alternate.type === "JSXElement") {
+        addKeyToElement(astElement.alternate, `${randomHashString}0${i}`);
+      } else if (astElement.alternate.type === "ArrayExpression") {
         applyKeysToNestedArray(astElement.alternate);
       }
-      if (astElement.consequent.type === 'JSXElement') {
-        addKeyToElement(astElement.consequent, `.${randomHashString}.$t.${i}`);
-      } else if (astElement.consequent.type === 'ArrayExpression') {
+      if (astElement.consequent.type === "JSXElement") {
+        addKeyToElement(astElement.consequent, `${randomHashString}1${i}`);
+      } else if (astElement.consequent.type === "ArrayExpression") {
         applyKeysToNestedArray(astElement.consequent);
       }
     }
@@ -130,14 +136,14 @@ function applyKeysToNestedArray(expr) {
 
 function convertReactElementToJSXExpression(objectValue, rootConfig) {
   const objectProps = objectValue.properties;
-  let typeValue = objectProps.get('type').descriptor.value;
-  let keyValue = objectProps.has('key')
-    ? objectProps.get('key').descriptor.value
+  let typeValue = objectProps.get("type").descriptor.value;
+  let keyValue = objectProps.has("key")
+    ? objectProps.get("key").descriptor.value
     : null;
-  let refValue = objectProps.has('ref')
-    ? objectProps.get('ref').descriptor.value
+  let refValue = objectProps.has("ref")
+    ? objectProps.get("ref").descriptor.value
     : null;
-  let propsValue = objectProps.get('props').descriptor.value;
+  let propsValue = objectProps.get("props").descriptor.value;
 
   let identifier = convertExpressionToJSXIdentifier(
     convertValueToExpression(typeValue, rootConfig),
@@ -150,39 +156,39 @@ function convertReactElementToJSXExpression(objectValue, rootConfig) {
     keyValue !== null &&
     !(keyValue instanceof UndefinedValue || keyValue instanceof NullValue)
   ) {
-    attributes.push(convertKeyValueToJSXAttribute('key', keyValue, rootConfig));
+    attributes.push(convertKeyValueToJSXAttribute("key", keyValue, rootConfig));
   }
 
   if (
     refValue !== null &&
     !(refValue instanceof UndefinedValue || refValue instanceof NullValue)
   ) {
-    attributes.push(convertKeyValueToJSXAttribute('ref', refValue, rootConfig));
+    attributes.push(convertKeyValueToJSXAttribute("ref", refValue, rootConfig));
   }
   if (propsValue.properties) {
     for (let [key, propertyBinding] of propsValue.properties) {
       let desc = propertyBinding.descriptor;
       if (desc === undefined) continue; // deleted
 
-      if (key === 'key' || key === 'ref') {
-        throw new Error(key + ' is a reserved prop name');
+      if (key === "key" || key === "ref") {
+        throw new Error(key + " is a reserved prop name");
       }
 
-      if (key === 'children') {
+      if (key === "children") {
         let expr = convertValueToExpression(desc.value, rootConfig);
-        let elements = expr.type === 'ArrayExpression' &&
+        let elements = expr.type === "ArrayExpression" &&
           expr.elements.length > 1
           ? expr.elements
           : [expr];
         children = elements.map(expr => {
-          if (expr.type === 'ArrayExpression') {
+          if (expr.type === "ArrayExpression") {
             applyKeysToNestedArray(expr);
           }
           return expr === null
             ? t.jSXExpressionContainer(t.jSXEmptyExpression())
-            : expr.type === 'StringLiteral'
+            : expr.type === "StringLiteral"
                 ? t.jSXText(expr.value)
-                : expr.type === 'JSXElement'
+                : expr.type === "JSXElement"
                     ? expr
                     : t.jSXExpressionContainer(expr);
         });
@@ -199,7 +205,7 @@ function convertReactElementToJSXExpression(objectValue, rootConfig) {
     );
   }
 
-  if (identifier.type === 'ArrowFunctionExpression') {
+  if (identifier.type === "ArrowFunctionExpression") {
     if (identifier.body.func !== undefined) {
       identifier = t.JSXIdentifier(identifier.body.func.name);
     } else if (identifier.params.func !== undefined) {
@@ -239,17 +245,17 @@ function convertObjectValueToObjectLiteral(objectValue, rootConfig) {
 }
 
 function convertArrayValueToArrayLiteral(arrayValue, rootConfig) {
-  let lengthProperty = arrayValue.properties.get('length');
+  let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
     !(lengthProperty.descriptor.value instanceof NumberValue)
   ) {
-    throw new Error('Invalid length');
+    throw new Error("Invalid length");
   }
   let length = lengthProperty.descriptor.value.value;
   let elements = [];
   for (let i = 0; i < length; i++) {
-    let elementProperty = arrayValue.properties.get('' + i);
+    let elementProperty = arrayValue.properties.get("" + i);
     let elementValue =
       elementProperty &&
       elementProperty.descriptor &&
@@ -262,13 +268,17 @@ function convertArrayValueToArrayLiteral(arrayValue, rootConfig) {
 }
 
 function toIdentififer(string) {
-  if (string === 'this') {
+  if (string === "this") {
     return t.thisExpression();
   }
   return t.identifier(string);
 }
 
-function convertStringToExpressionWithDelimiter(placeholder, delimiter, startPosition) {
+function convertStringToExpressionWithDelimiter(
+  placeholder,
+  delimiter,
+  startPosition
+) {
   const parts = placeholder.substr(startPosition).split(delimiter);
   let astNode = null;
   while (parts.length > 0) {
@@ -303,7 +313,7 @@ function convertValueToExpression(value, rootConfig) {
       for (let i = 0; i < value.args.length; i++) {
         const abstractArg = value.args[i];
         const node = convertValueToExpression(abstractArg, rootConfig);
-        if (node.type === 'ArrayExpression') {
+        if (node.type === "ArrayExpression") {
           applyKeysToNestedArray(node);
         }
         serializedArgs.push(node);
@@ -313,7 +323,7 @@ function convertValueToExpression(value, rootConfig) {
     }
     if (value.isIntrinsic()) {
       const intrinsicName = value.intrinsicName;
-      if (intrinsicName.indexOf('_$') === 0) {
+      if (intrinsicName.indexOf("_$") === 0) {
         const preludeGenerator = evaluator.getPreludeGenerator();
         if (preludeGenerator.derivedIds.has(intrinsicName)) {
           const derivedArgValues = preludeGenerator.derivedIds.get(
@@ -322,11 +332,15 @@ function convertValueToExpression(value, rootConfig) {
           const derivedArgs = derivedArgValues.map(derivedArgValue =>
             convertValueToExpression(derivedArgValue, rootConfig)
           );
-          if (typeof value._buildNode === 'function') {
-            if (JSON.stringify(value.buildNode(derivedArgs)).indexOf('dataTestID') !== -1) {
+          if (typeof value._buildNode === "function") {
+            if (
+              JSON.stringify(value.buildNode(derivedArgs)).indexOf(
+                "dataTestID"
+              ) !== -1
+            ) {
               debugger;
             }
-            
+
             return value.buildNode(derivedArgs);
           } else {
             debugger;
@@ -335,17 +349,17 @@ function convertValueToExpression(value, rootConfig) {
           debugger;
         }
       }
-      if (intrinsicName.indexOf('$F$') === 0) {
-        return convertStringToExpressionWithDelimiter(intrinsicName, '$_$', 3);
+      if (intrinsicName.indexOf("$F$") === 0) {
+        return convertStringToExpressionWithDelimiter(intrinsicName, "$_$", 3);
       }
       if (
         rootConfig.useClassComponent === false &&
-        value.intrinsicName.indexOf('this.props') !== -1
+        value.intrinsicName.indexOf("this.props") !== -1
       ) {
         // hack for now
         const node = value.buildNode(serializedArgs);
-        node.object = t.identifier('props');
-        if (JSON.stringify(node).indexOf('dataTestID') !== -1) {
+        node.object = t.identifier("props");
+        if (JSON.stringify(node).indexOf("dataTestID") !== -1) {
           debugger;
         }
         return node;
@@ -354,21 +368,25 @@ function convertValueToExpression(value, rootConfig) {
     return value.buildNode(serializedArgs);
   }
   if (value.isIntrinsic()) {
-    if (value.intrinsicName.indexOf('.') === -1) {
+    if (value.intrinsicName.indexOf(".") === -1) {
       return t.identifier(value.intrinsicName);
     } else {
-      return convertStringToExpressionWithDelimiter(value.intrinsicName, '.', 0);
+      return convertStringToExpressionWithDelimiter(
+        value.intrinsicName,
+        ".",
+        0
+      );
     }
   }
   if (value instanceof FunctionValue) {
     // TODO: Get a proper reference from a lexical map of names instead.
     let name = getFunctionReferenceName(value);
     if (name !== null) {
-      if (name.indexOf('bound') !== -1) {
+      if (name.indexOf("bound") !== -1) {
         // this is a temp hack
-        name = name.replace('bound ', '');
+        name = name.replace("bound ", "");
       }
-      return t.identifier(name);
+      return convertStringToExpressionWithDelimiter(name, ".", 0);
     } else {
       // TODO: assume an arrow function for now?
       return t.arrowFunctionExpression(
@@ -378,7 +396,7 @@ function convertValueToExpression(value, rootConfig) {
     }
   }
   if (value instanceof ObjectValue) {
-    if (value.properties.has('$$typeof')) {
+    if (value.properties.has("$$typeof")) {
       // TODO: Also compare the value to ensure it's the symbol
       return convertReactElementToJSXExpression(value, rootConfig);
     }
@@ -399,8 +417,8 @@ function convertValueToExpression(value, rootConfig) {
 function createClassConstructorBody(rootConfig) {
   const bodyBlock = [
     t.expressionStatement(
-      t.callExpression(t.identifier('super'), [t.identifier('props')])
-    ),
+      t.callExpression(t.identifier("super"), [t.identifier("props")])
+    )
   ];
   const constructorProperties = rootConfig.getConstructorProperties(bodyBlock);
   if (constructorProperties !== null) {
@@ -411,8 +429,8 @@ function createClassConstructorBody(rootConfig) {
     bodyBlock.push(
       t.expressionStatement(
         t.assignmentExpression(
-          '=',
-          t.memberExpression(t.thisExpression(), t.identifier('state')),
+          "=",
+          t.memberExpression(t.thisExpression(), t.identifier("state")),
           mergedState
         )
       )
@@ -431,16 +449,16 @@ function removeDeadCodeFromClassAst(classAst, parentScope) {
   Array.from(classAst.class.methods.values()).forEach(method => {
     const name = method.name;
     if (
-      name !== 'render' &&
-      name !== 'constructor' &&
-      name !== 'componentWillMount' &&
-      name !== 'componentDidMount' &&
-      name !== 'componentWillUpdate' &&
-      name !== 'componentDidUpdate' &&
-      name !== 'componentWillUnmount' &&
-      name !== 'shouldComponentUpdate' &&
-      name !== 'componentWillReceiveProps' &&
-      name !== 'componentDidCatch'
+      name !== "render" &&
+      name !== "constructor" &&
+      name !== "componentWillMount" &&
+      name !== "componentDidMount" &&
+      name !== "componentWillUpdate" &&
+      name !== "componentDidUpdate" &&
+      name !== "componentWillUnmount" &&
+      name !== "shouldComponentUpdate" &&
+      name !== "componentWillReceiveProps" &&
+      name !== "componentDidCatch"
     ) {
       if (method.callSites.length === 0) {
         const indexToRemove = astBody.indexOf(method.astNode);
@@ -463,7 +481,7 @@ function serializeEvaluatedFunction(
   const params = args.map(arg => {
     const intrinsicName = arg.intrinsicName;
     if (!intrinsicName) {
-      throw new Error('Expected arguments to have an intrinsic name');
+      throw new Error("Expected arguments to have an intrinsic name");
     }
     return t.identifier(intrinsicName);
   });
@@ -476,11 +494,11 @@ function serializeEvaluatedFunction(
       // build the constructor method and put the merged state object back in
       // TODO: add in merged instance variables and other stuff
       t.classMethod(
-        'constructor',
-        t.identifier('constructor'),
-        [t.identifier('props')],
+        "constructor",
+        t.identifier("constructor"),
+        [t.identifier("props")],
         constructorBody
-      ),
+      )
     ];
     const prototypeProperties = rootConfig.getPrototypeProperties();
     if (prototypeProperties !== null) {
@@ -490,7 +508,7 @@ function serializeEvaluatedFunction(
     }
     classBody.push(
       // put in the optimized render method
-      t.classMethod('method', t.identifier('render'), [], renderBody)
+      t.classMethod("method", t.identifier("render"), [], renderBody)
     );
     let scope;
     if (functionValue.class !== undefined) {
@@ -499,12 +517,15 @@ function serializeEvaluatedFunction(
       scope = functionValue.func.scope;
     }
     // DCE
-    return removeDeadCodeFromClassAst(t.classDeclaration(
-      t.identifier(name),
-      t.memberExpression(t.identifier('React'), t.identifier('Component')),
-      t.classBody(classBody),
-      []
-    ), scope);
+    return removeDeadCodeFromClassAst(
+      t.classDeclaration(
+        t.identifier(name),
+        t.memberExpression(t.identifier("React"), t.identifier("Component")),
+        t.classBody(classBody),
+        []
+      ),
+      scope
+    );
   }
   return t.functionDeclaration(t.identifier(name), params, renderBody);
 }

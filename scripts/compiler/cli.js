@@ -13,6 +13,7 @@ const {compileBundle} = require('./src/compiler');
 const {createHasteMap} = require('./src/haste-map');
 const {createBundle} = require('./src/bundler');
 const optimizer = require('./src/optimizer');
+const reconciler = require('./src/reconciler');
 const argv = require('minimist')(process.argv.slice(2));
 const path = require('path');
 const entryFilePath = argv._[0];
@@ -41,6 +42,7 @@ createHasteMap(resolveEntryFilePath, destinationBundlePath)
   .then(code => {
     console.log('\nCompilation complete!');
     console.log(`Optimized Trees: ${optimizer.getOptimizedTrees()}`);
+    console.log(`Inlined Components: ${reconciler.getInlinedComponents()}`);
   })
   .catch(e => {
     console.error(e.stack);

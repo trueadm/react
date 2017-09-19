@@ -188,7 +188,24 @@ function renamePropsObject(node, firstNode, propsValue, rootConfig) {
 }
 
 function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
-  const thisAccessors = entry.theClass.thisObject.accessors;
+  const theClass = entry.theClass;
+  let thisAccessors = null;
+  if (theClass !== null) {
+    thisAccessors = theClass.thisObject.accessors;
+  }
+  const func = entry.func;
+  let propsArgument = null;
+  if (func !== null) {
+    propsArgument = func.params.length > 0 ? func.params[0] : null;
+  }
+  let propsName = null;
+  if (propsArgument !== null && propsArgument.astNode !== null) {
+    if (propsArgument.astNode.type === 'Identifier') {
+      propsName = propsArgument.astNode.name;
+    } else {
+      debugger;
+    }
+  }
   const prefix = entry.key;
   const propsValue = entry.props;
   const scope = traverser.createModuleScope();
@@ -235,12 +252,14 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
         };
         traverser.traverse(newNode, traverser.Actions.FindAndReplace, subScope);
         return newNode;
+      } else if (propsArgument !== null && node.object.type === 'Identifier' && propsName === node.object.name) {
+        return renamePropsObject(node, node.object, propsValue, rootConfig);
       } else if (node.object.type === "ThisExpression") {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
 
         const name = firstNode.name;
-        if (thisAccessors.has(name) && blacklist[name] !== true) {
+        if (thisAccessors !== null && thisAccessors.has(name) && blacklist[name] !== true) {
           firstNode.name = prefix + name;
         }
         return true;
@@ -302,7 +321,7 @@ class RootConfig {
     this.moduleEnv = moduleEnv;
     this.useClassComponent = false;
   }
-  addEntry(props, theClass) {
+  addEntry(props, theClass, func) {
     const key =
       Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3) + "_";
     const entry = {
@@ -311,7 +330,8 @@ class RootConfig {
       props: props,
       prototypeProperties: null,
       state: null,
-      theClass: theClass
+      theClass,
+      func,
     };
 
     this._entries.add(entry);
@@ -330,17 +350,32 @@ class RootConfig {
     const entries = this._getEntries();
     const prototypeProperties = [];
     const lifecycleMethods = {};
+    let componentDidMountEntries = null;
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
-      const thisObject = entry.theClass.thisObject;
-      const methods = entry.theClass.methods;
+      const theClass = entry.theClass;
       if (entry.prototypeProperties !== null) {
         entry.prototypeProperties.forEach(prototypeProperty => {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
-          if (
+          // componentDidMount get merged in reverse block order
+          if (name === "componentDidMount") {
+            if (componentDidMountEntries === null) {
+              componentDidMountEntries = [];
+            }
+            componentDidMountEntries.unshift(() => {
+              mergeLifecycleMethod(
+                name,
+                prototypeProperty,
+                lifecycleMethods,
+                prototypeProperties,
+                entry,
+                this
+              );
+            });
+            return;
+          } else if (
             name === "componentWillMount" ||
-            name === "componentDidMount" ||
             name === "componentWillUpdate" ||
             name === "componentDidUpdate" ||
             name === "componentWillUnmount" ||
@@ -358,15 +393,19 @@ class RootConfig {
             );
             return;
           }
-          if (
-            methods.has(name) &&
-            thisObject.properties.has(name) &&
-            traverser.handleMultipleValues(thisObject.properties.get(name))
-              .callSites.length > 0
-          ) {
-            // strip out render methods entirely
-            if (name.startsWith("_render") || name.startsWith("render")) {
-              return;
+          if (theClass !== null) {
+            const thisObject = entry.theClass.thisObject;
+            const methods = entry.theClass.methods;
+            if (
+              methods.has(name) &&
+              thisObject.properties.has(name) &&
+              traverser.handleMultipleValues(thisObject.properties.get(name))
+                .callSites.length > 0
+            ) {
+              // strip out render methods entirely
+              if (name.startsWith("_render") || name.startsWith("render")) {
+                return;
+              }
             }
           }
           prototypeProperties.push(
@@ -384,6 +423,9 @@ class RootConfig {
           );
         });
       }
+    }
+    if (componentDidMountEntries !== null) {
+      componentDidMountEntries.forEach(componentDidMountEntry => componentDidMountEntry());
     }
     return prototypeProperties;
   }

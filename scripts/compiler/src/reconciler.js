@@ -17,17 +17,19 @@ const {
   NumberValue,
   StringValue,
   NullValue,
-  UndefinedValue,
-} = require('prepack/lib/values');
+  UndefinedValue
+} = require("prepack/lib/values");
 const {
   convertAccessorsToNestedObject,
-  convertNestedObjectWithPrefixesToAst,
-} = require('./types');
-const t = require('babel-types');
-const evaluator = require('./evaluator');
+  convertNestedObjectWithPrefixesToAst
+} = require("./types");
+const t = require("babel-types");
+const evaluator = require("./evaluator");
+
+let inlinedComponents = 0;
 
 function isReactElement(value) {
-  return value instanceof ObjectValue && value.properties.has('$$typeof');
+  return value instanceof ObjectValue && value.properties.has("$$typeof");
 }
 
 function isReactClassComponent(type) {
@@ -35,20 +37,20 @@ function isReactClassComponent(type) {
     return false;
   }
   // Any ES6 class supported for now.
-  return type.$FunctionKind === 'classConstructor';
+  return type.$FunctionKind === "classConstructor";
 }
 
 async function resolveFragment(arrayValue, moduleEnv, rootConfig, isBranched) {
-  let lengthProperty = arrayValue.properties.get('length');
+  let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
     !(lengthProperty.descriptor.value instanceof NumberValue)
   ) {
-    throw new Error('Invalid length');
+    throw new Error("Invalid length");
   }
   let length = lengthProperty.descriptor.value.value;
   for (let i = 0; i < length; i++) {
-    let elementProperty = arrayValue.properties.get('' + i);
+    let elementProperty = arrayValue.properties.get("" + i);
     let elementValue =
       elementProperty &&
       elementProperty.descriptor &&
@@ -90,12 +92,12 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
     return value;
   }
   if (isReactElement(value)) {
-    const type = value.properties.get('type').descriptor.value;
-    const props = value.properties.get('props').descriptor.value;
-    const ref = value.properties.get('ref').descriptor.value;
+    const type = value.properties.get("type").descriptor.value;
+    const props = value.properties.get("props").descriptor.value;
+    const ref = value.properties.get("ref").descriptor.value;
     if (type instanceof StringValue) {
       // Terminal host component. Start evaluating its children.
-      const childrenProperty = props.properties.get('children');
+      const childrenProperty = props.properties.get("children");
       if (childrenProperty && childrenProperty.descriptor) {
         const resolvedChildren = await resolveDeeply(
           childrenProperty.descriptor.value,
@@ -108,13 +110,17 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       return value;
     }
     let name;
-    if (type.properties && type.properties.has('name')) {
-      name = type.properties.get('name').descriptor.value.value;
+    if (type.properties && type.properties.has("name")) {
+      name = type.properties.get("name").descriptor.value.value;
     } else if (type.func) {
       name = type.func.name;
+    } else {
+      name = type.intrinsicName;
     }
     if (!(ref instanceof NullValue)) {
-      console.log(`\nFailed to inline component "${name}" as there was a ref on the ReactElement, this is not supported on components.`);
+      console.log(
+        `Failed to inline component "${name}" as there was a ref on the ReactElement, this is not supported on components.`
+      );
       return value;
     }
     try {
@@ -126,21 +132,27 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
         isBranched
       );
       if (nextValue === null) {
-        console.log(
-          `\nFailed to inline component "${type.intrinsicName}" as the reference wasn't a statically determinable function or class.`
-        );
+        if (name !== undefined) {
+          console.log(
+            `Failed to inline component "${name}" as the reference wasn't a statically determinable function or class.`
+          );
+        }
         return value;
       }
+      inlinedComponents++;
       return nextValue;
-    } catch (x) {
+    } catch (e) {
       if (name !== undefined) {
-        if (x.stack.indexOf('Failed to') === -1) {
+        if (
+          e.stack.indexOf("A fatal error occurred while prepacking") !== -1 ||
+          e.stack.indexOf("Invariant Violation") !== -1
+        ) {
           console.log(
-            `\nFailed to inline component "${name}" due to a Prepack evaluation error:\n${x.stack}\n`
+            `Failed to inline component "${name}" due to a Prepack evaluation error:\n- ${e.stack}`
           );
         } else {
           console.log(
-            `\nFailed to inline component "${name}" due to:\n${x.stack}\n`
+            `Failed to inline component "${name}" due to:\n${e.message}`
           );
         }
       }
@@ -168,7 +180,7 @@ function createReactClassInstance(
     debugger;
   }
   // add a rootConfig entry
-  const {rootConfigEntry, entryKey} = rootConfig.addEntry(props, theClass);
+  const { rootConfigEntry, entryKey } = rootConfig.addEntry(props, theClass, null);
   // we used to use Prepack to construct the component but this generally lead to
   // unwanted effects, as we don't really want to evaluate the code but rather
   // we just want to extract the things we care about and set everything else as abstract
@@ -176,23 +188,23 @@ function createReactClassInstance(
   // this will also help avoid bail outs and improve how we can inline things
   // we need to be careful not to set render methods to abstract (i.e. this._renderHeader())
   const baseComponent = moduleEnv.eval(
-    t.memberExpression(t.identifier('React'), t.identifier('Component')),
+    t.memberExpression(t.identifier("React"), t.identifier("Component")),
     true
   );
   // add all prototype properties on to the BaseComponent
-  const baseComponentPrototype = baseComponent.properties.get('prototype')
+  const baseComponentPrototype = baseComponent.properties.get("prototype")
     .descriptor.value.properties;
-  const componentPrototype = componentType.properties.get('prototype')
+  const componentPrototype = componentType.properties.get("prototype")
     .descriptor.value.properties;
   for (let [key, property] of componentPrototype) {
-    if (key !== 'constructor') {
+    if (key !== "constructor") {
       baseComponentPrototype.set(key, property);
     }
   }
   const instance = evaluator.construct(baseComponent, [props]);
   const instanceProperties = instance.properties;
   // set props on the new instance
-  instanceProperties.get('props').descriptor.value = props;
+  instanceProperties.get("props").descriptor.value = props;
   // now we need to work out all the instance properties for "this"
   const thisObject = theClass.thisObject;
   const instanceThisShape = convertAccessorsToNestedObject(
@@ -202,7 +214,7 @@ function createReactClassInstance(
   );
   const instanceThisAstWithPrefixes = convertNestedObjectWithPrefixesToAst(
     instanceThisShape,
-    'this',
+    "this",
     entryKey,
     moduleEnv
   );
@@ -210,30 +222,30 @@ function createReactClassInstance(
   // copy over the instanceThis properties to our instance, minus "props" as we have that already
   let useClassComponent = false;
   if (
-    componentPrototype.has('componentWillMount') ||
-    componentPrototype.has('componentDidMount') ||
-    componentPrototype.has('componentWillUpdate') ||
-    componentPrototype.has('componentDidUpdate') ||
-    componentPrototype.has('componentWillUnmount') ||
-    componentPrototype.has('componentDidCatch') ||
-    componentPrototype.has('componentWillReceiveProps')
+    componentPrototype.has("componentWillMount") ||
+    componentPrototype.has("componentDidMount") ||
+    componentPrototype.has("componentWillUpdate") ||
+    componentPrototype.has("componentDidUpdate") ||
+    componentPrototype.has("componentWillUnmount") ||
+    componentPrototype.has("componentDidCatch") ||
+    componentPrototype.has("componentWillReceiveProps")
   ) {
     if (isBranched === true) {
       throw new Error(
-        `\nFailed to inline component "${theClass.name}" due to the component having lifecycle events when inside a branch.`
+        `- Component having lifecycle events when inside a branch.`
       );
     }
     useClassComponent = true;
   }
   // TODO do we need to bail on sCU in branches too?
-  if (componentPrototype.has('shouldComponentUpdate')) {
+  if (componentPrototype.has("shouldComponentUpdate")) {
     useClassComponent = true;
   }
   for (let [key, value] of instanceThis.properties) {
-    if (key === 'state') {
+    if (key === "state") {
       useClassComponent = true;
       instanceProperties.set(key, value);
-    } else if (key !== 'props') {
+    } else if (key !== "props") {
       // if this is a prototype method that is called directly in the component (i.e. lifecycles) then don't make it abstract
       if (
         componentPrototype.has(key) &&
@@ -250,19 +262,19 @@ function createReactClassInstance(
   }
 
   // as we may bail out later on, don't actually apply changes to rootConfig until we know all is well
-  const commitToRootConfig = () => {
+  const commitToRootConfig = value => {
     if (useClassComponent === true) {
       rootConfig.useClassComponent = true;
     }
-    if (thisObject.properties.has('state')) {
-      rootConfigEntry.state = thisObject.properties.get('state').astNode;
+    if (thisObject.properties.has("state")) {
+      rootConfigEntry.state = thisObject.properties.get("state").astNode;
     }
     for (let [key, property] of componentPrototype) {
-      if (key === 'constructor') {
+      if (key === "constructor") {
         const constructorAstBody =
           property.descriptor.value.$ECMAScriptCode.body;
         rootConfigEntry.constructorProperties = constructorAstBody;
-      } else if (key !== 'render') {
+      } else if (key !== "render") {
         if (theClass.methods.has(key)) {
           if (rootConfigEntry.prototypeProperties === null) {
             rootConfigEntry.prototypeProperties = [];
@@ -273,11 +285,81 @@ function createReactClassInstance(
         }
       }
     }
+    findAndHoistClosures(value, props, rootConfigEntry, entryKey, rootConfig);
   };
   return {
     instance,
-    commitToRootConfig,
+    commitToRootConfig
   };
+}
+
+function findAndHoistClosures(
+  value,
+  propsValue,
+  rootConfigEntry,
+  entryKey,
+  rootConfig,
+  func
+) {
+  if (isReactElement(value)) {
+    const closures = [];
+    // functions might exist in 2 places, "ref" and "props"
+    const props = value.properties.get("props").descriptor.value;
+    if (props.properties !== undefined) {
+      for (let [key, prop] of props.properties) {
+        const propValue = prop.descriptor.value;
+        if (propValue instanceof FunctionValue && propValue.$ThisMode === 'lexical') {
+          closures.push(propValue);
+        }
+      }
+    }
+    const ref = value.properties.get("ref").descriptor.value;
+    if (ref instanceof FunctionValue && ref.$ThisMode === 'lexical') {
+      closures.push(ref);
+    }
+    if (closures.length > 0) {
+      // we hoist the closures onto the class, removing them from the render phase
+      rootConfig.useClassComponent = true;
+      // check if we already have a rootConfigEntry and entryKey, if not, create them
+      if (rootConfigEntry === null && entryKey === null) {
+        const entry = rootConfig.addEntry(propsValue, null, func);
+        rootConfigEntry = entry.rootConfigEntry;
+        entryKey = entry.entryKey;
+      }
+      closures.forEach(closure => {
+        // get the name, or if its not there, make up a random one to avoid collisions
+        const name =
+          closure.__originalName ||
+          (closure.properties.has("name") &&
+            closure.properties.get("name").descriptor.value.value) ||
+          Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 2);
+        if (rootConfigEntry.constructorProperties === null) {
+          rootConfigEntry.constructorProperties = [];
+        }
+        rootConfigEntry.constructorProperties.push(
+          t.expressionStatement(
+            t.assignmentExpression(
+              "=",
+              t.memberExpression(
+                t.thisExpression(),
+                t.identifier(entryKey + name)
+              ),
+              t.arrowFunctionExpression(
+                closure.$FormalParameters,
+                closure.$ECMAScriptCode
+              )
+            )
+          )
+        );
+        // rename the reference to the function to the new name
+        const newName = `this.${entryKey}${name}`;
+        closure.__originalName = newName;
+        if (closure.properties.has("name")) {
+          closure.properties.get("name").descriptor.value.value = newName;
+        }
+      });
+    }
+  }
 }
 
 function renderOneLevel(
@@ -292,12 +374,10 @@ function renderOneLevel(
       componentType.class !== undefined &&
       componentType.class.bailOut === true
     ) {
-      throw new Error(
-        `\nFailed to inline component "${componentType.class.name}" due to ${componentType.class.bailOutReason}.`
-      );
+      throw new Error(componentType.class.bailOutReason);
     }
     // Class Component
-    const {instance, commitToRootConfig} = createReactClassInstance(
+    const { instance, commitToRootConfig } = createReactClassInstance(
       componentType,
       props,
       moduleEnv,
@@ -305,27 +385,24 @@ function renderOneLevel(
       isBranched
     );
 
-    const render = evaluator.get(instance, 'render');
+    const render = evaluator.get(instance, "render");
     const value = evaluator.call(render, instance, []);
     // we would have thrown if there was an issue, so if not, we can commit to root config
-    commitToRootConfig();
+    commitToRootConfig(value);
     return value;
   } else {
     if (
       componentType.func !== undefined &&
       componentType.func.bailOut === true
     ) {
-      throw new Error(
-        `\nFailed to inline component "${componentType.func.name}" due to ${componentType.func.bailOutReason}.`
-      );
-    }
-    if (componentType.func !== undefined && componentType.func.name === 'ReactBlueBarFlyout') {
-      // debugger;
+      throw new Error(`- ${componentType.func.bailOutReason}`);
     }
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
     if (componentType.$Call !== undefined) {
-      return evaluator.call(componentType, undefined, [props]);
+      const value = evaluator.call(componentType, undefined, [props]);
+      findAndHoistClosures(value, props, null, null, rootConfig, componentType.func);
+      return value;
     }
   }
   return null;
@@ -348,5 +425,10 @@ async function renderAsDeepAsPossible(
   return await resolveDeeply(result, moduleEnv, rootConfig, isBranched);
 }
 
+function getInlinedComponents() {
+  return inlinedComponents;
+}
+
+exports.getInlinedComponents = getInlinedComponents;
 exports.renderOneLevel = renderOneLevel;
 exports.renderAsDeepAsPossible = renderAsDeepAsPossible;
