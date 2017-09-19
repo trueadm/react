@@ -11,3 +11,5 @@ exports[`Compiler return-text 1`] = `"Optimized 1 trees"`;
 exports[`Compiler simple 1`] = `"Optimized 1 trees"`;
 
 exports[`Compiler simple-children 1`] = `"Optimized 1 trees"`;
+
+exports[`Compiler type-change 1`] = `"Optimized 2 trees"`;

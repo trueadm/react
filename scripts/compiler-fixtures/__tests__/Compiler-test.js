@@ -98,6 +98,10 @@ describe('Compiler', () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
 
+  it('type-change', async () => {
+    await runFixture('fixtures/type-change.js');
+  });
+
   // Bug in componentDidMount parent/child order.
   xit('lifecycle-children', async () => {
     await runFixture('fixtures/lifecycle-children.js');
