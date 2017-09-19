@@ -94,11 +94,11 @@ describe('Compiler', () => {
     await runFixture('fixtures/return-text.js');
   });
 
-  // These look like bugs to me.
   it('lifecycle-siblings', async () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
-  xit('lifecycle-children', async () => {
+
+  it('lifecycle-children', async () => {
     await runFixture('fixtures/lifecycle-children.js');
   });
 

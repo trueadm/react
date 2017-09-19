@@ -13,9 +13,10 @@ var React = require('react');
 class A extends React.Component {
   constructor(props) {
     super(props);
-    this.props.log.push(`A.ctor(${this.props.arg})`);
+    this.ctorMessage = `A.ctor(${this.props.arg})`;
   }
   componentWillMount() {
+    this.props.log.push(this.ctorMessage);
     this.props.log.push(`A.componentWillMount(${this.props.arg})`);
   }
   componentDidMount() {
@@ -41,9 +42,10 @@ class A extends React.Component {
 class B extends React.Component {
   constructor(props) {
     super(props);
-    this.props.log.push(`B.ctor(${this.props.arg})`);
+    this.ctorMessage = `B.ctor(${this.props.arg})`;
   }
   componentWillMount() {
+    this.props.log.push(this.ctorMessage);
     this.props.log.push(`B.componentWillMount(${this.props.arg})`);
   }
   componentDidMount() {
