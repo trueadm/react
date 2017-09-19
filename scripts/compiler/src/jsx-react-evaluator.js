@@ -383,7 +383,14 @@ function evaluateJSXChildren(children, strictCode, env, realm) {
     return null;
   }
   if (children.length === 1) {
-    return evaluateJSXValue(children[0], strictCode, env, realm);
+    const singleChild = evaluateJSXValue(children[0], strictCode, env, realm);
+
+    if (singleChild instanceof StringValue) {
+      const lines = [];
+      cleanJSXElementLiteralChild({value: singleChild.value}, lines);
+      singleChild.value = lines[0].value;
+    }
+    return singleChild;
   }
   let array = ArrayCreate(realm, 0);
   let dynamicChildrenLength = children.length;
@@ -398,6 +405,8 @@ function evaluateJSXChildren(children, strictCode, env, realm) {
         dynamicChildrenLength--;
         // this is a space full of whitespace, so let's proceed
         continue;
+      } else {
+        value.value = lines[0].value;
       }
     }
     lastChildValue = value;

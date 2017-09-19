@@ -319,6 +319,7 @@ class RootConfig {
   constructor(moduleEnv) {
     this._entries = new Set();
     this._entriesCache = null;
+    this.componentDidQueue = [];
     this.moduleEnv = moduleEnv;
     this.useClassComponent = false;
   }
@@ -361,8 +362,6 @@ class RootConfig {
           if (
             name === "componentWillMount" ||
             name === "componentWillUpdate" ||
-            name === 'componentDidMount' ||
-            name === "componentDidUpdate" ||
             name === "componentWillUnmount" ||
             name === "shouldComponentUpdate" ||
             name === "componentWillReceiveProps" ||
@@ -407,7 +406,30 @@ class RootConfig {
             )
           );
         });
-      }
+      } 
+    }
+    if (this.componentDidQueue.length > 0) {
+      this.componentDidQueue.forEach(entry => {
+        if (entry.prototypeProperties !== null) {
+          entry.prototypeProperties.forEach(prototypeProperty => {
+            // skip it if it starts with _render
+            const name = prototypeProperty.key.name;
+            if (
+              name === "componentDidMount" ||
+              name === "componentDidUpdate"
+            ) {
+              mergeLifecycleMethod(
+                name,
+                prototypeProperty,
+                lifecycleMethods,
+                prototypeProperties,
+                entry,
+                this
+              );
+            }
+          });
+        }
+      });
     }
     return prototypeProperties;
   }

@@ -282,7 +282,7 @@ function createReactClassInstance(
           if (rootConfigEntry.prototypeProperties === null) {
             rootConfigEntry.prototypeProperties = [];
           }
-          if (key !== 'componentDidMount') {
+          if (key !== 'componentDidMount' && key !== 'componentDidUpdate') {
             rootConfigEntry.prototypeProperties.push(
               theClass.methods.get(key).astNode
             );
@@ -293,7 +293,7 @@ function createReactClassInstance(
     findAndHoistClosures(value, props, rootConfigEntry, entryKey, rootConfig);
   };
 
-  const commitDidMountPhase = value => {
+  const commitDidMountPhase = () => {
     if (componentPrototype.has('componentDidMount')) {
       if (rootConfigEntry.prototypeProperties === null) {
         rootConfigEntry.prototypeProperties = [];
@@ -302,6 +302,15 @@ function createReactClassInstance(
         theClass.methods.get('componentDidMount').astNode
       );
     }
+    if (componentPrototype.has('componentDidUpdate')) {
+      if (rootConfigEntry.prototypeProperties === null) {
+        rootConfigEntry.prototypeProperties = [];
+      }
+      rootConfigEntry.prototypeProperties.push(
+        theClass.methods.get('componentDidUpdate').astNode
+      );
+    }
+    rootConfig.componentDidQueue.push(rootConfigEntry);
   };
   return {
     instance,

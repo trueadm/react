@@ -112,12 +112,12 @@ describe('Compiler', () => {
   });
 
   // Bug in componentDidMount parent/child order.
-  xit('lifecycle-children', async () => {
+  it('lifecycle-children', async () => {
     await runFixture('fixtures/lifecycle-children.js');
   });
 
   // Bug with JSX spaces.
-  xit('simple-children', async () => {
+  it('simple-children', async () => {
     await runFixture('fixtures/simple-children.js');
   });
 
