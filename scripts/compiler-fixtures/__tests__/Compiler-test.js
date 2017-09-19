@@ -98,12 +98,20 @@ describe('Compiler', () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
 
+  it('lifecycle-children', async () => {
+    await runFixture('fixtures/lifecycle-children.js');
+  });
+
   it('clone-element', async () => {
     await runFixture('fixtures/clone-element.js');
   });
 
   it('key-change', async () => {
     await runFixture('fixtures/key-change.js');
+  });
+
+  it('simple-children', async () => {
+    await runFixture('fixtures/simple-children.js');
   });
 
   // Bug with inlining.
@@ -119,16 +127,6 @@ describe('Compiler', () => {
   // Bug? It unexpectedly bails out of inlining.
   xit('conditional', async () => {
     await runFixture('fixtures/conditional.js');
-  });
-
-  // Bug in componentDidMount parent/child order.
-  it('lifecycle-children', async () => {
-    await runFixture('fixtures/lifecycle-children.js');
-  });
-
-  // Bug with JSX spaces.
-  it('simple-children', async () => {
-    await runFixture('fixtures/simple-children.js');
   });
 
   // Difference in behavior. Before compilation, it fails,
