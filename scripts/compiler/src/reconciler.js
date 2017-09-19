@@ -139,6 +139,14 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
         }
         return value;
       }
+      if (result instanceof UndefinedValue) {
+        if (name !== undefined) {
+          console.log(
+            `Failed to inline component "${name}" as the render returned an undefined value.`
+          );
+        }        
+        return value;
+      }
       inlinedComponents++;
       if (commitDidMountPhase !== null) {
         commitDidMountPhase();

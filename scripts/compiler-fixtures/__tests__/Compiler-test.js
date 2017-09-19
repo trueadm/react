@@ -129,10 +129,7 @@ describe('Compiler', () => {
     await runFixture('fixtures/conditional.js');
   });
 
-  // Difference in behavior. Before compilation, it fails,
-  // but after compilation, it doesn't trigger the error.
-  // Potentially can be very confusing.
-  xit('return-undefined', async () => {
+  it('return-undefined', async () => {
     await runFixture('fixtures/return-undefined.js');
   });
 });
