@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Compiler conditional 1`] = `"Optimized 1 trees"`;
+
 exports[`Compiler dynamic-props 1`] = `"Optimized 1 trees"`;
 
 exports[`Compiler lifecycle-children 1`] = `"Optimized 1 trees"`;

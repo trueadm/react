@@ -102,6 +102,11 @@ describe('Compiler', () => {
     await runFixture('fixtures/type-change.js');
   });
 
+  // Bug? It unexpectedly bails out of inlining.
+  xit('conditional', async () => {
+    await runFixture('fixtures/conditional.js');
+  });
+
   // Bug in componentDidMount parent/child order.
   xit('lifecycle-children', async () => {
     await runFixture('fixtures/lifecycle-children.js');
