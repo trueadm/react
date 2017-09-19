@@ -22,8 +22,12 @@ class A extends React.Component {
   componentDidMount() {
     this.props.log.push(`A.componentDidMount(${this.props.arg})`);
   }
+  componentWillReceiveProps(nextProps) {
+    this.crwpMessage = `A.componentWillReceiveProps(${this.props.arg, nextProps.arg})`;
+  }
   componentWillUpdate(nextProps) {
-    this.props.log.push(`A.componentDidUpdate(${this.props.arg}, ${nextProps.arg})`);
+    this.props.log.push(this.crwpMessage);
+    this.props.log.push(`A.componentWillUpdate(${this.props.arg}, ${nextProps.arg})`);
   }
   componentDidUpdate(prevProps) {
     this.props.log.push(`A.componentDidUpdate(${prevProps.arg}, ${this.props.arg})`);
@@ -51,8 +55,12 @@ class B extends React.Component {
   componentDidMount() {
     this.props.log.push(`B.componentDidMount(${this.props.arg})`);
   }
+  componentWillReceiveProps(nextProps) {
+    this.crwpMessage = `B.componentWillReceiveProps(${this.props.arg, nextProps.arg})`;
+  }
   componentWillUpdate(nextProps) {
-    this.props.log.push(`B.componentDidUpdate(${this.props.arg}, ${nextProps.arg})`);
+    this.props.log.push(this.crwpMessage);
+    this.props.log.push(`B.componentWillUpdate(${this.props.arg}, ${nextProps.arg})`);
   }
   componentDidUpdate(prevProps) {
     this.props.log.push(`B.componentDidUpdate(${prevProps.arg}, ${this.props.arg})`);
