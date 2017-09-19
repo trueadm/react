@@ -98,12 +98,22 @@ describe('Compiler', () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
 
-  it('type-change', async () => {
-    await runFixture('fixtures/type-change.js');
-  });
-
   it('clone-element', async () => {
     await runFixture('fixtures/clone-element.js');
+  });
+
+  it('key-change', async () => {
+    await runFixture('fixtures/key-change.js');
+  });
+
+  // Bug with inlining.
+  xit('key-nesting', async () => {
+    await runFixture('fixtures/key-nesting.js');
+  });
+
+  // Bug with inlining.
+  xit('type-change', async () => {
+    await runFixture('fixtures/type-change.js');
   });
 
   // Bug? It unexpectedly bails out of inlining.

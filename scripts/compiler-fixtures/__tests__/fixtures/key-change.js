@@ -28,25 +28,17 @@ class Stateful extends React.Component {
   }
 }
 
-function MessagePane() {
-  return <Stateful>Hi</Stateful>;
-}
-
-function SettingsPane() {
-  return <Stateful>Bye</Stateful>;
-}
-
 function App(props) {
   if (props.switch) {
     return (
       <div>
-        <MessagePane />
+        <Stateful key='hi'>Hi</Stateful>
       </div>
     );
   }
   return (
     <div>
-      <SettingsPane />
+      <Stateful key='bye'>Bye</Stateful>
     </div>
   );
 }
@@ -56,16 +48,16 @@ App.getTrials = function*(renderer, Root) {
   yield ['mount', renderer.toJSON()];
 
   renderer.update(<Root switch={false} />);
-  yield ['update with same type', renderer.toJSON()];
+  yield ['update with same key', renderer.toJSON()];
 
   renderer.update(<Root switch={true} />);
-  yield ['update with different type', renderer.toJSON()];
+  yield ['update with different key', renderer.toJSON()];
 
   renderer.update(<Root switch={true} />);
-  yield ['update with same type (again)', renderer.toJSON()];
+  yield ['update with same key (again)', renderer.toJSON()];
 
   renderer.update(<Root switch={false} />);
-  yield ['update with different type (again)', renderer.toJSON()];
+  yield ['update with different key (again)', renderer.toJSON()];
 };
 
 module.exports = App;
