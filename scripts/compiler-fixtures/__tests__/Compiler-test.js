@@ -59,10 +59,10 @@ async function runFixture(name) {
     const {value: valueA, done: doneA} = trialsA.next();
     const {value: valueB, done: doneB} = trialsB.next();
 
-    expect(doneA).toBe(doneB);
+    expect(doneB).toBe(doneA);
     // The yielded output should be the same.
     // Each fixture gets to decide what to yield.
-    expect(valueA).toEqual(valueB);
+    expect(valueB).toEqual(valueA);
     if (doneA) {
       break;
     }
