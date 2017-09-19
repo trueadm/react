@@ -59,10 +59,10 @@ async function runFixture(name) {
     const {value: valueA, done: doneA} = trialsA.next();
     const {value: valueB, done: doneB} = trialsB.next();
 
-    expect(doneA).toBe(doneB);
+    expect(doneB).toBe(doneA);
     // The yielded output should be the same.
     // Each fixture gets to decide what to yield.
-    expect(valueA).toEqual(valueB);
+    expect(valueB).toEqual(valueA);
     if (doneA) {
       break;
     }
@@ -94,12 +94,22 @@ describe('Compiler', () => {
     await runFixture('fixtures/return-text.js');
   });
 
-  // These look like bugs to me.
   it('lifecycle-siblings', async () => {
     await runFixture('fixtures/lifecycle-siblings.js');
   });
+
+  it('type-change', async () => {
+    await runFixture('fixtures/type-change.js');
+  });
+
+  // Bug in componentDidMount parent/child order.
   xit('lifecycle-children', async () => {
     await runFixture('fixtures/lifecycle-children.js');
+  });
+
+  // Bug with JSX spaces.
+  xit('simple-children', async () => {
+    await runFixture('fixtures/simple-children.js');
   });
 
   // Difference in behavior. Before compilation, it fails,
