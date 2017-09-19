@@ -160,6 +160,7 @@ function renamePropsObject(node, firstNode, propsValue, rootConfig) {
   if (propValue !== undefined) {
     const value = propValue.descriptor.value;
     if (value.isIntrinsic()) {
+      // $F$ is the this.state.foo relabelling
       if (value.intrinsicName.indexOf("$F$") === 0) {
         memberNode = serializer.convertStringToExpressionWithDelimiter(
           value.intrinsicName,
@@ -326,8 +327,8 @@ class RootConfig {
       Math.random().toString(36).replace(/[^a-z]+/g, "").substring(0, 3) + "_";
     const entry = {
       constructorProperties: null,
-      key: key,
-      props: props,
+      key,
+      props,
       prototypeProperties: null,
       state: null,
       theClass,
@@ -350,7 +351,6 @@ class RootConfig {
     const entries = this._getEntries();
     const prototypeProperties = [];
     const lifecycleMethods = {};
-    let componentDidMountEntries = null;
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const theClass = entry.theClass;
@@ -358,25 +358,10 @@ class RootConfig {
         entry.prototypeProperties.forEach(prototypeProperty => {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
-          // componentDidMount get merged in reverse block order
-          if (name === "componentDidMount") {
-            if (componentDidMountEntries === null) {
-              componentDidMountEntries = [];
-            }
-            componentDidMountEntries.unshift(() => {
-              mergeLifecycleMethod(
-                name,
-                prototypeProperty,
-                lifecycleMethods,
-                prototypeProperties,
-                entry,
-                this
-              );
-            });
-            return;
-          } else if (
+          if (
             name === "componentWillMount" ||
             name === "componentWillUpdate" ||
+            name === 'componentDidMount' ||
             name === "componentDidUpdate" ||
             name === "componentWillUnmount" ||
             name === "shouldComponentUpdate" ||
@@ -423,9 +408,6 @@ class RootConfig {
           );
         });
       }
-    }
-    if (componentDidMountEntries !== null) {
-      componentDidMountEntries.forEach(componentDidMountEntry => componentDidMountEntry());
     }
     return prototypeProperties;
   }

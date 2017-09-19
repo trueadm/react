@@ -157,17 +157,20 @@ async function optimizeComponentWithPrepack(
   if (astComponent.class !== undefined) {
     prepackEvaluatedComponent.class = astComponent.class;
   }
-  const resolvedResult = await reconciler.renderAsDeepAsPossible(
+  const {result, commitDidMountPhase} = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
     moduleEnv,
     rootConfig,
     false
   );
+  if (commitDidMountPhase !== null) {
+    commitDidMountPhase();
+  }
   const node = serializer.serializeEvaluatedFunction(
     prepackEvaluatedComponent,
     [initialProps],
-    resolvedResult,
+    result,
     rootConfig
   );
   return convertToExpression(node);

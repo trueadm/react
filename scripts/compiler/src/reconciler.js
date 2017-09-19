@@ -124,14 +124,14 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       return value;
     }
     try {
-      const nextValue = await renderAsDeepAsPossible(
+      const {result, commitDidMountPhase} = await renderAsDeepAsPossible(
         type,
         props,
         moduleEnv,
         rootConfig,
         isBranched
       );
-      if (nextValue === null) {
+      if (result === null) {
         if (name !== undefined) {
           console.log(
             `Failed to inline component "${name}" as the reference wasn't a statically determinable function or class.`
@@ -140,7 +140,10 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
         return value;
       }
       inlinedComponents++;
-      return nextValue;
+      if (commitDidMountPhase !== null) {
+        commitDidMountPhase();
+      }
+      return result;
     } catch (e) {
       if (name !== undefined) {
         if (
@@ -262,7 +265,7 @@ function createReactClassInstance(
   }
 
   // as we may bail out later on, don't actually apply changes to rootConfig until we know all is well
-  const commitToRootConfig = value => {
+  const commitWillMountPhase = value => {
     if (useClassComponent === true) {
       rootConfig.useClassComponent = true;
     }
@@ -279,17 +282,31 @@ function createReactClassInstance(
           if (rootConfigEntry.prototypeProperties === null) {
             rootConfigEntry.prototypeProperties = [];
           }
-          rootConfigEntry.prototypeProperties.push(
-            theClass.methods.get(key).astNode
-          );
+          if (key !== 'componentDidMount') {
+            rootConfigEntry.prototypeProperties.push(
+              theClass.methods.get(key).astNode
+            );
+          }
         }
       }
     }
     findAndHoistClosures(value, props, rootConfigEntry, entryKey, rootConfig);
   };
+
+  const commitDidMountPhase = value => {
+    if (componentPrototype.has('componentDidMount')) {
+      if (rootConfigEntry.prototypeProperties === null) {
+        rootConfigEntry.prototypeProperties = [];
+      }
+      rootConfigEntry.prototypeProperties.push(
+        theClass.methods.get('componentDidMount').astNode
+      );
+    }
+  };
   return {
     instance,
-    commitToRootConfig
+    commitWillMountPhase,
+    commitDidMountPhase,
   };
 }
 
@@ -377,7 +394,7 @@ function renderOneLevel(
       throw new Error(componentType.class.bailOutReason);
     }
     // Class Component
-    const { instance, commitToRootConfig } = createReactClassInstance(
+    const { instance, commitWillMountPhase, commitDidMountPhase } = createReactClassInstance(
       componentType,
       props,
       moduleEnv,
@@ -388,8 +405,8 @@ function renderOneLevel(
     const render = evaluator.get(instance, "render");
     const value = evaluator.call(render, instance, []);
     // we would have thrown if there was an issue, so if not, we can commit to root config
-    commitToRootConfig(value);
-    return value;
+    commitWillMountPhase(value);
+    return {value, commitDidMountPhase};
   } else {
     if (
       componentType.func !== undefined &&
@@ -402,10 +419,10 @@ function renderOneLevel(
     if (componentType.$Call !== undefined) {
       const value = evaluator.call(componentType, undefined, [props]);
       findAndHoistClosures(value, props, null, null, rootConfig, componentType.func);
-      return value;
+      return {value, commitDidMountPhase: null};
     }
   }
-  return null;
+  return {value: null, commitDidMountPhase: null};
 }
 
 async function renderAsDeepAsPossible(
@@ -415,14 +432,18 @@ async function renderAsDeepAsPossible(
   rootConfig,
   isBranched
 ) {
-  const result = renderOneLevel(
+  const {value, commitDidMountPhase} = renderOneLevel(
     componentType,
     props,
     moduleEnv,
     rootConfig,
     isBranched
   );
-  return await resolveDeeply(result, moduleEnv, rootConfig, isBranched);
+  const result = await resolveDeeply(value, moduleEnv, rootConfig, isBranched);
+  return {
+    result,
+    commitDidMountPhase,
+  };
 }
 
 function getInlinedComponents() {
