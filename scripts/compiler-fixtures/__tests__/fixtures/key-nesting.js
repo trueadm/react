@@ -21,7 +21,6 @@ class Stateful extends React.Component {
   render() {
     return (
       <div>
-        {this.props.children}
         (is update: {String(this.state.updated)})
       </div>
     );
@@ -29,11 +28,11 @@ class Stateful extends React.Component {
 }
 
 function MessagePane() {
-  return <Stateful>Hi</Stateful>;
+  return <div key='ha'><Stateful /></div>;
 }
 
 function SettingsPane() {
-  return <Stateful>Bye</Stateful>;
+  return <div key='ha'><Stateful /></div>;
 }
 
 function App(props) {

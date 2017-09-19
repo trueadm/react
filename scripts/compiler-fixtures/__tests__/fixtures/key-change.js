@@ -22,7 +22,7 @@ class Stateful extends React.Component {
     return (
       <div>
         {this.props.children}
-        (is update: {this.state.updated})
+        (is update: {String(this.state.updated)})
       </div>
     );
   }
