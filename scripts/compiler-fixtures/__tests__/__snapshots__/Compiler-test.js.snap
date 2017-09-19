@@ -6,6 +6,8 @@ exports[`Compiler conditional 1`] = `"Optimized 1 trees"`;
 
 exports[`Compiler dynamic-props 1`] = `"Optimized 1 trees"`;
 
+exports[`Compiler key-change 1`] = `"Optimized 2 trees"`;
+
 exports[`Compiler lifecycle-children 1`] = `"Optimized 1 trees"`;
 
 exports[`Compiler lifecycle-siblings 1`] = `"Optimized 1 trees"`;
