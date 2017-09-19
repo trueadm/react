@@ -222,7 +222,7 @@ function createReactClassInstance(
     thisObject.accessors,
     null,
     true
-  );
+  ) || {};
   const instanceThisAstWithPrefixes = convertNestedObjectWithPrefixesToAst(
     instanceThisShape,
     "this",

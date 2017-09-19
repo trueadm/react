@@ -3,7 +3,7 @@
 require('React');
 
 function App(props) {
-  return "Hi";
+  return <h1>Hi</h1>;
 }
 
 var test = App;

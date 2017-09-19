@@ -9,19 +9,20 @@
 
 
 var React = require('React');
-class A extends React.Component {
-  render() {
-    return this.props.children;
+function MaybeShow(props) {
+  if (props.show) {
+    return props.children;
   }
+  return null;
 }
 
-function App(props) {
-  return (
-    <A>
-      <A>
-        Hi
-      </A>
-    </A>
-  );
+class App extends React.Component {
+  render() {
+    return (
+      <MaybeShow show={true}>
+        <h1>Hi</h1>
+      </MaybeShow>
+    );
+  }
 }
 module.exports = App;
