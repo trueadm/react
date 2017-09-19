@@ -17,19 +17,30 @@ function MaybeShow(props) {
   return null;
 }
 
-class App extends React.Component {
-  render() {
-    return (
+function Override(props) {
+  var child = props.children;
+  var shouldShow = props.overrideShow;
+  return React.cloneElement(child, {
+    show: shouldShow
+  });
+}
+
+function App(props) {
+  return (
+    <Override overrideShow={props.show}>
       <MaybeShow show={true}>
         <h1>Hi</h1>
       </MaybeShow>
-    );
-  }
+    </Override>
+  );
 }
 
 App.getTrials = function*(renderer, Root) {
-  renderer.update(<Root />);
-  yield ['conditional render', renderer.toJSON()];
+  renderer.update(<Root show={true} />);
+  yield ['clone element (true)', renderer.toJSON()];
+
+  renderer.update(<Root show={false} />);
+  yield ['clone element (false)', renderer.toJSON()];
 };
 
 module.exports = App;
