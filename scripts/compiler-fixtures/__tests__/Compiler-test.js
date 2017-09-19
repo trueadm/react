@@ -124,8 +124,7 @@ describe('Compiler', () => {
     await runFixture('fixtures/type-change.js');
   });
 
-  // Bug? It unexpectedly bails out of inlining.
-  xit('conditional', async () => {
+  it('conditional', async () => {
     await runFixture('fixtures/conditional.js');
   });
 
