@@ -114,6 +114,14 @@ describe('Compiler', () => {
     await runFixture('fixtures/simple-children.js');
   });
 
+  it('conditional', async () => {
+    await runFixture('fixtures/conditional.js');
+  });
+
+  it('return-undefined', async () => {
+    await runFixture('fixtures/return-undefined.js');
+  });
+
   // Bug with inlining.
   xit('key-nesting', async () => {
     await runFixture('fixtures/key-nesting.js');
@@ -122,13 +130,5 @@ describe('Compiler', () => {
   // Bug with inlining.
   xit('type-change', async () => {
     await runFixture('fixtures/type-change.js');
-  });
-
-  it('conditional', async () => {
-    await runFixture('fixtures/conditional.js');
-  });
-
-  it('return-undefined', async () => {
-    await runFixture('fixtures/return-undefined.js');
   });
 });
