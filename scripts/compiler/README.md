@@ -3,8 +3,8 @@
 ## Installation
 
 Checkout a fork of Prepack locally:
-- git clone git@github.com:trueadm/prepack.git locally
-- git checkout `hacks` branch from the repo
+- `git clone https://github.com/trueadm/prepack.git` locally
+- `git checkout hacks` in it
 - run `yarn` from within the repo
 
 From the React repo:
