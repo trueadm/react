@@ -191,13 +191,13 @@ function handleAssignmentValue(
             //   declarations[assignmentKey] = assignmentValue.astNode;
             //   break;
             // }
-            console.log(
-              `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
-            );
+            // console.log(
+            //   `Found a nondeterministic function call for "${identifier.name}" (treating as abstract)`
+            // );
           } else {
-            console.log(
-              `Found a nondeterministic function call (treating as abstract)`
-            );
+            // console.log(
+            //   `Found a nondeterministic function call (treating as abstract)`
+            // );
           }
           declarations[assignmentKey] = evaluator.createAbstractFunction(
             assignmentKey

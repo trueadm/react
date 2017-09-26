@@ -9,9 +9,9 @@
 'use strict';
 
 const reconciler = require('./reconciler');
+const evaluator = require('./evaluator');
 const serializer = require('./serializer');
 const traverser = require('./traverser');
-const chalk = require('chalk');
 const {
   convertAccessorsToNestedObject,
   convertNestedObjectToAst,
@@ -150,6 +150,7 @@ async function optimizeComponentWithPrepack(
     astComponent,
     moduleEnv
   );
+  const initialContext = evaluator.createAbstractObject('this.context');
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   if (astComponent.func !== undefined) {
     prepackEvaluatedComponent.func = astComponent.func;
@@ -160,6 +161,7 @@ async function optimizeComponentWithPrepack(
   const {result, commitDidMountPhase} = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
+    initialContext,
     moduleEnv,
     rootConfig,
     false

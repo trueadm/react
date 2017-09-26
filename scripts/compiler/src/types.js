@@ -168,27 +168,41 @@ function convertNestedObjectToAst(object) {
 
 // this will add additioal prefixed aliases to all prefixes one level deep
 // i.e. this.state.foo => this.state.PREFIX_foo
+// i.e. this.state.foo.bar => this.state.PREFIX_foo.bar
 function convertNestedObjectWithPrefixesToAst(
   object,
   prefix,
   aliasKey,
-  moduleEnv
+  moduleEnv,
+  hasAppliedPrefix
 ) {
   return t.objectExpression(
     Object.keys(object).map(key => {
       const value = object[key];
       if (typeof value === 'object') {
+        let childHasAppliedPrefix = hasAppliedPrefix;
+        let ident = `${prefix}$_$${key}`;
+        if (hasAppliedPrefix === false && prefix.startsWith('this')) {
+          if (key !== 'props' && key !== 'state') {
+            ident = `${prefix}$_$${aliasKey}${key}`;
+            childHasAppliedPrefix = true;
+          }
+        }
         return t.objectProperty(
           t.identifier(key),
           convertNestedObjectWithPrefixesToAst(
             value,
-            `${prefix}$_$${key}`,
+            ident,
             aliasKey,
-            moduleEnv
+            moduleEnv,
+            childHasAppliedPrefix
           )
         );
       } else {
-        const ident = `$F$${prefix}$_$${aliasKey}${key}`;
+        let ident = `$F$${prefix}$_$${key}`;
+        if (hasAppliedPrefix === false) {
+          ident = `$F$${prefix}$_$${aliasKey}${key}`;
+        }
         moduleEnv.declare(ident, evaluator.createAbstractValue(ident));
         return t.objectProperty(t.identifier(key), t.identifier(ident));
       }
@@ -224,6 +238,7 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
             newPrefix
           );
           break;
+        case Types.OBJECT:
         case Types.OBJECT_REQUIRED:
           properties.get(key).descriptor.value = evaluator.createAbstractObject(
             newPrefix
@@ -248,14 +263,6 @@ function setAbstractPropsUsingNestedObject(oldValue, object, prefix, root) {
           properties.get(
             key
           ).descriptor.value = evaluator.createAbstractBoolean(newPrefix);
-          break;
-        // union objects
-        case Types.OBJECT:
-          properties.get(
-            key
-          ).descriptor.value = evaluator.createAbstractObjectOrUndefined(
-            newPrefix
-          );
           break;
         case Types.STRING:
           // not correct but we're cheating for now

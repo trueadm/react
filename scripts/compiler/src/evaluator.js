@@ -36,18 +36,11 @@ const jsxEvaluator = require('./jsx-react-evaluator');
 const {describeLocation} = require('prepack/lib/intrinsics/ecma262/Error.js');
 const t = require('babel-types');
 
-let preludeGenerator = null;
-
-function getPreludeGenerator() {
-  return preludeGenerator;
-}
-
 class NoTempVariablesGenerator extends Generator {
   derive(types, values, args, buildFunction, kind) {
     let result = AbstractValue.createFromTemplate(
       realm,
       _preludeGenerator => args => {
-        preludeGenerator = _preludeGenerator;
         // convert it back to array
         args = Object.values(args);
         return buildFunction(args);
@@ -389,8 +382,6 @@ function get(object, propertyName) {
 }
 
 exports.get = get;
-
-exports.getPreludeGenerator = getPreludeGenerator;
 
 exports.createAbstractBoolean = createAbstractBoolean;
 

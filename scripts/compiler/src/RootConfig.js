@@ -207,6 +207,18 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
       debugger;
     }
   }
+  let contextArgument = null;
+  if (func !== null) {
+    contextArgument = func.params.length > 1 ? func.params[1] : null;
+  }  
+  let contextName = null;
+  if (contextArgument !== null && contextArgument.astNode !== null) {
+    if (contextArgument.astNode.type === 'Identifier') {
+      contextName = contextArgument.astNode.name;
+    } else {
+      debugger;
+    }
+  }  
   const prefix = entry.key;
   const propsValue = entry.props;
   const scope = traverser.createModuleScope();
@@ -255,6 +267,9 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
         return newNode;
       } else if (propsArgument !== null && node.object.type === 'Identifier' && propsName === node.object.name) {
         return renamePropsObject(node, node.object, propsValue, rootConfig);
+      } else if (contextArgument !== null && node.object.type === 'Identifier' && contextName === node.object.name) {
+        node.object.name = 'childContext';
+        return t.memberExpression(t.memberExpression(t.thisExpression(), node.object), node.property);
       } else if (node.object.type === "ThisExpression") {
         // handle this.* instance properties/methods
         const firstNode = findFirstMemberNodeOfMemberExpression(node.property);
@@ -270,7 +285,13 @@ function addPrefixesToAstNodes(entryNode, entry, rootConfig, propsAliases) {
         const name = firstNode.name;
         if (name === "state") {
           const property = getNextMemberNodeOfMemberExpression(node, firstNode);
+          if (property.name === 'activeFlyout') {
+            debugger;
+          }
           property.name = prefix + property.name;
+          return true;
+        } else if (name === "context") {
+          firstNode.name = 'childContext';
           return true;
         } else if (name === "props") {
           return renamePropsObject(node, firstNode, propsValue, rootConfig);
@@ -360,6 +381,7 @@ class RootConfig {
           // skip it if it starts with _render
           const name = prototypeProperty.key.name;
           if (
+            name === "getChildContext" ||
             name === "componentWillMount" ||
             name === "componentWillUpdate" ||
             name === "componentWillUnmount" ||

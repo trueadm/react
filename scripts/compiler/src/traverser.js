@@ -1145,6 +1145,7 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
             newValue.action = action;
           }
           assign(subject, "properties", key, newValue);
+          subject.accessors.set(key, newValue);
           return newValue;
         }
         if (subject.properties.has(key)) {
@@ -1187,11 +1188,10 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         if (!subject.accessors.has(key)) {
           const accesorObject = createAbstractValue();
           subject.accessors.set(key, accesorObject);
+          return accesorObject;
         } else {
           return subject.accessors.get(key);
         }
-        // who knows what it could be?
-        return createAbstractValue(false);
       } else if (subject.type === Types.MathExpression) {
         // who knows what it could be?
         return createAbstractValue(false);
@@ -1301,6 +1301,13 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
               false,
               false
             )
+          );
+        } else if (astProperty.type === "SpreadProperty") {
+          obj.accessedAsSpread = true;
+          getOrSetValueFromAst(
+            astProperty.argument,
+            subject,
+            action
           );
         } else {
           debugger;

@@ -19,7 +19,6 @@ const {
   UndefinedValue
 } = require("prepack/lib/values");
 const t = require("babel-types");
-const evaluator = require("./evaluator");
 const traverser = require("./traverser");
 
 function getFunctionReferenceName(functionValue) {
@@ -104,7 +103,7 @@ function addKeyToElement(astElement, key) {
 // as we compile and inline components, nested arrays will be common
 // to avoid key issues and bad updates, we need to manually add keys
 // to static children that won't ever collide
-function applyKeysToNestedArray(expr) {
+function applyKeysToNestedArray(expr, isBase) {
   const astElements = expr.elements;
   const randomHashString = Math.random()
     .toString(36)
@@ -114,21 +113,21 @@ function applyKeysToNestedArray(expr) {
   for (let i = 0; i < astElements.length; i++) {
     const astElement = astElements[i];
 
-    if (astElement.type === "JSXElement") {
+    if (astElement.type === "JSXElement" && isBase === false) {
       addKeyToElement(astElement, `${randomHashString}${i}`);
     } else if (astElement.type === "ArrayExpression") {
-      applyKeysToNestedArray(astElement);
+      applyKeysToNestedArray(astElement, false);
     } else if (astElement.type === "ConditionalExpression") {
       // it's common for conditions to be in an array, which means we need to check them for keys too
-      if (astElement.alternate.type === "JSXElement") {
+      if (astElement.alternate.type === "JSXElement" && isBase === false) {
         addKeyToElement(astElement.alternate, `${randomHashString}0${i}`);
       } else if (astElement.alternate.type === "ArrayExpression") {
-        applyKeysToNestedArray(astElement.alternate);
+        applyKeysToNestedArray(astElement.alternate, false);
       }
-      if (astElement.consequent.type === "JSXElement") {
+      if (astElement.consequent.type === "JSXElement" && isBase === false) {
         addKeyToElement(astElement.consequent, `${randomHashString}1${i}`);
       } else if (astElement.consequent.type === "ArrayExpression") {
-        applyKeysToNestedArray(astElement.consequent);
+        applyKeysToNestedArray(astElement.consequent, false);
       }
     }
   }
@@ -182,7 +181,7 @@ function convertReactElementToJSXExpression(objectValue, rootConfig) {
           : [expr];
         children = elements.map(expr => {
           if (expr.type === "ArrayExpression") {
-            applyKeysToNestedArray(expr);
+            applyKeysToNestedArray(expr, true);
           }
           return expr === null
             ? t.jSXExpressionContainer(t.jSXEmptyExpression())
@@ -295,7 +294,7 @@ function convertStringToExpressionWithDelimiter(
           toIdentififer(parts.shift())
         );
       } else {
-        debugger;
+        astNode = t.memberExpression(astNode, toIdentififer(parts.shift()));
       }
     }
   }
@@ -314,7 +313,7 @@ function convertValueToExpression(value, rootConfig) {
         const abstractArg = value.args[i];
         const node = convertValueToExpression(abstractArg, rootConfig);
         if (node.type === "ArrayExpression") {
-          applyKeysToNestedArray(node);
+          applyKeysToNestedArray(node, false);
         }
         serializedArgs.push(node);
       }
@@ -324,7 +323,7 @@ function convertValueToExpression(value, rootConfig) {
     if (value.isIntrinsic()) {
       const intrinsicName = value.intrinsicName;
       if (intrinsicName.indexOf("_$") === 0) {
-        const preludeGenerator = evaluator.getPreludeGenerator();
+        const preludeGenerator = value.$Realm.preludeGenerator;
         if (preludeGenerator.derivedIds.has(intrinsicName)) {
           const derivedArgValues = preludeGenerator.derivedIds.get(
             intrinsicName
@@ -333,14 +332,6 @@ function convertValueToExpression(value, rootConfig) {
             convertValueToExpression(derivedArgValue, rootConfig)
           );
           if (typeof value._buildNode === "function") {
-            if (
-              JSON.stringify(value.buildNode(derivedArgs)).indexOf(
-                "dataTestID"
-              ) !== -1
-            ) {
-              debugger;
-            }
-
             return value.buildNode(derivedArgs);
           } else {
             debugger;
@@ -359,9 +350,15 @@ function convertValueToExpression(value, rootConfig) {
         // hack for now
         const node = value.buildNode(serializedArgs);
         node.object = t.identifier("props");
-        if (JSON.stringify(node).indexOf("dataTestID") !== -1) {
-          debugger;
-        }
+        return node;
+      }
+      if (
+        rootConfig.useClassComponent === false &&
+        value.intrinsicName.indexOf("this.context") !== -1
+      ) {
+        // hack for now
+        const node = value.buildNode(serializedArgs);
+        node.object = t.identifier("context");
         return node;
       }
     }
@@ -417,7 +414,7 @@ function convertValueToExpression(value, rootConfig) {
 function createClassConstructorBody(rootConfig) {
   const bodyBlock = [
     t.expressionStatement(
-      t.callExpression(t.identifier("super"), [t.identifier("props")])
+      t.callExpression(t.identifier("super"), [t.identifier("props"), t.identifier('context')])
     )
   ];
   const constructorProperties = rootConfig.getConstructorProperties(bodyBlock);
@@ -450,6 +447,7 @@ function removeDeadCodeFromClassAst(classAst, parentScope) {
     const name = method.name;
     if (
       name !== "render" &&
+      name !== "getChildContext" &&
       name !== "constructor" &&
       name !== "componentWillMount" &&
       name !== "componentDidMount" &&
@@ -496,7 +494,7 @@ function serializeEvaluatedFunction(
       t.classMethod(
         "constructor",
         t.identifier("constructor"),
-        [t.identifier("props")],
+        [t.identifier("props"), t.identifier("context")],
         constructorBody
       )
     ];

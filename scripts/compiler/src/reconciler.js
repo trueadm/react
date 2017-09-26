@@ -25,6 +25,9 @@ const {
 } = require("./types");
 const t = require("babel-types");
 const evaluator = require("./evaluator");
+const {
+  convertStringToExpressionWithDelimiter,
+} = require('./serializer');
 
 let inlinedComponents = 0;
 
@@ -40,7 +43,7 @@ function isReactClassComponent(type) {
   return type.$FunctionKind === "classConstructor";
 }
 
-async function resolveFragment(arrayValue, moduleEnv, rootConfig, isBranched) {
+async function resolveFragment(arrayValue, context, moduleEnv, rootConfig, isBranched) {
   let lengthProperty = arrayValue.properties.get("length");
   if (
     !lengthProperty ||
@@ -58,6 +61,7 @@ async function resolveFragment(arrayValue, moduleEnv, rootConfig, isBranched) {
     if (elementValue) {
       elementProperty.descriptor.value = await resolveDeeply(
         elementValue,
+        context,
         moduleEnv,
         rootConfig,
         isBranched
@@ -66,7 +70,7 @@ async function resolveFragment(arrayValue, moduleEnv, rootConfig, isBranched) {
   }
 }
 
-async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
+async function resolveDeeply(value, context, moduleEnv, rootConfig, isBranched) {
   if (
     value instanceof StringValue ||
     value instanceof NumberValue ||
@@ -80,6 +84,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
     for (let i = 0; i < value.args.length; i++) {
       value.args[i] = await resolveDeeply(
         value.args[i],
+        context,
         moduleEnv,
         rootConfig,
         true
@@ -88,7 +93,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
     return value;
   }
   if (value instanceof ArrayValue) {
-    await resolveFragment(value, moduleEnv, rootConfig, isBranched);
+    await resolveFragment(value, context, moduleEnv, rootConfig, isBranched);
     return value;
   }
   if (isReactElement(value)) {
@@ -101,6 +106,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       if (childrenProperty && childrenProperty.descriptor) {
         const resolvedChildren = await resolveDeeply(
           childrenProperty.descriptor.value,
+          context,
           moduleEnv,
           rootConfig,
           isBranched
@@ -127,6 +133,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
       const {result, commitDidMountPhase} = await renderAsDeepAsPossible(
         type,
         props,
+        context,
         moduleEnv,
         rootConfig,
         isBranched
@@ -144,7 +151,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
           console.log(
             `Failed to inline component "${name}" as the render returned an undefined value.`
           );
-        }        
+        }
         return value;
       }
       inlinedComponents++;
@@ -163,7 +170,7 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
           );
         } else {
           console.log(
-            `Failed to inline component "${name}" due to:\n${e.message}`
+            `Failed to inline component "${name}" due to:\n${e.stack}`
           );
         }
       }
@@ -177,12 +184,14 @@ async function resolveDeeply(value, moduleEnv, rootConfig, isBranched) {
 function createReactClassInstance(
   componentType,
   props,
+  context,
   moduleEnv,
   rootConfig,
   isBranched
 ) {
   // first we find the class object we made during the scan phase, it can be in two places
   let theClass;
+  let hasGetChildContext = false;
   if (componentType.class !== undefined) {
     theClass = componentType.class;
   } else if (componentType.$ECMAScriptCode.class) {
@@ -212,7 +221,7 @@ function createReactClassInstance(
       baseComponentPrototype.set(key, property);
     }
   }
-  const instance = evaluator.construct(baseComponent, [props]);
+  const instance = evaluator.construct(baseComponent, [props, context]);
   const instanceProperties = instance.properties;
   // set props on the new instance
   instanceProperties.get("props").descriptor.value = props;
@@ -227,7 +236,8 @@ function createReactClassInstance(
     instanceThisShape,
     "this",
     entryKey,
-    moduleEnv
+    moduleEnv,
+    false
   );
   let instanceThis = moduleEnv.eval(instanceThisAstWithPrefixes);
   // copy over the instanceThis properties to our instance, minus "props" as we have that already
@@ -242,11 +252,17 @@ function createReactClassInstance(
     componentPrototype.has("componentWillReceiveProps")
   ) {
     if (isBranched === true) {
-      throw new Error(
-        `- Component having lifecycle events when inside a branch.`
-      );
+      // skip SubscriberComponent for now as we can inline it safely
+      if (theClass.name !== 'SubscriberComponent') {
+        throw new Error(
+          `- Component having lifecycle events when inside a branch.`
+        );
+      }
     }
     useClassComponent = true;
+  }
+  if (componentPrototype.has('getChildContext')) {
+    hasGetChildContext = true;
   }
   // TODO do we need to bail on sCU in branches too?
   if (componentPrototype.has("shouldComponentUpdate")) {
@@ -318,12 +334,31 @@ function createReactClassInstance(
         theClass.methods.get('componentDidUpdate').astNode
       );
     }
+    // if we merge a root component that getChildContext, child components
+    // of this root component will still reference this.context.XXX
+    // so we add a childContext property for them to use
+    if (componentPrototype.has('getChildContext')) {
+      if (rootConfigEntry.constructorProperties !== null) {
+        rootConfigEntry.constructorProperties.push(
+          t.expressionStatement(
+            t.assignmentExpression(
+              '=',
+              t.memberExpression(t.thisExpression(), t.identifier('childContext')),
+              t.callExpression(t.memberExpression(t.thisExpression(), t.identifier('getChildContext')), [])
+            )
+          )
+        );
+      } else {
+        debugger;
+      }
+    }
     rootConfig.componentDidQueue.push(rootConfigEntry);
   };
   return {
     instance,
     commitWillMountPhase,
     commitDidMountPhase,
+    hasGetChildContext,
   };
 }
 
@@ -370,26 +405,42 @@ function findAndHoistClosures(
         if (rootConfigEntry.constructorProperties === null) {
           rootConfigEntry.constructorProperties = [];
         }
-        rootConfigEntry.constructorProperties.push(
-          t.expressionStatement(
-            t.assignmentExpression(
-              "=",
-              t.memberExpression(
-                t.thisExpression(),
-                t.identifier(entryKey + name)
-              ),
-              t.arrowFunctionExpression(
-                closure.$FormalParameters,
-                closure.$ECMAScriptCode
+        if (name.startsWith('this')) {
+          rootConfigEntry.constructorProperties.push(
+            t.expressionStatement(
+              t.assignmentExpression(
+                "=",
+                convertStringToExpressionWithDelimiter(name, '.', 0),
+                t.arrowFunctionExpression(
+                  closure.$FormalParameters,
+                  closure.$ECMAScriptCode
+                )
               )
             )
-          )
-        );
-        // rename the reference to the function to the new name
-        const newName = `this.${entryKey}${name}`;
-        closure.__originalName = newName;
-        if (closure.properties.has("name")) {
-          closure.properties.get("name").descriptor.value.value = newName;
+          );
+        } else {
+          console.log()
+          rootConfigEntry.constructorProperties.push(
+            t.expressionStatement(
+              t.assignmentExpression(
+                "=",
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier(entryKey + name)
+                ),
+                t.arrowFunctionExpression(
+                  closure.$FormalParameters,
+                  closure.$ECMAScriptCode
+                )
+              )
+            )
+          );
+          // rename the reference to the function to the new name
+          const newName = `this.${entryKey}${name}`;
+          closure.__originalName = newName;
+          if (closure.properties.has("name")) {
+            closure.properties.get("name").descriptor.value.value = newName;
+          }
         }
       });
     }
@@ -399,6 +450,7 @@ function findAndHoistClosures(
 function renderOneLevel(
   componentType,
   props,
+  context,
   moduleEnv,
   rootConfig,
   isBranched
@@ -411,19 +463,25 @@ function renderOneLevel(
       throw new Error(componentType.class.bailOutReason);
     }
     // Class Component
-    const { instance, commitWillMountPhase, commitDidMountPhase } = createReactClassInstance(
+    const { instance, commitWillMountPhase, commitDidMountPhase, hasGetChildContext } = createReactClassInstance(
       componentType,
       props,
+      context,
       moduleEnv,
       rootConfig,
       isBranched
     );
-
+    let childContext = context;
+    if (hasGetChildContext === true) {
+      const getChildContext = evaluator.get(instance, "getChildContext");
+      childContext = evaluator.call(getChildContext, instance, []);
+    }
+    instance.properties.get("context").descriptor.value = childContext;
     const render = evaluator.get(instance, "render");
     const value = evaluator.call(render, instance, []);
     // we would have thrown if there was an issue, so if not, we can commit to root config
     commitWillMountPhase(value);
-    return {value, commitDidMountPhase};
+    return {value, commitDidMountPhase, childContext};
   } else {
     if (
       componentType.func !== undefined &&
@@ -434,29 +492,31 @@ function renderOneLevel(
     // Stateless Functional Component
     // we sometimes get references to HOC wrappers, so lets check if this is a ref to a func
     if (componentType.$Call !== undefined) {
-      const value = evaluator.call(componentType, undefined, [props]);
+      const value = evaluator.call(componentType, undefined, [props, context]);
       findAndHoistClosures(value, props, null, null, rootConfig, componentType.func);
-      return {value, commitDidMountPhase: null};
+      return {value, commitDidMountPhase: null, childContext: context};
     }
   }
-  return {value: null, commitDidMountPhase: null};
+  return {value: null, commitDidMountPhase: null, childContext: context};
 }
 
 async function renderAsDeepAsPossible(
   componentType,
   props,
+  context,
   moduleEnv,
   rootConfig,
   isBranched
 ) {
-  const {value, commitDidMountPhase} = renderOneLevel(
+  const {value, commitDidMountPhase, childContext} = renderOneLevel(
     componentType,
     props,
+    context,
     moduleEnv,
     rootConfig,
     isBranched
   );
-  const result = await resolveDeeply(value, moduleEnv, rootConfig, isBranched);
+  const result = await resolveDeeply(value, childContext, moduleEnv, rootConfig, isBranched);
   return {
     result,
     commitDidMountPhase,
