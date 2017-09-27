@@ -203,13 +203,16 @@ function handleAssignmentValue(
             assignmentKey
           );
         } else {
-          if (assignmentValue.identifier.type !== "AbstractValue") {
-            declarations[assignmentKey] = assignmentValue.astNode;
-          } else {
-            declarations[assignmentKey] = evaluator.createAbstractFunction(
-              assignmentKey
-            );
-          }
+          declarations[assignmentKey] = evaluator.createAbstractFunction(
+            assignmentKey
+          );
+          // if (assignmentValue.identifier.type !== "AbstractValue") {
+          //   declarations[assignmentKey] = assignmentValue.astNode;
+          // } else {
+          //   declarations[assignmentKey] = evaluator.createAbstractFunction(
+          //     assignmentKey
+          //   );
+          // }
         }
         break;
       }

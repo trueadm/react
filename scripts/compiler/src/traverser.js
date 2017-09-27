@@ -309,6 +309,20 @@ function createArray(astNode, properties) {
   return object;
 }
 
+function hoistFunctionDeclarations(body) {
+  const newBody = [];
+  for (let i = 0; i < body.length; i++) {
+    const bodyPart = body[i];
+
+    if (bodyPart.type === 'FunctionDeclaration') {
+      newBody.unshift(bodyPart)
+    } else {
+      newBody.push(bodyPart);
+    }
+  }
+  return newBody;
+}
+
 function createModuleScope() {
   return createScope({
     Promise: createAbstractObject(),
@@ -907,7 +921,15 @@ function traverse(node, action, scope) {
       break;
     }
     case "Program": {
-      const body = node.body;
+      let body = node.body;
+      if (
+        action === Actions.ScanInnerScope1 ||
+        action === Actions.ScanInnerScope2 ||
+        action === Actions.ScanInnerScope3 ||
+        action === Actions.ScanTopLevelScope
+      ) {
+        body = hoistFunctionDeclarations(node.body);
+      }
       node.scope = scope;
       for (let i = 0; i < body.length; i++) {
         const bodyNode = traverse(body[i], action, scope);

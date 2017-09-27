@@ -252,12 +252,9 @@ function createReactClassInstance(
     componentPrototype.has("componentWillReceiveProps")
   ) {
     if (isBranched === true) {
-      // skip SubscriberComponent for now as we can inline it safely
-      if (theClass.name !== 'SubscriberComponent') {
-        throw new Error(
-          `- Component having lifecycle events when inside a branch.`
-        );
-      }
+      throw new Error(
+        `- Component having lifecycle events when inside a branch.`
+      );
     }
     useClassComponent = true;
   }

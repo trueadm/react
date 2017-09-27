@@ -289,9 +289,9 @@ async function optimizeComponentTree(
         moduleEnv,
         moduleScope
       );
-      // console.log(
-      //   chalk.green(`Successfully optimized a component tree with a root component of "${name}".`)
-      // );
+      console.log(
+        `Successfully optimized a component tree with a root component of "${name}".`
+      );
     } catch (e) {
       if (
         e.stack &&
