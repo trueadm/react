@@ -170,7 +170,7 @@ async function resolveDeeply(value, context, moduleEnv, rootConfig, isBranched) 
           );
         } else {
           console.log(
-            `Failed to inline component "${name}" due to:\n${e.stack}`
+            `Failed to inline component "${name}" due to:\n${e.message}`
           );
         }
       }
@@ -180,6 +180,21 @@ async function resolveDeeply(value, context, moduleEnv, rootConfig, isBranched) 
     return value;
   }
 }
+
+// function addInferredProps(props, propsValue, prefix, moduleEnv) {
+//   for (let [key, prop] of props.accessors) {
+//     if (propsValue.properties.has(key)) {
+//       const propValue = propsValue.properties.get(key).descriptor.value;
+//       addInferredProps(prop, propValue, `${prefix}${key}.`, moduleEnv);
+//     } else {
+//       propsValue.properties.set(key, {
+//         descriptor: {
+//           value: evaluator.createAbstractObject(prefix + key),
+//         },
+//       });
+//     }
+//   }
+// }
 
 function createReactClassInstance(
   componentType,
@@ -199,6 +214,7 @@ function createReactClassInstance(
   } else {
     debugger;
   }
+  const thisObject = theClass.thisObject;
   // add a rootConfig entry
   const { rootConfigEntry, entryKey } = rootConfig.addEntry(props, theClass, null);
   // we used to use Prepack to construct the component but this generally lead to
@@ -226,7 +242,6 @@ function createReactClassInstance(
   // set props on the new instance
   instanceProperties.get("props").descriptor.value = props;
   // now we need to work out all the instance properties for "this"
-  const thisObject = theClass.thisObject;
   const instanceThisShape = convertAccessorsToNestedObject(
     thisObject.accessors,
     null,
@@ -516,6 +531,7 @@ async function renderAsDeepAsPossible(
   const result = await resolveDeeply(value, childContext, moduleEnv, rootConfig, isBranched);
   return {
     result,
+    childContext,
     commitDidMountPhase,
   };
 }

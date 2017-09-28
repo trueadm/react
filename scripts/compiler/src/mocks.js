@@ -45,7 +45,8 @@ function createMockReact(env) {
     mockReact
   );
 
-  const mockReactChildren = evaluator.createAbstractObject('React.Children');
+  const realm = evaluator.realm;
+  const mockReactChildren = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
   mockReactChildren.$SetPartial(
     'only',
     env.eval(reactChildrenMock.reactChildrenOnly),
@@ -72,7 +73,7 @@ function createMockReact(env) {
     mockReactChildren
   );
 
-  mockReact.$SetPartial('Children', mockReactChildren, mockReact);
+  mockReact.$Set('Children', mockReactChildren, mockReact);
   return mockReact;
 }
 

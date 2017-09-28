@@ -146,9 +146,31 @@ function handleAssignmentValue(
       }
       case "FunctionCall": {
         if (assignmentValue.accessedAsConstructor === true) {
-          declarations[assignmentKey] = evaluator.createAbstractFunction(
+          const value = evaluator.createAbstractFunction(
             assignmentKey
           );
+          value.throwIfNotConcreteObject = function () {
+            return this;
+          };
+          for (let element of value.values._elements) {
+            element.throwIfNotConcreteObject = function () {
+              return this;
+            };
+            element.$Call = () => {
+              debugger;
+            };
+            element.$Construct = () => {
+              debugger;
+            };
+            element.properties.set('prototype', {
+              descriptor: {
+                value: evaluator.createAbstractObject('prototype'),
+              },
+              object: element,
+            });
+          }
+          
+          declarations[assignmentKey] = value;
           break;
         }
         const identifier = assignmentValue.identifier;
@@ -275,7 +297,7 @@ function handleAssignmentValue(
       case "ConditionalExpression":
       case "MathExpression": {
         // TODO maybe not an object?
-        declarations[assignmentKey] = evaluator.createAbstractValue(
+        declarations[assignmentKey] = evaluator.createAbstractObject(
           assignmentKey
         );
         break;

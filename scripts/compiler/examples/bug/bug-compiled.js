@@ -4,7 +4,7 @@ require('React');
 require('prop-types');
 
 function MyComponent(props) {
-  return <div>{this.props.person.name}</div>;
+  return <div>{props.person !== null && this.props.person.name}</div>;
 }
 
 var bug = MyComponent;

@@ -506,6 +506,9 @@ function traverse(node, action, scope) {
       } else {
         const callee = traverse(node.callee, action, scope);
         if (callee !== undefined) {
+          if (callee.type === 'Identifier' && callee.name === 'undefined') {
+            return callee;
+          }
           node.callee = callee;
         }
         const args = node.arguments;
@@ -1700,11 +1703,11 @@ function callFunction(astNode, callee, args, action, scope) {
       return functionRef;
     } else if (functionRef.type === Types.Undefined) {
       throw new Error(
-        `Could not call an  identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
+        `Could not call an identifier that is "undefined" for function call "${getNameFromAst(callee)}"`
       );
     } else if (functionRef.type === Types.Null) {
       throw new Error(
-        `Could not call an  identifier that is "null" for function call "${getNameFromAst(callee)}"`
+        `Could not call an identifier that is "null" for function call "${getNameFromAst(callee)}"`
       );
     } else if (functionRef.type === Types.FunctionCall) {
       functionRef = createAbstractFunction(getNameFromAst(callee));
@@ -1730,7 +1733,7 @@ function declareVariable(astNode, id, init, action, scope) {
     const value = getOrSetValueFromAst(init, scope, action);
 
     astProperties.forEach(astProperty => {
-      dealWithNestedObjectPattern(init, astProperty, value, scope, false, true);
+      dealWithNestedObjectPattern(init, astProperty, value, scope, false, true, astProperty.key);
     });
   } else {
     const assignKey = getNameFromAst(id);
@@ -1816,7 +1819,8 @@ function dealWithNestedObjectPattern(
   object,
   scope,
   deep,
-  search
+  search,
+  astKey
 ) {
   if (astProperty.type === "ObjectProperty") {
     const astValue = astProperty.value;
@@ -1827,7 +1831,8 @@ function dealWithNestedObjectPattern(
       object,
       scope,
       false,
-      search
+      search,
+      astProperty.key
     );
   } else if (astProperty.type === "Identifier") {
     let identifier;
@@ -1848,7 +1853,7 @@ function dealWithNestedObjectPattern(
       );
     }
     if (deep === false) {
-      assign(object, "accessors", name, identifier);
+      assign(object, "accessors", astKey.name, identifier);
     }
     assign(scope, "assignments", name, identifier);
   } else if (astProperty.type === "ObjectPattern") {
@@ -1918,7 +1923,8 @@ function declareFuctionParams(func, params, newScope, action) {
           paramObject,
           newScope,
           false,
-          false
+          false,
+          property.key
         );
       });
       func.params.push(paramObject);

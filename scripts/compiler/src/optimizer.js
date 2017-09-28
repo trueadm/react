@@ -55,7 +55,7 @@ function addInferredPropsFromJSXElementCallSites(props, astComponent) {
             if (value.type === 'FunctionCall') {
               // bail-out, we can't track through function calls
               throw new Error(
-                '- Object spread/rest used on a ReactElement in the root render'
+                '- Object spread/rest used on a ReactElement in the root render #1'
               );
             }
 
@@ -89,7 +89,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
     if (propsInScope !== undefined) {
       if (propsInScope.accessedAsSpread === true) {
         throw new Error(
-          '- Object spread/rest used on a ReactElement in the root render'
+          '- Object spread/rest used on a ReactElement in the root render #2'
         );
       }
       propsShape = convertAccessorsToNestedObject(
@@ -104,7 +104,7 @@ function createAbstractPropsObject(scope, astComponent, moduleEnv, rootConfig) {
     if (propsOnClass !== undefined) {
       if (propsOnClass.accessedAsSpread === true) {
         throw new Error(
-          '- Object spread/rest used on a ReactElement in the root render'
+          '- Object spread/rest used on a ReactElement in the root render #2'
         );
       }
       propsShape = convertAccessorsToNestedObject(
@@ -141,7 +141,8 @@ async function optimizeComponentWithPrepack(
   ast,
   moduleEnv,
   astComponent,
-  moduleScope
+  moduleScope,
+  context
 ) {
   // create an abstract props object
   const rootConfig = createRootConfig(moduleEnv);
@@ -150,7 +151,8 @@ async function optimizeComponentWithPrepack(
     astComponent,
     moduleEnv
   );
-  const initialContext = evaluator.createAbstractObject('this.context');
+  // use the existing context or if null, create a new initial context
+  const contextToUse = context === null ? evaluator.createAbstractObject('this.context') : context;
   const prepackEvaluatedComponent = moduleEnv.eval(astComponent);
   if (astComponent.func !== undefined) {
     prepackEvaluatedComponent.func = astComponent.func;
@@ -158,10 +160,10 @@ async function optimizeComponentWithPrepack(
   if (astComponent.class !== undefined) {
     prepackEvaluatedComponent.class = astComponent.class;
   }
-  const {result, commitDidMountPhase} = await reconciler.renderAsDeepAsPossible(
+  const {result, commitDidMountPhase, childContext} = await reconciler.renderAsDeepAsPossible(
     prepackEvaluatedComponent,
     initialProps,
-    initialContext,
+    contextToUse,
     moduleEnv,
     rootConfig,
     false
@@ -175,14 +177,15 @@ async function optimizeComponentWithPrepack(
     result,
     rootConfig
   );
-  return convertToExpression(node);
+  return {optimizedAstComponent: convertToExpression(node), childContext};
 }
 
 async function findNonOptimizedComponents(
   ast,
   astComponent,
   moduleEnv,
-  moduleScope
+  moduleScope,
+  context
 ) {
   // scan the optimized component for further components
   const componentScope = {
@@ -204,7 +207,8 @@ async function findNonOptimizedComponents(
         ast,
         moduleEnv,
         component.astNode,
-        moduleScope
+        moduleScope,
+        context
       );
     }
   }
@@ -214,21 +218,19 @@ async function optimizeComponentTree(
   ast,
   moduleEnv,
   astComponent,
-  moduleScope
+  moduleScope,
+  context
 ) {
   if (astComponent == null || astComponent.type === undefined) {
     return;
   }
   if (astComponent.type === 'CallExpression') {
-    const astArguments = astComponent.arguments;
-    for (let i = 0; i < astArguments.length; i++) {
-      await optimizeComponentTree(ast, moduleEnv, astArguments[i], moduleScope);
-    }
+    // TODO this is typically used for HOCs
     return;
   } else if (astComponent.type === 'Identifier') {
     const obj = moduleScope.assignments.get(astComponent.name);
     if (obj.astNode !== undefined) {
-      await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope);
+      await optimizeComponentTree(ast, moduleEnv, obj.astNode, moduleScope, context);
     }
     return;
   } else if (
@@ -274,11 +276,12 @@ async function optimizeComponentTree(
     alreadyTried.set(name, true);
     processedTrees++;
     try {
-      const optimizedAstComponent = await optimizeComponentWithPrepack(
+      const {optimizedAstComponent} = await optimizeComponentWithPrepack(
         ast,
         moduleEnv,
         astComponent,
-        moduleScope
+        moduleScope,
+        context
       );
       astComponent.optimized = true;
       astComponent.optimizedReplacement = optimizedAstComponent;
@@ -287,11 +290,12 @@ async function optimizeComponentTree(
         ast,
         optimizedAstComponent,
         moduleEnv,
-        moduleScope
+        moduleScope,
+        null
       );
-      console.log(
-        `Successfully optimized a component tree with a root component of "${name}".`
-      );
+      // console.log(
+      //   `Successfully optimized a component tree with a root component of "${name}".`
+      // );
     } catch (e) {
       if (
         e.stack &&
@@ -314,7 +318,8 @@ async function optimizeComponentTree(
         ast,
         astComponent,
         moduleEnv,
-        moduleScope
+        moduleScope,
+        null
       );
     }
   }

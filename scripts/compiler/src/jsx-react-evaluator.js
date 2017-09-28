@@ -250,7 +250,7 @@ function addInferredSpreadProperties(
             } else {
               spreadValue.properties.set(key, {
                 descriptor: {
-                  value: evaluator.createAbstractValue(`this.props.${key}`),
+                  value: evaluator.createAbstractObject(`this.props.${key}`),
                 },
               });
             }
