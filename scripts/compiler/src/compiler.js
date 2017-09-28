@@ -36,20 +36,20 @@ async function compileSource(result) {
   const moduleScope = result.moduleScope;
   const ast = result.ast;
 
-  // await optimizeComponentTree(
-  //   ast,
-  //   prepackMetadata.env,
-  //   defaultExportComponent,
-  //   moduleScope,
-  //   null
-  // );
-  // // clear the deferredScopes, as we may have removed some scopes
-  // moduleScope.deferredScopes = [];
-  // traverser.traverse(
-  //   ast.program,
-  //   traverser.Actions.ReplaceWithOptimized,
-  //   moduleScope
-  // );
+  await optimizeComponentTree(
+    ast,
+    prepackMetadata.env,
+    defaultExportComponent,
+    moduleScope,
+    null
+  );
+  // clear the deferredScopes, as we may have removed some scopes
+  moduleScope.deferredScopes = [];
+  traverser.traverse(
+    ast.program,
+    traverser.Actions.ReplaceWithOptimized,
+    moduleScope
+  );
 
   return removeDeadCode(babel.transformFromAst(ast).code);
 }
