@@ -8,12 +8,7 @@
  */
 'use strict';
 
-const {setupBundle} = require('./src/setup');
-const {compileBundle} = require('./src/compiler');
-const {createHasteMap} = require('./src/haste-map');
-const {createBundle} = require('./src/bundler');
-const optimizer = require('./src/optimizer');
-const reconciler = require('./src/reconciler');
+const {compileFile} = require('./src/compiler');
 const argv = require('minimist')(process.argv.slice(2));
 const path = require('path');
 const entryFilePath = argv._[0];
@@ -35,16 +30,12 @@ console.log(
 );
 console.log('Scanning for all JavaScript modules. This may take a while.');
 
-createHasteMap(resolveEntryFilePath, destinationBundlePath)
-  .then(createBundle)
-  .then(setupBundle)
-  .then(compileBundle)
-  .then(code => {
+compileFile(resolveEntryFilePath, destinationBundlePath)
+  .then(result => {
     console.log('\nCompilation complete!');
-    console.log(`Optimized Trees: ${optimizer.getOptimizedTrees()}`);
-    console.log(`Inlined Components: ${reconciler.getInlinedComponents()}`);
-  })
-  .catch(e => {
+    console.log(`Optimized Trees: ${result.optimizedTrees}`);
+    console.log(`Inlined Components: ${result.inlinedComponents}`);
+  }).catch(e => {
     console.error(e.stack);
     process.exit(1);
   });

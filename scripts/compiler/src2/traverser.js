@@ -1549,6 +1549,9 @@ function getOrSetValueFromAst(astNode, subject, action, newValue) {
         astNode.operator
       );
     }
+    case "JSXEmptyExpression": {
+      return createNull();
+    }
     default: {
       debugger;
     }

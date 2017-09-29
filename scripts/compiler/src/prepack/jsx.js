@@ -22,13 +22,7 @@ const {
   Set,
   ToString,
 } = require('prepack/lib/methods');
-const evaluator = require('./evaluator');
-const traverser = require('./traverser');
 const t = require('babel-types');
-const {
-  convertNestedObjectToAst,
-  convertAccessorsToNestedObject,
-} = require('./types');
 
 let reactElementSymbol = undefined;
 const reactElementSymbolKey = 'react.element';

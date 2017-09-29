@@ -8,46 +8,47 @@
  */
 "use strict";
 
-const construct_realm = require('prepack/lib/construct_realm').default;
-const {ExecutionContext} = require('prepack/lib/realm');
+const construct_realm = require("prepack/lib/construct_realm").default;
+const { ExecutionContext } = require("prepack/lib/realm");
 const {
   NewDeclarativeEnvironment,
   GetValue,
   Get,
   ObjectCreate,
   Construct,
-  ToStringPartial,
-} = require('prepack/lib/methods');
-const {AbruptCompletion} = require('prepack/lib/completions');
+  ToStringPartial
+} = require("prepack/lib/methods");
+const { AbruptCompletion } = require("prepack/lib/completions");
 const {
   AbstractObjectValue,
   AbstractValue,
   ObjectValue,
   StringValue,
   FunctionValue,
-  BooleanValue,
   UndefinedValue,
-  Value,
-} = require('prepack/lib/values');
-const {TypesDomain, ValuesDomain} = require('prepack/lib/domains');
-const {Generator} = require('prepack/lib/utils/generator');
-const buildExpressionTemplate = require('prepack/lib/utils/builder').default;
-const jsxEvaluator = require('./jsx-react-evaluator');
-const {describeLocation} = require('prepack/lib/intrinsics/ecma262/Error.js');
-const t = require('babel-types');
+  Value
+} = require("prepack/lib/values");
+const { ValuesDomain } = require("prepack/lib/domains");
+const { Generator } = require("prepack/lib/utils/generator");
+const buildExpressionTemplate = require("prepack/lib/utils/builder").default;
+const jsxEvaluator = require("./jsx");
+const { describeLocation } = require("prepack/lib/intrinsics/ecma262/Error.js");
+const initializePrepackGlobals = require("prepack/lib/intrinsics/prepack/global.js")
+  .default;
+const { NativeFunctionValue } = require("prepack/lib/values");
 
 class NoTempVariablesGenerator extends Generator {
   derive(types, values, args, buildFunction, kind) {
     let result = AbstractValue.createFromTemplate(
       realm,
-      _preludeGenerator => args => {
+      _preludeGenerator => _args => {
         // convert it back to array
-        args = Object.values(args);
-        return buildFunction(args);
+        args = Object.values_(args);
+        return buildFunction(_args);
       },
       types,
       [],
-      '',
+      "",
       undefined
     );
     result.values = values;
@@ -58,7 +59,7 @@ class NoTempVariablesGenerator extends Generator {
 
 function onError() {
   // Try to recover
-  return 'Recover';
+  return "Recover";
 }
 
 let realmOptions = {
@@ -67,8 +68,8 @@ let realmOptions = {
   debugNames: false,
   uniqueSuffix: false,
   timeout: 8000,
-  compatibility: 'browser',
-  errorHandler: onError,
+  compatibility: "browser",
+  errorHandler: onError
 };
 
 let realm = construct_realm(realmOptions);
@@ -80,50 +81,61 @@ function parseTypeNameOrTemplate(typeNameOrTemplate) {
     typeNameOrTemplate === undefined ||
     typeNameOrTemplate instanceof UndefinedValue
   ) {
-    return {type: Value, template: undefined};
+    return { type: Value, template: undefined };
   } else if (
     typeNameOrTemplate instanceof StringValue ||
-    typeof typeNameOrTemplate === 'string'
+    typeof typeNameOrTemplate === "string"
   ) {
     let typeNameString = ToStringPartial(realm, typeNameOrTemplate);
     let type = Value.getTypeFromName(typeNameString);
     if (type === undefined) {
       throw realm.createErrorThrowCompletion(
         realm.intrinsics.TypeError,
-        'unknown typeNameOrTemplate'
+        "unknown typeNameOrTemplate"
       );
     }
     return {
       type,
       template: Value.isTypeCompatibleWith(type, ObjectValue)
         ? ObjectCreate(realm, realm.intrinsics.ObjectPrototype)
-        : undefined,
+        : undefined
     };
   } else if (typeNameOrTemplate instanceof FunctionValue) {
-    return {type: FunctionValue, template: typeNameOrTemplate};
+    return { type: FunctionValue, template: typeNameOrTemplate };
   } else if (typeNameOrTemplate instanceof ObjectValue) {
-    return {type: ObjectValue, template: typeNameOrTemplate};
+    return { type: ObjectValue, template: typeNameOrTemplate };
   } else {
     throw realm.createErrorThrowCompletion(
       realm.intrinsics.TypeError,
-      'typeNameOrTemplate has unsupported type'
+      "typeNameOrTemplate has unsupported type"
     );
   }
+}
+
+function __object(shape, name) {
+  const obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
+  Object.keys(shape).forEach(id => {
+    obj.$Set(id, shape[id], obj);
+  });
+  if (name) {
+    obj.intrinsicName = name;
+  }
+  return obj;
 }
 
 function __abstract(typeNameOrTemplate, name) {
   if (!realm.useAbstractInterpretation) {
     throw realm.createErrorThrowCompletion(
       realm.intrinsics.TypeError,
-      'realm is not partial'
+      "realm is not partial"
     );
   }
 
-  let {type, template} = parseTypeNameOrTemplate(typeNameOrTemplate);
+  let { type, template } = parseTypeNameOrTemplate(typeNameOrTemplate);
 
   let result;
-  let nameString = name ? ToStringPartial(realm, name) : '';
-  if (nameString === '') {
+  let nameString = name ? ToStringPartial(realm, name) : "";
+  if (nameString === "") {
     let locString;
     for (let executionContext of realm.contextStack.slice().reverse()) {
       let caller = executionContext.caller;
@@ -135,7 +147,6 @@ function __abstract(typeNameOrTemplate, name) {
       );
       if (locString !== undefined) break;
     }
-    let locVal = new StringValue(realm, locString || '(unknown location)');
     debugger;
     // result = AbstractValue.createFromTemplate(realm, throwTemplate, type, [locVal], throwTemplateSrc);
   } else {
@@ -167,7 +178,7 @@ function __makePartial(object) {
   }
   throw realm.createErrorThrowCompletion(
     realm.intrinsics.TypeError,
-    'not an (abstract) object'
+    "not an (abstract) object"
   );
 }
 
@@ -179,20 +190,20 @@ function __makeSimple(object) {
   }
   throw realm.createErrorThrowCompletion(
     realm.intrinsics.TypeError,
-    'not an (abstract) object'
+    "not an (abstract) object"
   );
 }
 
 function createAbstractNumber(nameString) {
-  return __abstract('number', nameString);
+  return __abstract("number", nameString);
 }
 
 function createAbstractString(nameString) {
-  return __abstract('string', nameString);
+  return __abstract("string", nameString);
 }
 
 function createAbstractBoolean(nameString) {
-  return __abstract('boolean', nameString);
+  return __abstract("boolean", nameString);
 }
 
 function createAbstractArray(nameString) {
@@ -220,24 +231,17 @@ function createAbstractObject(nameString) {
 function createAbstractRegExp(nameString) {
   return __makeSimple(
     __makePartial(
-      __abstract(
-        ObjectCreate(realm, realm.intrinsics.RegExp),
-        nameString
-      )
+      __abstract(ObjectCreate(realm, realm.intrinsics.RegExp), nameString)
     )
   );
 }
 
 function createAbstractFunction(nameString) {
-  return __makeSimple(__makePartial(__abstract('function', nameString)));
+  return __makeSimple(__makePartial(__abstract("function", nameString)));
 }
 
 function createAbstractValue(nameString) {
-  return __abstract('empty', nameString);
-}
-
-function createAbstractObjectOrUndefined(nameString) {
-  return createAbstractObject(nameString);
+  return __abstract("empty", nameString);
 }
 
 function getError(completionValue) {
@@ -245,10 +249,10 @@ function getError(completionValue) {
   let context = new ExecutionContext();
   realm.pushContext(context);
   try {
-    let message = Get(realm, completionValue.value, 'message').value;
-    let stack = Get(realm, completionValue.value, 'stack').value;
-    let error = new Error('Error evaluating function');
-    error.stack = message + '\n' + stack;
+    let message = Get(realm, completionValue.value, "message").value;
+    let stack = Get(realm, completionValue.value, "stack").value;
+    let error = new Error("Error evaluating function");
+    error.stack = message + "\n" + stack;
     return error;
   } finally {
     realm.popContext(context);
@@ -304,14 +308,11 @@ function call(
   let context = new ExecutionContext();
   context.lexicalEnvironment = realm.$GlobalEnv;
   context.variableEnvironment = realm.$GlobalEnv;
-  context.realm = this.realm;
+  context.realm = realm;
   realm.pushContext(context);
 
   let res;
   try {
-    if (!functionValue.$Call) {
-      debugger;
-    }
     res = functionValue.$Call(thisArg, argsList);
   } catch (completion) {
     if (completion instanceof AbruptCompletion) {
@@ -326,7 +327,7 @@ function call(
     let error = getError(res);
     throw error;
   }
-  return GetValue(this.realm, res);
+  return GetValue(realm, res);
 }
 
 function construct(constructor, argsList) {
@@ -381,30 +382,59 @@ function get(object, propertyName) {
   return GetValue(realm, res);
 }
 
-exports.get = get;
+function setGlobals(moduleEnv, mocks) {
+  const global = realm.$GlobalObject;
+  const { createMockReact } = mocks;
+  initializePrepackGlobals(realm);
+  global.$DefineOwnProperty("module", {
+    value: __object({
+     exports: __object({}),
+    }),
+    writable: true,
+    enumerable: false,
+    configurable: true
+  });
+  global.$DefineOwnProperty("require", {
+    value: new NativeFunctionValue(
+      realm,
+      "global.require",
+      "require",
+      0,
+      (context, [requireObj]) => {
+        const requireName = requireObj.value;
 
-exports.createAbstractBoolean = createAbstractBoolean;
+        switch (requireName) {
+          case "react":
+          case "React":
+            return createMockReact(moduleEnv);
+          default:
+            return createAbstractValue(requireName);
+        }
+      }
+    ),
+    writable: true,
+    enumerable: false,
+    configurable: true
+  });
+}
 
-exports.createAbstractRegExp = createAbstractRegExp;
-
-exports.createAbstractArray = createAbstractArray;
-
-exports.createAbstractNumber = createAbstractNumber;
-
-exports.createAbstractString = createAbstractString;
-
-exports.createAbstractObject = createAbstractObject;
-
-exports.createAbstractFunction = createAbstractFunction;
-
-exports.createAbstractValue = createAbstractValue;
-
-exports.createAbstractObjectOrUndefined = createAbstractObjectOrUndefined;
-
-exports.call = call;
-
-exports.construct = construct;
-
-exports.ModuleEnvironment = ModuleEnvironment;
-
-exports.realm = realm;
+module.exports = {
+  __abstract,
+  __makePartial,
+  __makeSimple,
+  __object,
+  get,
+  createAbstractBoolean,
+  createAbstractRegExp,
+  createAbstractArray,
+  createAbstractNumber,
+  createAbstractString,
+  createAbstractObject,
+  createAbstractFunction,
+  createAbstractValue,
+  call,
+  construct,
+  ModuleEnvironment,
+  realm,
+  setGlobals
+};
