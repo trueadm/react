@@ -25,7 +25,7 @@ class Optimizer {
 		setGlobals(this.moduleEnv, mocks);
 	}
 	serialize(ast) {
-		const code = babel.transformFromAst(ast).code;
+		const code = `(function(){${babel.transformFromAst(ast).code}})()`;
 		const serializer = new Serializer(realm, this.serializerOptions);
 		const sources = [{ filePath: '', fileContents: code }];
 		const serialized = serializer.init(sources, false);

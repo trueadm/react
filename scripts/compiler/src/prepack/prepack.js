@@ -386,10 +386,17 @@ function setGlobals(moduleEnv, mocks) {
   const global = realm.$GlobalObject;
   const { createMockReact } = mocks;
   initializePrepackGlobals(realm);
+
+  const exportsValue = __object({});
+  exportsValue.intrinsicName = 'exports';
+
+  const moduleValue = __object({
+    exports: exportsValue,
+  });
+
+  moduleValue.intrinsicName = 'module';
   global.$DefineOwnProperty("module", {
-    value: __object({
-     exports: __object({}),
-    }),
+    value: moduleValue,
     writable: true,
     enumerable: false,
     configurable: true
@@ -408,7 +415,7 @@ function setGlobals(moduleEnv, mocks) {
           case "React":
             return createMockReact(moduleEnv);
           default:
-            return createAbstractValue(requireName);
+            return createAbstractValue(`require('${requireName}')`);
         }
       }
     ),
