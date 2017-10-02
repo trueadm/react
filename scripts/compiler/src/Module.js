@@ -5,7 +5,6 @@ const Optimizer = require("./prepack/Optimizer");
 const {
   getReactComponentBindings,
 	getReactComponents,
-	prepareModuleForPrepack,
 } = require("./traversalUtils");
 
 class Module {
@@ -14,17 +13,16 @@ class Module {
       plugins: ["jsx", "flow"],
       sourceType: "module"
 		});
-		const componentBindings = getReactComponentBindings(this.ast);
-		const components = getReactComponents(this.ast, componentBindings);
+		const componentsFromBindings = getReactComponentBindings(this.ast);
+		const {componentsFromIdentifiers, componentsFromNames} = getReactComponents(this.ast, componentsFromBindings);
     this.react = {
-			components,
-			componentBindings,
+      componentsFromIdentifiers,
+      componentsFromNames,
+			componentsFromBindings,
 		};
   }
   async compileReactComponentTrees() {
-		const optimizer = new Optimizer();
-		// TODO clone ast? as this will mutuate it
-		prepareModuleForPrepack(this.ast);
+		const optimizer = new Optimizer(this.react);
 		const output = optimizer.serialize(this.ast);
     return {
       stats: {

@@ -62,25 +62,42 @@ function getReactComponentBindings(ast) {
   return reactComponentIdentifiers;
 }
 
-function getReactComponents(ast, componentBindings) {
-	const reactComponents = new Map();
+function createRandomString() {
+	return Math.random()
+	.toString(36)
+	.replace(/[^a-z]+/g, "")
+	.substring(0, 2);
+}
+
+function getReactComponents(ast, componentsFromBindings) {
+	const componentsFromIdentifiers = new Map();
+	const componentsFromNames = new Map();
   traverse(ast, {
 		FunctionDeclaration(path) {
 			const node = path.node;
 			if (node.id !== null) {
-				if (componentBindings.has(node.id)) {
-					const component = new FunctionalComponent(node.id, node);
-					reactComponents.set(node.id, component);
+				if (componentsFromBindings.has(node.id)) {
+					let uniqueComponentName = node.id.name;
+
+					if (componentsFromNames.has(uniqueComponentName)) {
+						uniqueComponentName += createRandomString();
+					}
+					const component = new FunctionalComponent(uniqueComponentName, node);
+					componentsFromIdentifiers.set(node.id, component);
+					componentsFromNames.set(uniqueComponentName, component);
 				}
 			} else {
 				debugger;
 			}
 		},
   });
-  return reactComponents;
+  return {
+		componentsFromIdentifiers,
+		componentsFromNames,
+	};
 }
 
-function prepareModuleForPrepack(ast) {
+function prepareModuleForPrepack(ast, react) {
   traverse(ast, {
 		TypeCastExpression(path) {
 			let { node } = path;
@@ -92,6 +109,22 @@ function prepareModuleForPrepack(ast) {
 		AssignmentPattern({ node }) {
 			node.left.optional = false;
 		},
+		FunctionDeclaration(path) {
+			const node = path.node;
+			const id = node.id;
+
+			// replace functional component with a Prepack component helper
+			if (id !== undefined && react.componentsFromIdentifiers.has(id)) {
+				path.replaceWith(
+					t.variableDeclaration('var', [
+						t.variableDeclarator(id, t.callExpression(t.identifier('__constructReactComponent'), [
+							t.stringLiteral(react.componentsFromIdentifiers.get(id).name),
+							t.functionExpression(null, node.params, node.body, false)
+						])),
+					])
+				);
+			}
+		},
 		Function({ node }) {
 			for (let i = 0; i < node.params.length; i++) {
 				const param = node.params[i];
@@ -101,16 +134,6 @@ function prepareModuleForPrepack(ast) {
 				}
 			}
 			node.predicate = null;
-		},
-		ClassDeclaration(path) {
-			const node = path.node;
-			// convert to ClassExpression
-			path.replaceWith(t.classExpression(
-				node.id,
-				node.superClass,
-				node.body,
-				node.decorators || []
-			));
 		},
 		TypeAlias(path) {
 			path.remove();

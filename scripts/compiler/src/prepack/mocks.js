@@ -10,7 +10,7 @@
 
 const {
   __object,
-} = require('./prepack');
+} = require('./evaluator');
 const reactClassMock = require('./mocks/reactClass');
 
 function createMockReact(env) {

@@ -9,20 +9,24 @@
 
 
 var React = require('React');
-function MaybeShow(props) {
-  if (props.show) {
-    return props.children;
-  }
-  return null;
+var Foo = require('Foo');
+
+function foo() {
+  return <span>123</span>;
 }
 
-class App extends React.Component {
-  render() {
-    return (
-      <MaybeShow show={true}>
-        <h1>Hi</h1>
-      </MaybeShow>
-    );
+function App(props: {check: boolean}) {
+  function test(e) {
+    e.log('123');
   }
+  return props.check === true ? <div onClick={test}>{foo()}</div> : <div>Nothing</div>;
 }
+
+function App(props: {check?: boolean}) {
+  if (props.check == null) {
+    return 123;
+  }
+  return props.check === true ?  <div>123</div> : <div>Nothing</div>;
+}
+
 module.exports = App;
