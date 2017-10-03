@@ -203,6 +203,7 @@ class Reconciler {
     this.react = react;
     this.moduleEnv = moduleEnv;
     this.realm = moduleEnv.lexicalEnvironment.realm;
+    this.realm.react = react;
     this.rootConfig = new ComponentTree(moduleEnv);
   }
   render(component) {

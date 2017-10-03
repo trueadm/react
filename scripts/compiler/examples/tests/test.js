@@ -6,27 +6,37 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+'use strict';
 
+var React = require('react');
 
-var React = require('React');
-var Foo = require('Foo');
-
-function foo() {
-  return <span>123</span>;
-}
-
-function App(props: {check: boolean}) {
-  function test(e) {
-    e.log('123');
+class C extends React.Component {
+  render() {
+    return <div>!</div>;
   }
-  return props.check === true ? <div onClick={test}>{foo()}</div> : <div>Nothing</div>;
 }
 
-function App(props: {check?: boolean}) {
-  if (props.check == null) {
-    return 123;
-  }
-  return props.check === true ?  <div>123</div> : <div>Nothing</div>;
+function A(props: {x: number}) {
+  return <div>Hello {props.x}</div>;
 }
+
+function B() {
+  return <div>World</div>;
+}
+
+function App() {
+  return (
+    <div>
+      <A x={42} />
+      <B />
+      <C />
+    </div>
+  );
+}
+
+App.getTrials = function*(renderer, Root) {
+  renderer.update(<Root />);
+  yield ['simple render', renderer.toJSON()];
+};
 
 module.exports = App;

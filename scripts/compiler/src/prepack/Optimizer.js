@@ -17,13 +17,12 @@ function sanitizeValue(value) {
     let originalBuildNode = value._buildNode;
     value._buildNode = args => {
       const node = originalBuildNode(args);
-    
-      return t.returnStatement(node);
+			return t.returnStatement(node);
     };
     return value;
   } else {
     value.args = [value];
-    value.buildNode = function (_, context) {
+    value.buildNode = function (args, context) {
       return t.returnStatement(context.serializeValue(value));
     };
     return value;

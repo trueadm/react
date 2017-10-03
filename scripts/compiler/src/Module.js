@@ -13,9 +13,10 @@ class Module {
       plugins: ["jsx", "flow"],
       sourceType: "module"
 		});
-		const componentsFromBindings = getReactComponentBindings(this.ast);
-		const {componentsFromIdentifiers, componentsFromNames} = getReactComponents(this.ast, componentsFromBindings);
+    const {componentsFromBindings, jsxIdentifiersToBindings} = getReactComponentBindings(this.ast);
+    const {componentsFromIdentifiers, componentsFromNames} = getReactComponents(this.ast, componentsFromBindings);
     this.react = {
+      jsxIdentifiersToBindings,
       componentsFromIdentifiers,
       componentsFromNames,
 			componentsFromBindings,

@@ -86,49 +86,49 @@ describe('Compiler', () => {
     await runFixture('fixtures/simple.js');
   });
 
-  it('dynamic-props', async () => {
-    await runFixture('fixtures/dynamic-props.js');
-  });
+  // it('dynamic-props', async () => {
+  //   await runFixture('fixtures/dynamic-props.js');
+  // });
 
-  it('return-text', async () => {
-    await runFixture('fixtures/return-text.js');
-  });
+  // it('return-text', async () => {
+  //   await runFixture('fixtures/return-text.js');
+  // });
 
-  it('lifecycle-siblings', async () => {
-    await runFixture('fixtures/lifecycle-siblings.js');
-  });
+  // it('lifecycle-siblings', async () => {
+  //   await runFixture('fixtures/lifecycle-siblings.js');
+  // });
 
-  it('lifecycle-children', async () => {
-    await runFixture('fixtures/lifecycle-children.js');
-  });
+  // it('lifecycle-children', async () => {
+  //   await runFixture('fixtures/lifecycle-children.js');
+  // });
 
-  it('clone-element', async () => {
-    await runFixture('fixtures/clone-element.js');
-  });
+  // it('clone-element', async () => {
+  //   await runFixture('fixtures/clone-element.js');
+  // });
 
-  it('key-change', async () => {
-    await runFixture('fixtures/key-change.js');
-  });
+  // it('key-change', async () => {
+  //   await runFixture('fixtures/key-change.js');
+  // });
 
-  it('simple-children', async () => {
-    await runFixture('fixtures/simple-children.js');
-  });
+  // it('simple-children', async () => {
+  //   await runFixture('fixtures/simple-children.js');
+  // });
 
-  it('conditional', async () => {
-    await runFixture('fixtures/conditional.js');
-  });
+  // it('conditional', async () => {
+  //   await runFixture('fixtures/conditional.js');
+  // });
 
-  it('return-undefined', async () => {
-    await runFixture('fixtures/return-undefined.js');
-  });
+  // it('return-undefined', async () => {
+  //   await runFixture('fixtures/return-undefined.js');
+  // });
 
-  // Bug with inlining.
-  xit('key-nesting', async () => {
-    await runFixture('fixtures/key-nesting.js');
-  });
+  // // Bug with inlining.
+  // xit('key-nesting', async () => {
+  //   await runFixture('fixtures/key-nesting.js');
+  // });
 
-  // Bug with inlining.
-  xit('type-change', async () => {
-    await runFixture('fixtures/type-change.js');
-  });
+  // // Bug with inlining.
+  // xit('type-change', async () => {
+  //   await runFixture('fixtures/type-change.js');
+  // });
 });
