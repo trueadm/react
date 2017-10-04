@@ -1,8 +1,9 @@
 "use strict";
 
 class Component {
-	constructor() {
-		this.name = null;
+	constructor(name, ast) {
+		this.name = name;
+		this.ast = ast;
 	}
 }
 

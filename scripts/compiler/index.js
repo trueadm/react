@@ -8,14 +8,12 @@
  */
 'use strict';
 
-const {setupSource} = require('./src/setup');
 const {compileSource} = require('./src/compiler');
-const {getOptimizedTrees} = require('./src/optimizer');
 
 async function compileSourceEntry(source) {
-  return setupSource(source).then(compileSource).then(code => ({
-    code,
-    optimizedTrees: getOptimizedTrees(),
+  return compileSource(source).then(result => ({
+    code: result.compiledSource,
+    optimizedTrees: result.optimizedTrees,
   }));
 }
 

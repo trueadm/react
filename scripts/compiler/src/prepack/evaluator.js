@@ -382,7 +382,7 @@ function get(object, propertyName) {
   return GetValue(realm, res);
 }
 
-function setGlobals(moduleEnv, mocks) {
+function setGlobals(moduleEnv, mocks, optimizeComponent) {
   const global = realm.$GlobalObject;
   const { createMockReact } = mocks;
   initializePrepackGlobals(realm);
@@ -401,6 +401,20 @@ function setGlobals(moduleEnv, mocks) {
     enumerable: false,
     configurable: true
   });
+  global.$DefineOwnProperty("__constructReactComponent", {
+    value: new NativeFunctionValue(
+      realm,
+      "global.__constructReactComponent",
+      "__constructReactComponent",
+      0,
+      (context, [componentName, value]) => {
+        return optimizeComponent(componentName.value, value);
+      }
+    ),
+    writable: true,
+    enumerable: false,
+    configurable: true
+  });  
   global.$DefineOwnProperty("require", {
     value: new NativeFunctionValue(
       realm,
