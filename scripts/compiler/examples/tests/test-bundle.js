@@ -5,9 +5,8 @@
 
   var _$1 = _$0.module;
 
-  var _1 = function () {
-    var lol = _2.foo();
-
+  var _1 = function (props) {
+    var lol = props.ExternalModule.foo();
     return <div>
       {lol}
 
@@ -15,8 +14,5 @@
   };
 
   var _0 = _$1;
-
-  var _2 = require('ExternalModule');
-
   _0.exports = _1;
 }).call(this);

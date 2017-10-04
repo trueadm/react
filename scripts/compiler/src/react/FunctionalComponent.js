@@ -5,6 +5,12 @@ const { __abstract, __object } = require("../prepack/evaluator");
 function flowAnnotationToObject(annotation) {
 	if (annotation.type === 'TypeAnnotation') {
 		return flowAnnotationToObject(annotation.typeAnnotation);
+	} else if (annotation.type === 'GenericTypeAnnotation') {
+		if (annotation.id.type === 'Identifier') {
+			return annotation.id.name;
+		} else {
+			debugger;
+		}
 	} else if (annotation.type === 'BooleanTypeAnnotation') {
 		return 'boolean';
 	} else if (annotation.type === 'StringTypeAnnotation') {

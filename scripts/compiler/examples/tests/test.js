@@ -10,8 +10,8 @@
 
 const ExternalModule = require('ExternalModule');
 
-function App() {
-  var lol = ExternalModule.foo();
+function App(props: {ExternalModule: {foo: Function}}) {
+  var lol = props.ExternalModule.foo();
   return (
     <div>
       {lol}
