@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-2015, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -14,7 +12,6 @@
 let createReactNativeComponentClass;
 let React;
 let ReactNative;
-let ReactNativeFeatureFlags = require('ReactNativeFeatureFlags');
 
 describe('createReactNativeComponentClass', () => {
   beforeEach(() => {
@@ -35,8 +32,14 @@ describe('createReactNativeComponentClass', () => {
       uiViewClassName: 'View',
     };
 
-    const Text = createReactNativeComponentClass(textViewConfig);
-    const View = createReactNativeComponentClass(viewViewConfig);
+    const Text = createReactNativeComponentClass(
+      textViewConfig.uiViewClassName,
+      () => textViewConfig,
+    );
+    const View = createReactNativeComponentClass(
+      viewViewConfig.uiViewClassName,
+      () => viewViewConfig,
+    );
 
     expect(Text).not.toBe(View);
 
@@ -44,22 +47,26 @@ describe('createReactNativeComponentClass', () => {
     ReactNative.render(<View />, 1);
   });
 
-  if (ReactNativeFeatureFlags.useFiber) {
-    it('should not allow viewConfigs with duplicate uiViewClassNames to be registered', () => {
-      const textViewConfig = {
-        validAttributes: {},
-        uiViewClassName: 'Text',
-      };
-      const altTextViewConfig = {
-        validAttributes: {},
-        uiViewClassName: 'Text', // Same
-      };
+  it('should not allow viewConfigs with duplicate uiViewClassNames to be registered', () => {
+    const textViewConfig = {
+      validAttributes: {},
+      uiViewClassName: 'Text',
+    };
+    const altTextViewConfig = {
+      validAttributes: {},
+      uiViewClassName: 'Text', // Same
+    };
 
-      createReactNativeComponentClass(textViewConfig);
+    createReactNativeComponentClass(
+      textViewConfig.uiViewClassName,
+      () => textViewConfig,
+    );
 
-      expect(() => {
-        createReactNativeComponentClass(altTextViewConfig);
-      }).toThrow('Tried to register two views with the same name Text');
-    });
-  }
+    expect(() => {
+      createReactNativeComponentClass(
+        altTextViewConfig.uiViewClassName,
+        () => altTextViewConfig,
+      );
+    }).toThrow('Tried to register two views with the same name Text');
+  });
 });

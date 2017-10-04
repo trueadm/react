@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -14,8 +12,6 @@
 var React;
 var ReactDOMServer;
 var ReactDOMServerBrowser;
-
-var ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
 
 describe('ReactServerRenderingBrowser', () => {
   beforeEach(() => {
@@ -55,18 +51,16 @@ describe('ReactServerRenderingBrowser', () => {
     );
   });
 
-  if (ReactDOMFeatureFlags.useFiber) {
-    it('throws meaningfully for server-only APIs', () => {
-      expect(() => ReactDOMServerBrowser.renderToNodeStream(<div />)).toThrow(
-        'ReactDOMServer.renderToNodeStream(): The streaming API is not available ' +
-          'in the browser. Use ReactDOMServer.renderToString() instead.',
-      );
-      expect(() =>
-        ReactDOMServerBrowser.renderToStaticNodeStream(<div />),
-      ).toThrow(
-        'ReactDOMServer.renderToStaticNodeStream(): The streaming API is not available ' +
-          'in the browser. Use ReactDOMServer.renderToStaticMarkup() instead.',
-      );
-    });
-  }
+  it('throws meaningfully for server-only APIs', () => {
+    expect(() => ReactDOMServerBrowser.renderToNodeStream(<div />)).toThrow(
+      'ReactDOMServer.renderToNodeStream(): The streaming API is not available ' +
+        'in the browser. Use ReactDOMServer.renderToString() instead.',
+    );
+    expect(() =>
+      ReactDOMServerBrowser.renderToStaticNodeStream(<div />),
+    ).toThrow(
+      'ReactDOMServer.renderToStaticNodeStream(): The streaming API is not available ' +
+        'in the browser. Use ReactDOMServer.renderToStaticMarkup() instead.',
+    );
+  });
 });

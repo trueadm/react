@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -14,14 +12,17 @@
 var React = require('react');
 var ReactTestRenderer = require('react-test-renderer');
 var prettyFormat = require('pretty-format');
-var ReactFeatureFlags;
 
 // Kind of hacky, but we nullify all the instances to test the tree structure
 // with jasmine's deep equality function, and test the instances separate. We
 // also delete children props because testing them is more annoying and not
 // really important to verify.
-function cleanNode(node) {
+function cleanNodeOrArray(node) {
   if (!node) {
+    return;
+  }
+  if (Array.isArray(node)) {
+    node.forEach(cleanNodeOrArray);
     return;
   }
   if (node && node.instance) {
@@ -33,18 +34,13 @@ function cleanNode(node) {
     node.props = props;
   }
   if (Array.isArray(node.rendered)) {
-    node.rendered.forEach(cleanNode);
+    node.rendered.forEach(cleanNodeOrArray);
   } else if (typeof node.rendered === 'object') {
-    cleanNode(node.rendered);
+    cleanNodeOrArray(node.rendered);
   }
 }
 
 describe('ReactTestRenderer', () => {
-  beforeEach(() => {
-    ReactFeatureFlags = require('ReactFeatureFlags');
-    ReactFeatureFlags.disableNewFiberFeatures = false;
-  });
-
   function normalizeCodeLocInfo(str) {
     return str && str.replace(/\(at .+?:\d+\)/g, '(at **)');
   }
@@ -513,7 +509,7 @@ describe('ReactTestRenderer', () => {
     var renderer = ReactTestRenderer.create(<Qoo />);
     var tree = renderer.toTree();
 
-    cleanNode(tree);
+    cleanNodeOrArray(tree);
 
     expect(prettyFormat(tree)).toEqual(
       prettyFormat({
@@ -544,7 +540,7 @@ describe('ReactTestRenderer', () => {
 
     expect(tree.instance).toBeInstanceOf(Foo);
 
-    cleanNode(tree);
+    cleanNodeOrArray(tree);
 
     expect(tree).toEqual({
       type: Foo,
@@ -553,6 +549,124 @@ describe('ReactTestRenderer', () => {
       instance: null,
       rendered: null,
     });
+  });
+
+  it('toTree() handles simple components that return arrays', () => {
+    const Foo = ({children}) => children;
+
+    const renderer = ReactTestRenderer.create(
+      <Foo>
+        <div>One</div>
+        <div>Two</div>
+      </Foo>,
+    );
+
+    var tree = renderer.toTree();
+
+    cleanNodeOrArray(tree);
+
+    expect(prettyFormat(tree)).toEqual(
+      prettyFormat({
+        type: Foo,
+        nodeType: 'component',
+        props: {},
+        instance: null,
+        rendered: [
+          {
+            instance: null,
+            nodeType: 'host',
+            props: {},
+            rendered: ['One'],
+            type: 'div',
+          },
+          {
+            instance: null,
+            nodeType: 'host',
+            props: {},
+            rendered: ['Two'],
+            type: 'div',
+          },
+        ],
+      }),
+    );
+  });
+
+  it('toTree() handles complicated tree of fragments', () => {
+    class Foo extends React.Component {
+      render() {
+        return this.props.children;
+      }
+    }
+
+    const renderer = ReactTestRenderer.create(
+      <div>
+        <Foo>
+          <div>One</div>
+          <div>Two</div>
+          <Foo>
+            <div>Three</div>
+          </Foo>
+        </Foo>
+        <div>Four</div>
+      </div>,
+    );
+
+    var tree = renderer.toTree();
+
+    cleanNodeOrArray(tree);
+
+    expect(prettyFormat(tree)).toEqual(
+      prettyFormat({
+        type: 'div',
+        instance: null,
+        nodeType: 'host',
+        props: {},
+        rendered: [
+          {
+            type: Foo,
+            nodeType: 'component',
+            props: {},
+            instance: null,
+            rendered: [
+              {
+                type: 'div',
+                nodeType: 'host',
+                props: {},
+                instance: null,
+                rendered: ['One'],
+              },
+              {
+                type: 'div',
+                nodeType: 'host',
+                props: {},
+                instance: null,
+                rendered: ['Two'],
+              },
+              {
+                type: Foo,
+                nodeType: 'component',
+                props: {},
+                instance: null,
+                rendered: {
+                  type: 'div',
+                  nodeType: 'host',
+                  props: {},
+                  instance: null,
+                  rendered: ['Three'],
+                },
+              },
+            ],
+          },
+          {
+            type: 'div',
+            nodeType: 'host',
+            props: {},
+            instance: null,
+            rendered: ['Four'],
+          },
+        ],
+      }),
+    );
   });
 
   it('root instance and createNodeMock ref return the same value', () => {
@@ -608,7 +722,7 @@ describe('ReactTestRenderer', () => {
     expect(tree.instance).toBeInstanceOf(Bam);
     expect(tree.rendered.instance).toBeInstanceOf(Bar);
 
-    cleanNode(tree);
+    cleanNodeOrArray(tree);
 
     expect(prettyFormat(tree)).toEqual(
       prettyFormat({

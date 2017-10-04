@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactDOMNullInputValuePropHook
  */
@@ -13,27 +11,17 @@
 
 if (__DEV__) {
   var warning = require('fbjs/lib/warning');
-  var {
-    ReactComponentTreeHook,
-    ReactDebugCurrentFrame,
-  } = require('ReactGlobalSharedState');
-  var {getStackAddendumByID} = ReactComponentTreeHook;
+  var {ReactDebugCurrentFrame} = require('ReactGlobalSharedState');
 }
 
 var didWarnValueNull = false;
 
-function getStackAddendum(debugID) {
-  if (debugID != null) {
-    // This can only happen on Stack
-    return getStackAddendumByID(debugID);
-  } else {
-    // This can only happen on Fiber / Server
-    var stack = ReactDebugCurrentFrame.getStackAddendum();
-    return stack != null ? stack : '';
-  }
+function getStackAddendum() {
+  var stack = ReactDebugCurrentFrame.getStackAddendum();
+  return stack != null ? stack : '';
 }
 
-function validateProperties(type, props, debugID /* Stack only */) {
+function validateProperties(type, props) {
   if (type !== 'input' && type !== 'textarea' && type !== 'select') {
     return;
   }
@@ -44,7 +32,7 @@ function validateProperties(type, props, debugID /* Stack only */) {
         'Consider using the empty string to clear the component or `undefined` ' +
         'for uncontrolled components.%s',
       type,
-      getStackAddendum(debugID),
+      getStackAddendum(),
     );
 
     didWarnValueNull = true;
@@ -52,19 +40,7 @@ function validateProperties(type, props, debugID /* Stack only */) {
 }
 
 var ReactDOMNullInputValuePropHook = {
-  // Fiber
   validateProperties,
-  // Stack
-  onBeforeMountComponent(debugID, element) {
-    if (__DEV__ && element != null && typeof element.type === 'string') {
-      validateProperties(element.type, element.props, debugID);
-    }
-  },
-  onBeforeUpdateComponent(debugID, element) {
-    if (__DEV__ && element != null && typeof element.type === 'string') {
-      validateProperties(element.type, element.props, debugID);
-    }
-  },
 };
 
 module.exports = ReactDOMNullInputValuePropHook;

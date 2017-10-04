@@ -8,7 +8,7 @@ permalink: docs/context.html
 >
 > `React.PropTypes` has moved into a different package since React v15.5. Please use [the `prop-types` library instead](https://www.npmjs.com/package/prop-types) to define `contextTypes`.
 >
->We provide [a codemod script](/react/blog/2017/04/07/react-v15.5.0.html#migrating-from-react.proptypes) to automate the conversion.
+>We provide [a codemod script](/blog/2017/04/07/react-v15.5.0.html#migrating-from-react.proptypes) to automate the conversion.
 
 With React, it's easy to track the flow of data through your React components. When you look at a component, you can see which props are being passed, which makes your apps easy to reason about.
 
@@ -36,7 +36,7 @@ Suppose you have a structure like:
 class Button extends React.Component {
   render() {
     return (
-      <button style={{'{{'}}background: this.props.color}}>
+      <button style={{background: this.props.color}}>
         {this.props.children}
       </button>
     );
@@ -67,12 +67,12 @@ class MessageList extends React.Component {
 In this example, we manually thread through a `color` prop in order to style the `Button` and `Message` components appropriately. Using context, we can pass this through the tree automatically:
 
 ```javascript{6,13-15,21,28-30,40-42}
-const PropTypes = require('prop-types');
+import PropTypes from 'prop-types';
 
 class Button extends React.Component {
   render() {
     return (
-      <button style={{'{{'}}background: this.context.color}}>
+      <button style={{background: this.context.color}}>
         {this.props.children}
       </button>
     );
@@ -147,23 +147,26 @@ Before you build components with an API similar to this, consider if there are c
 
 ## Referencing Context in Lifecycle Methods
 
-If `contextTypes` is defined within a component, the following [lifecycle methods](/react/docs/react-component.html#the-component-lifecycle) will receive an additional parameter, the `context` object:
+If `contextTypes` is defined within a component, the following [lifecycle methods](/docs/react-component.html#the-component-lifecycle) will receive an additional parameter, the `context` object:
 
-- [`constructor(props, context)`](/react/docs/react-component.html#constructor)
-- [`componentWillReceiveProps(nextProps, nextContext)`](/react/docs/react-component.html#componentwillreceiveprops)
-- [`shouldComponentUpdate(nextProps, nextState, nextContext)`](/react/docs/react-component.html#shouldcomponentupdate)
-- [`componentWillUpdate(nextProps, nextState, nextContext)`](/react/docs/react-component.html#componentwillupdate)
-- [`componentDidUpdate(prevProps, prevState, prevContext)`](/react/docs/react-component.html#componentdidupdate)
+- [`constructor(props, context)`](/docs/react-component.html#constructor)
+- [`componentWillReceiveProps(nextProps, nextContext)`](/docs/react-component.html#componentwillreceiveprops)
+- [`shouldComponentUpdate(nextProps, nextState, nextContext)`](/docs/react-component.html#shouldcomponentupdate)
+- [`componentWillUpdate(nextProps, nextState, nextContext)`](/docs/react-component.html#componentwillupdate)
+
+> Note:
+>
+> As of React 16, `componentDidUpdate` no longer receives `prevContext`.
 
 ## Referencing Context in Stateless Functional Components
 
 Stateless functional components are also able to reference `context` if `contextTypes` is defined as a property of the function. The following code shows a `Button` component written as a stateless functional component.
 
 ```javascript
-const PropTypes = require('prop-types');
+import PropTypes from 'prop-types';
 
 const Button = ({children}, context) =>
-  <button style={{'{{'}}background: context.color}}>
+  <button style={{background: context.color}}>
     {children}
   </button>;
 
@@ -179,7 +182,7 @@ React has an API to update context, but it is fundamentally broken and you shoul
 The `getChildContext` function will be called when the state or props changes. In order to update data in the context, trigger a local state update with `this.setState`. This will trigger a new context and changes will be received by the children.
 
 ```javascript
-const PropTypes = require('prop-types');
+import PropTypes from 'prop-types';
 
 class MediaQuery extends React.Component {
   constructor(props) {

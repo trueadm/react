@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactNativeFiberEntry
  * @flow
@@ -22,7 +20,7 @@ const ReactNativeFiberInspector = require('ReactNativeFiberInspector');
 const ReactVersion = require('ReactVersion');
 const UIManager = require('UIManager');
 
-const findNumericNodeHandle = require('findNumericNodeHandleFiber');
+const findNumericNodeHandle = require('findNumericNodeHandle');
 
 const {injectInternals} = require('ReactFiberDevToolsHook');
 
@@ -48,7 +46,7 @@ const ReactNativeFiber: ReactNativeType = {
 
   findNodeHandle: findNumericNodeHandle,
 
-  render(element: ReactElement<any>, containerTag: any, callback: ?Function) {
+  render(element: React$Element<any>, containerTag: any, callback: ?Function) {
     let root = roots.get(containerTag);
 
     if (!root) {
@@ -79,7 +77,7 @@ const ReactNativeFiber: ReactNativeType = {
     UIManager.removeRootView(containerTag);
   },
 
-  unstable_createPortal(
+  createPortal(
     children: ReactNodeList,
     containerTag: number,
     key: ?string = null,
@@ -96,11 +94,12 @@ const ReactNativeFiber: ReactNativeType = {
     NativeMethodsMixin: require('NativeMethodsMixin'),
 
     // Used by react-native-github/Libraries/ components
+    ReactNativeBridgeEventPlugin: require('ReactNativeBridgeEventPlugin'), // requireNativeComponent
     ReactGlobalSharedState: require('ReactGlobalSharedState'), // Systrace
     ReactNativeComponentTree: require('ReactNativeComponentTree'), // InspectorUtils, ScrollResponder
     ReactNativePropRegistry: require('ReactNativePropRegistry'), // flattenStyle, Stylesheet
     TouchHistoryMath: require('TouchHistoryMath'), // PanResponder
-    createReactNativeComponentClass: require('createReactNativeComponentClass'), // eg Text
+    createReactNativeComponentClass: require('createReactNativeComponentClass'), // eg RCTText, RCTView, ReactNativeART
     takeSnapshot: require('takeSnapshot'), // react-native-implementation
   },
 };
@@ -110,8 +109,19 @@ if (__DEV__) {
   Object.assign(
     ReactNativeFiber.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED,
     {
-      ReactDebugTool: require('ReactDebugTool'), // RCTRenderingPerf, Systrace
-      ReactPerf: require('ReactPerf'), // ReactPerfStallHandler, RCTRenderingPerf
+      // TODO: none of these work since Fiber. Remove these dependencies.
+      // Used by RCTRenderingPerf, Systrace:
+      ReactDebugTool: {
+        addHook() {},
+        removeHook() {},
+      },
+      // Used by ReactPerfStallHandler, RCTRenderingPerf:
+      ReactPerf: {
+        start() {},
+        stop() {},
+        printInclusive() {},
+        printWasted() {},
+      },
     },
   );
 }

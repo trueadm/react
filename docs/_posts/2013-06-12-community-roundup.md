@@ -1,20 +1,20 @@
 ---
 title: "Community Round-up #1"
-author: vjeux
+author: [vjeux]
 ---
 
 React was open sourced two weeks ago and it's time for a little round-up of what has been going on.
 
 ## Khan Academy Question Editor
 
-It looks like [Ben Alpert](http://benalpert.com/) is the first person outside of Facebook and Instagram to push React code to production. We are very grateful for his contributions in form of pull requests, bug reports and presence on IRC ([#reactjs on Freenode](irc://chat.freenode.net/reactjs)). Ben wrote about his experience using React:
+It looks like [Sophie Alpert](http://sophiebits.com/) is the first person outside of Facebook and Instagram to push React code to production. We are very grateful for her contributions in form of pull requests, bug reports and presence on IRC ([#reactjs on Freenode](irc://chat.freenode.net/reactjs)). Sophie wrote about her experience using React:
 
 > I just rewrote a 2000-line project in React and have now made a handful of pull requests to React. Everything about React I've seen so far seems really well thought-out and I'm proud to be the first non-FB/IG production user of React.
 >
 > The project that I rewrote in React (and am continuing to improve) is the Khan Academy question editor which content creators can use to enter questions and hints that will be presented to students:
-> <figure>[![](/react/img/blog/khan-academy-editor.png)](http://benalpert.com/2013/06/09/using-react-to-speed-up-khan-academy.html)</figure>
+> <figure><a href="http://sophiebits.com/2013/06/09/using-react-to-speed-up-khan-academy.html"><img src="../img/blog/khan-academy-editor.png"></a></figure>
 >
-> [Read the full post...](http://benalpert.com/2013/06/09/using-react-to-speed-up-khan-academy.html)
+> [Read the full post...](http://sophiebits.com/2013/06/09/using-react-to-speed-up-khan-academy.html)
 
 ## Pimp my Backbone.View (by replacing it with React)
 
@@ -38,7 +38,7 @@ It looks like [Ben Alpert](http://benalpert.com/) is the first person outside of
 
 ## Origins of React
 
-[Pete Hunt](http://www.petehunt.net/blog/) explained what differentiates React from other JavaScript libraries in [a previous blog post](/react/blog/2013/06/05/why-react.html). [Lee Byron](http://leebyron.com/) gives another perspective on Quora:
+[Pete Hunt](http://www.petehunt.net/blog/) explained what differentiates React from other JavaScript libraries in [a previous blog post](/blog/2013/06/05/why-react.html). [Lee Byron](http://leebyron.com/) gives another perspective on Quora:
 
 > React isn't quite like any other popular JavaScript libraries, and it solves a very specific problem: complex UI rendering. It's also intended to be used along side many other popular libraries. For example, React works well with Backbone.js, amongst many others.
 >

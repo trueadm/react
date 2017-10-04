@@ -19,7 +19,7 @@ All work on React happens directly on [GitHub](https://github.com/facebook/react
 
 ### Branch Organization
 
-We will do our best to keep the [`master` branch](https://github.com/facebook/react/tree/master) in good shape, with tests passing at all times. But in order to move fast, we will make API changes that your application might not be compatible with. We recommend that you use [the latest stable version of React](/react/downloads.html).
+We will do our best to keep the [`master` branch](https://github.com/facebook/react/tree/master) in good shape, with tests passing at all times. But in order to move fast, we will make API changes that your application might not be compatible with. We recommend that you use [the latest stable version of React](/downloads.html).
 
 If you send a pull request, please do it against the `master` branch. We maintain stable branches for major versions separately but we don't accept pull requests to them directly. Instead, we cherry-pick non-breaking changes from master to the latest stable major version.
 
@@ -116,7 +116,7 @@ First, run `npm run build`. This will produce pre-built bundles in `build` folde
 
 The easiest way to try your changes is to run `npm run build` and then open `fixtures/packaging/babel-standalone/dev.html`. This file already uses `react.js` from the `build` folder so it will pick up your changes.
 
-If you want to try your changes in your existing React project, you may copy `build/dist/react.development.js`, `build/dist/react-dom.development.js`, or any other build products into your app and use them instead of the stable version. If your project uses React from npm, you may delete `react` and `react-dom` in its dependencies and use `npm link` to point them to your local `build` folder:
+If you want to try your changes in your existing React project, you may copy `build/umd/react.development.js`, `build/umd/react-dom.development.js`, or any other build products into your app and use them instead of the stable version. If your project uses React from npm, you may delete `react` and `react-dom` in its dependencies and use `npm link` to point them to your local `build` folder:
 
 ```sh
 cd your_project
@@ -156,8 +156,8 @@ React team meets once a week to discuss the development of React, future plans, 
 
 ### License
 
-By contributing to React, you agree that your contributions will be licensed under its BSD license.
+By contributing to React, you agree that your contributions will be licensed under its MIT license.
 
 ### What Next?
 
-Read the [next section](/react/contributing/codebase-overview.html) to learn how the codebase is organized.
+Read the [next section](/contributing/codebase-overview.html) to learn how the codebase is organized.

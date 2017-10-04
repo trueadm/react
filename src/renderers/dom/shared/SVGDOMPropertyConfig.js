@@ -1,15 +1,17 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule SVGDOMPropertyConfig
  */
 
 'use strict';
+
+var DOMProperty = require('DOMProperty');
+
+var {HAS_STRING_BOOLEAN_VALUE} = DOMProperty.injection;
 
 var NS = {
   xlink: 'http://www.w3.org/1999/xlink',
@@ -113,15 +115,19 @@ var ATTRS = [
   'xmlns:xlink',
   'xml:lang',
   'xml:space',
-  // The following attributes expect boolean values. They must be in
-  // the whitelist to allow boolean attribute assignment:
-  'autoReverse',
-  'externalResourcesRequired',
-  'preserveAlpha',
 ];
 
 var SVGDOMPropertyConfig = {
-  Properties: {},
+  Properties: {
+    autoReverse: HAS_STRING_BOOLEAN_VALUE,
+    externalResourcesRequired: HAS_STRING_BOOLEAN_VALUE,
+    preserveAlpha: HAS_STRING_BOOLEAN_VALUE,
+  },
+  DOMAttributeNames: {
+    autoReverse: 'autoReverse',
+    externalResourcesRequired: 'externalResourcesRequired',
+    preserveAlpha: 'preserveAlpha',
+  },
   DOMAttributeNamespaces: {
     xlinkActuate: NS.xlink,
     xlinkArcrole: NS.xlink,
@@ -134,7 +140,6 @@ var SVGDOMPropertyConfig = {
     xmlLang: NS.xml,
     xmlSpace: NS.xml,
   },
-  DOMAttributeNames: {},
 };
 
 var CAMELIZE = /[\-\:]([a-z])/g;

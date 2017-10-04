@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule BeforeInputEventPlugin
  */
@@ -273,7 +271,7 @@ function extractCompositionEvent(
 }
 
 /**
- * @param {string} topLevelType Record from `BrowserEventConstants`.
+ * @param {TopLevelTypes} topLevelType Record from `BrowserEventConstants`.
  * @param {object} nativeEvent Native browser event.
  * @return {?string} The string corresponding to this `beforeInput` event.
  */

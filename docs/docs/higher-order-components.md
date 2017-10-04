@@ -22,7 +22,7 @@ In this document, we'll discuss why higher-order components are useful, and how 
 
 > **Note**
 >
-> We previously recommended mixins as a way to handle cross-cutting concerns. We've since realized that mixins create more trouble than they are worth. [Read more](/react/blog/2016/07/13/mixins-considered-harmful.html) about why we've moved away from mixins and how you can transition your existing components.
+> We previously recommended mixins as a way to handle cross-cutting concerns. We've since realized that mixins create more trouble than they are worth. [Read more](/blog/2016/07/13/mixins-considered-harmful.html) about why we've moved away from mixins and how you can transition your existing components.
 
 Components are the primary unit of code reuse in React. However, you'll find that some patterns aren't a straightforward fit for traditional components.
 
@@ -279,14 +279,14 @@ This form may seem confusing or unnecessary, but it has a useful property. Singl
 
 ```js
 // Instead of doing this...
-const EnhancedComponent = connect(commentSelector)(withRouter(WrappedComponent))
+const EnhancedComponent = withRouter(connect(commentSelector)(WrappedComponent))
 
 // ... you can use a function composition utility
 // compose(f, g, h) is the same as (...args) => f(g(h(...args)))
 const enhance = compose(
   // These are both single-argument HOCs
-  connect(commentSelector),
-  withRouter
+  withRouter,
+  connect(commentSelector)
 )
 const EnhancedComponent = enhance(WrappedComponent)
 ```

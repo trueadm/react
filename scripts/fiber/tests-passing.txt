@@ -97,8 +97,8 @@ src/isomorphic/classic/__tests__/createReactClassIntegration-test.js
 * should warn on invalid prop types
 * should warn on invalid context types
 * should throw on invalid child context types
-* should warn when mispelling shouldComponentUpdate
-* should warn when mispelling componentWillReceiveProps
+* should warn when misspelling shouldComponentUpdate
+* should warn when misspelling componentWillReceiveProps
 * should throw if a reserved property is in statics
 * should support statics
 * should work with object getInitialState() return values
@@ -804,7 +804,7 @@ src/renderers/dom/shared/__tests__/ReactDOMComponent-test.js
 * should not incur unnecessary DOM mutations for attributes
 * should not incur unnecessary DOM mutations for string properties
 * should not incur unnecessary DOM mutations for boolean properties
-* should ignore attribute whitelist for elements with the "is: attribute
+* should ignore attribute whitelist for elements with the "is" attribute
 * should not update when switching between null/undefined
 * handles multiple child updates without interference
 * should generate the correct markup with className

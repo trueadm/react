@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @flow
  */
@@ -31,6 +29,9 @@ declare module 'ExceptionsManager' {
     error: Error,
     isFatal: boolean,
   ) : void;
+}
+declare module 'Platform' {
+  declare var OS : string;
 }
 declare module 'UIManager' {
   declare var customBubblingEventTypes : Object;
@@ -83,5 +84,5 @@ declare module 'UIManager' {
   ) : Promise<any>;
 }
 declare module 'View' {
-  declare var exports : typeof ReactComponent;
+  declare var exports : typeof React$Component;
 }

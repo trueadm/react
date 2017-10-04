@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -17,7 +15,6 @@ describe('ReactDOMInput', () => {
   var React;
   var ReactDOM;
   var ReactDOMServer;
-  var ReactDOMFeatureFlags;
   var ReactTestUtils;
   var inputValueTracking;
 
@@ -37,7 +34,6 @@ describe('ReactDOMInput', () => {
     React = require('react');
     ReactDOM = require('react-dom');
     ReactDOMServer = require('react-dom/server');
-    ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
     ReactTestUtils = require('react-dom/test-utils');
     // TODO: can we express this test with only public API?
     inputValueTracking = require('inputValueTracking');
@@ -1189,7 +1185,6 @@ describe('ReactDOMInput', () => {
       <input value="0" type="range" min="0" max="100" step="1" />,
     );
     expect(log).toEqual([
-      ...(ReactDOMFeatureFlags.useFiber ? [] : ['set data-reactroot']),
       'set type',
       'set step',
       'set min',
@@ -1253,9 +1248,6 @@ describe('ReactDOMInput', () => {
       <input type="date" defaultValue="1980-01-01" />,
     );
     expect(log).toEqual([
-      ...(ReactDOMFeatureFlags.useFiber
-        ? []
-        : ['node.setAttribute("data-reactroot", "")']),
       'node.setAttribute("type", "date")',
       'node.setAttribute("value", "1980-01-01")',
       'node.value = ""',

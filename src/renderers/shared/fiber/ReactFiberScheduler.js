@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactFiberScheduler
  * @flow
@@ -111,7 +109,9 @@ if (__DEV__) {
     stopCommitLifeCyclesTimer,
   } = require('ReactDebugFiberPerf');
 
-  var warnAboutUpdateOnUnmounted = function(instance: ReactClass<any>) {
+  var warnAboutUpdateOnUnmounted = function(
+    instance: React$ComponentType<any>,
+  ) {
     const ctor = instance.constructor;
     warning(
       false,
@@ -123,7 +123,7 @@ if (__DEV__) {
     );
   };
 
-  var warnAboutInvalidUpdates = function(instance: ReactClass<any>) {
+  var warnAboutInvalidUpdates = function(instance: React$ComponentType<any>) {
     switch (ReactDebugCurrentFiber.phase) {
       case 'getChildContext':
         warning(
@@ -150,7 +150,7 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
   config: HostConfig<T, P, I, TI, PI, C, CX, PL>,
 ) {
   const hostContext = ReactFiberHostContext(config);
-  const hydrationContext: HydrationContext<C> = ReactFiberHydrationContext(
+  const hydrationContext: HydrationContext<C, CX> = ReactFiberHydrationContext(
     config,
   );
   const {popHostContainer, popHostContext, resetHostContainer} = hostContext;
@@ -234,7 +234,8 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
 
   // Use these to prevent an infinite loop of nested updates
   const NESTED_UPDATE_LIMIT = 1000;
-  let nestedUpdateCount = 0;
+  let nestedUpdateCount: number = 0;
+  let nextRenderedTree: FiberRoot | null = null;
 
   function resetContextStack() {
     // Reset the stack
@@ -299,18 +300,24 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
         highestPriorityRoot.current,
         highestPriorityLevel,
       );
+      if (highestPriorityRoot !== nextRenderedTree) {
+        // We've switched trees. Reset the nested update counter.
+        nestedUpdateCount = 0;
+        nextRenderedTree = highestPriorityRoot;
+      }
       return;
     }
 
     nextPriorityLevel = NoWork;
     nextUnitOfWork = null;
+    nextRenderedTree = null;
     return;
   }
 
   function commitAllHostEffects() {
     while (nextEffect !== null) {
       if (__DEV__) {
-        ReactDebugCurrentFiber.setCurrentFiber(nextEffect, null);
+        ReactDebugCurrentFiber.setCurrentFiber(nextEffect);
         recordEffect();
       }
 
@@ -608,7 +615,13 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
       // means that we don't need an additional field on the work in
       // progress.
       const current = workInProgress.alternate;
+      if (__DEV__) {
+        ReactDebugCurrentFiber.setCurrentFiber(workInProgress);
+      }
       const next = completeWork(current, workInProgress, nextPriorityLevel);
+      if (__DEV__) {
+        ReactDebugCurrentFiber.resetCurrentFiber();
+      }
 
       const returnFiber = workInProgress.return;
       const siblingFiber = workInProgress.sibling;
@@ -699,8 +712,12 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     // See if beginning this work spawns more work.
     if (__DEV__) {
       startWorkTimer(workInProgress);
+      ReactDebugCurrentFiber.setCurrentFiber(workInProgress);
     }
     let next = beginWork(current, workInProgress, nextPriorityLevel);
+    if (__DEV__) {
+      ReactDebugCurrentFiber.resetCurrentFiber();
+    }
     if (__DEV__ && ReactFiberInstrumentation.debugTool) {
       ReactFiberInstrumentation.debugTool.onBeginWork(workInProgress);
     }
@@ -711,9 +728,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     }
 
     ReactCurrentOwner.current = null;
-    if (__DEV__) {
-      ReactDebugCurrentFiber.resetCurrentFiber();
-    }
 
     return next;
   }
@@ -728,8 +742,12 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     // See if beginning this work spawns more work.
     if (__DEV__) {
       startWorkTimer(workInProgress);
+      ReactDebugCurrentFiber.setCurrentFiber(workInProgress);
     }
     let next = beginFailedWork(current, workInProgress, nextPriorityLevel);
+    if (__DEV__) {
+      ReactDebugCurrentFiber.resetCurrentFiber();
+    }
     if (__DEV__ && ReactFiberInstrumentation.debugTool) {
       ReactFiberInstrumentation.debugTool.onBeginWork(workInProgress);
     }
@@ -740,9 +758,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     }
 
     ReactCurrentOwner.current = null;
-    if (__DEV__) {
-      ReactDebugCurrentFiber.resetCurrentFiber();
-    }
 
     return next;
   }
@@ -967,8 +982,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     );
     isPerformingWork = true;
 
-    nestedUpdateCount = 0;
-
     // The priority context changes during the render phase. We'll need to
     // reset it at the end.
     const previousPriorityContext = priorityContext;
@@ -1079,6 +1092,9 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     firstUncaughtError = null;
     capturedErrors = null;
     failedBoundaries = null;
+    nextRenderedTree = null;
+    nestedUpdateCount = 0;
+
     if (__DEV__) {
       stopWorkLoopTimer();
     }
@@ -1491,16 +1507,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     scheduleUpdateImpl(fiber, TaskPriority, true);
   }
 
-  function performWithPriority(priorityLevel: PriorityLevel, fn: Function) {
-    const previousPriorityContext = priorityContext;
-    priorityContext = priorityLevel;
-    try {
-      fn();
-    } finally {
-      priorityContext = previousPriorityContext;
-    }
-  }
-
   function batchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
     const previousIsBatchingUpdates = isBatchingUpdates;
     isBatchingUpdates = true;
@@ -1563,7 +1569,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
   return {
     scheduleUpdate: scheduleUpdate,
     getPriorityContext: getPriorityContext,
-    performWithPriority: performWithPriority,
     batchedUpdates: batchedUpdates,
     unbatchedUpdates: unbatchedUpdates,
     flushSync: flushSync,

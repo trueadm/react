@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule EventPluginHub
  */
@@ -124,46 +122,23 @@ var EventPluginHub = {
 
     // TODO: shouldPreventMouseEvent is DOM-specific and definitely should not
     // live here; needs to be moved to a better place soon
-    if (typeof inst.tag === 'number') {
-      const stateNode = inst.stateNode;
-      if (!stateNode) {
-        // Work in progress (ex: onload events in incremental mode).
-        return null;
-      }
-      const props = EventPluginUtils.getFiberCurrentPropsFromNode(stateNode);
-      if (!props) {
-        // Work in progress.
-        return null;
-      }
-      listener = props[registrationName];
-      if (shouldPreventMouseEvent(registrationName, inst.type, props)) {
-        return null;
-      }
-    } else {
-      const currentElement = inst._currentElement;
-      if (
-        typeof currentElement === 'string' ||
-        typeof currentElement === 'number'
-      ) {
-        // Text node, let it bubble through.
-        return null;
-      }
-      if (!inst._rootNodeID) {
-        // If the instance is already unmounted, we have no listeners.
-        return null;
-      }
-      const props = currentElement.props;
-      listener = props[registrationName];
-      if (
-        shouldPreventMouseEvent(registrationName, currentElement.type, props)
-      ) {
-        return null;
-      }
+    const stateNode = inst.stateNode;
+    if (!stateNode) {
+      // Work in progress (ex: onload events in incremental mode).
+      return null;
     }
-
+    const props = EventPluginUtils.getFiberCurrentPropsFromNode(stateNode);
+    if (!props) {
+      // Work in progress.
+      return null;
+    }
+    listener = props[registrationName];
+    if (shouldPreventMouseEvent(registrationName, inst.type, props)) {
+      return null;
+    }
     invariant(
       !listener || typeof listener === 'function',
-      'Expected %s listener to be a function, instead got type %s',
+      'Expected `%s` listener to be a function, instead got a value of `%s` type.',
       registrationName,
       typeof listener,
     );

@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactNoopEntry
  * @flow
@@ -25,7 +23,6 @@ import type {UpdateQueue} from 'ReactFiberUpdateQueue';
 var ReactFiberInstrumentation = require('ReactFiberInstrumentation');
 var ReactFiberReconciler = require('ReactFiberReconciler');
 var ReactInstanceMap = require('ReactInstanceMap');
-var {TaskPriority} = require('ReactPriorityLevel');
 var emptyObject = require('fbjs/lib/emptyObject');
 
 var expect = require('jest-matchers');
@@ -251,12 +248,12 @@ var ReactNoop = {
   },
 
   // Shortcut for testing a single root
-  render(element: ReactElement<any>, callback: ?Function) {
+  render(element: React$Element<any>, callback: ?Function) {
     ReactNoop.renderToRootWithID(element, DEFAULT_ROOT_ID, callback);
   },
 
   renderToRootWithID(
-    element: ReactElement<any>,
+    element: React$Element<any>,
     rootID: string,
     callback: ?Function,
   ) {
@@ -281,7 +278,7 @@ var ReactNoop = {
   },
 
   findInstance(
-    componentOrElement: Element | ?ReactComponent<any, any, any>,
+    componentOrElement: Element | ?React$Component<any, any>,
   ): null | Instance | TextInstance {
     if (componentOrElement == null) {
       return null;
@@ -349,10 +346,6 @@ var ReactNoop = {
 
   hasScheduledCallback() {
     return !!scheduledCallback;
-  },
-
-  taskUpdates(fn: Function) {
-    NoopRenderer.performWithPriority(TaskPriority, fn);
   },
 
   batchedUpdates: NoopRenderer.batchedUpdates,

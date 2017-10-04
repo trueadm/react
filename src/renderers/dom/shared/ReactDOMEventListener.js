@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactDOMEventListener
  */
@@ -33,22 +31,14 @@ function findRootContainerNode(inst) {
   // TODO: It may be a good idea to cache this to prevent unnecessary DOM
   // traversal, but caching is difficult to do correctly without using a
   // mutation observer to listen for all DOM changes.
-  if (typeof inst.tag === 'number') {
-    while (inst.return) {
-      inst = inst.return;
-    }
-    if (inst.tag !== HostRoot) {
-      // This can happen if we're in a detached tree.
-      return null;
-    }
-    return inst.stateNode.containerInfo;
-  } else {
-    while (inst._hostParent) {
-      inst = inst._hostParent;
-    }
-    var rootNode = ReactDOMComponentTree.getNodeFromInstance(inst);
-    return rootNode.parentNode;
+  while (inst.return) {
+    inst = inst.return;
   }
+  if (inst.tag !== HostRoot) {
+    // This can happen if we're in a detached tree.
+    return null;
+  }
+  return inst.stateNode.containerInfo;
 }
 
 // Used to store ancestor hierarchy in top level callback

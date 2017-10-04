@@ -18,6 +18,7 @@ const Bundles = require('./bundles');
 const propertyMangleWhitelist = require('./mangle').propertyMangleWhitelist;
 const sizes = require('./plugins/sizes-plugin');
 const Stats = require('./stats');
+const syncReactDom = require('./sync').syncReactDom;
 const syncReactNative = require('./sync').syncReactNative;
 const Packaging = require('./packaging');
 const Header = require('./header');
@@ -40,6 +41,7 @@ const requestedBundleNames = (argv._[0] || '')
   .split(',')
   .map(type => type.toLowerCase());
 const syncFbsource = argv['sync-fbsource'];
+const syncWww = argv['sync-www'];
 
 // used for when we property mangle with uglify/gcc
 const mangleRegex = new RegExp(
@@ -80,14 +82,16 @@ function getBanner(bundleType, hasteName, filename) {
     // UMDs are not wrapped in conditions.
     case UMD_DEV:
     case UMD_PROD:
-      return Header.getUMDHeader(filename, reactVersion);
+      return Header.getHeader(filename, reactVersion);
     // CommonJS DEV bundle is guarded to help weak dead code elimination.
     case NODE_DEV:
+      let banner = Header.getHeader(filename, reactVersion);
       // Wrap the contents of the if-DEV check with an IIFE.
       // Block-level function definitions can cause problems for strict mode.
-      return `'use strict';\n\n\nif (process.env.NODE_ENV !== "production") {\n(function() {\n`;
+      banner += `'use strict';\n\n\nif (process.env.NODE_ENV !== "production") {\n(function() {\n`;
+      return banner;
     case NODE_PROD:
-      return '';
+      return Header.getHeader(filename, reactVersion);
     // All FB and RN bundles need Haste headers.
     // DEV bundle is guarded to help weak dead code elimination.
     case FB_DEV:
@@ -342,11 +346,13 @@ function getPlugins(
         commonjs(getCommonJsConfig(bundleType)),
         closure({
           compilationLevel: 'SIMPLE',
-          languageIn: 'ES5',
-          languageOut: 'ES5',
+          languageIn: 'ECMASCRIPT5_STRICT',
+          languageOut: 'ECMASCRIPT5_STRICT',
           env: 'CUSTOM',
           warningLevel: 'QUIET',
-          assumeFunctionWrapper: true,
+          // Don't let it create global variables in the browser.
+          // https://github.com/facebook/react/issues/10909
+          assumeFunctionWrapper: bundleType !== UMD_PROD,
           applyInputSourceMaps: false,
           useTypesForOptimization: false,
           processCommonJsModules: false,
@@ -514,10 +520,12 @@ rimraf('build', () => {
     tasks.push(() =>
       syncReactNative(join('build', 'react-native'), syncFbsource)
     );
+  } else if (syncWww) {
+    tasks.push(() => syncReactDom(join('build', 'facebook-www'), syncWww));
   }
   // rather than run concurently, opt to run them serially
   // this helps improve console/warning/error output
-  // and fixes a bunch of IO failures that sometimes occured
+  // and fixes a bunch of IO failures that sometimes occurred
   return runWaterfall(tasks)
     .then(() => {
       // output the results

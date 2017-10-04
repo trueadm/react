@@ -256,48 +256,6 @@ const bundles = [
     bundleTypes: [RN_DEV, RN_PROD],
     config: {
       destDir: 'build/',
-      moduleName: 'ReactNativeStack',
-      sourceMap: false,
-    },
-    entry: 'src/renderers/native/ReactNativeStackEntry',
-    externals: [
-      'ExceptionsManager',
-      'InitializeCore',
-      'ReactNativeFeatureFlags',
-      'RCTEventEmitter',
-      'TextInputState',
-      'UIManager',
-      'View',
-      'deepDiffer',
-      'deepFreezeAndThrowOnMutationInDev',
-      'flattenStyle',
-      'prop-types/checkPropTypes',
-    ],
-    hasteName: 'ReactNativeStack',
-    isRenderer: true,
-    label: 'native-stack',
-    manglePropertiesOnProd: false,
-    name: 'react-native-renderer',
-    paths: [
-      'src/renderers/native/**/*.js',
-      'src/renderers/shared/**/*.js',
-
-      'src/ReactVersion.js',
-      'src/shared/**/*.js',
-    ],
-    useFiber: false,
-    modulesToStub: [
-      'createReactNativeComponentClassFiber',
-      'ReactNativeFiberRenderer',
-      'findNumericNodeHandleFiber',
-      'ReactNativeFiber',
-    ],
-  },
-  {
-    babelOpts: babelOptsReact,
-    bundleTypes: [RN_DEV, RN_PROD],
-    config: {
-      destDir: 'build/',
       moduleName: 'ReactNativeFiber',
       sourceMap: false,
     },
@@ -305,7 +263,7 @@ const bundles = [
     externals: [
       'ExceptionsManager',
       'InitializeCore',
-      'ReactNativeFeatureFlags',
+      'Platform',
       'RCTEventEmitter',
       'TextInputState',
       'UIManager',
@@ -328,11 +286,6 @@ const bundles = [
       'src/shared/**/*.js',
     ],
     useFiber: true,
-    modulesToStub: [
-      'createReactNativeComponentClassStack',
-      'findNumericNodeHandleStack',
-      'ReactNativeStack',
-    ],
   },
 
   /******* React Test Renderer *******/
@@ -415,6 +368,24 @@ const bundles = [
     ],
   },
 ];
+
+// Based on deep-freeze by substack (public domain)
+function deepFreeze(o) {
+  Object.freeze(o);
+  Object.getOwnPropertyNames(o).forEach(function(prop) {
+    if (
+      o[prop] !== null &&
+      (typeof o[prop] === 'object' || typeof o[prop] === 'function') &&
+      !Object.isFrozen(o[prop])
+    ) {
+      deepFreeze(o[prop]);
+    }
+  });
+  return o;
+}
+
+// Don't accidentally mutate config as part of the build
+deepFreeze(bundles);
 
 module.exports = {
   bundleTypes,

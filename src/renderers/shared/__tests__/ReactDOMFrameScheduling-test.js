@@ -1,20 +1,15 @@
 /**
- * Copyright 2016-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
 
 'use strict';
 
-const ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
-const describeFiber = ReactDOMFeatureFlags.useFiber ? describe : xdescribe;
-
-describeFiber('ReactDOMFrameScheduling', () => {
+describe('ReactDOMFrameScheduling', () => {
   it('warns when requestAnimationFrame is not polyfilled in the browser', () => {
     const previousRAF = global.requestAnimationFrame;
     try {

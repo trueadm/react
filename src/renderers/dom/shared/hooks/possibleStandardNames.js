@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule possibleStandardNames
  */
@@ -20,7 +18,6 @@ var possibleStandardNames = {
   accesskey: 'accessKey',
   action: 'action',
   allowfullscreen: 'allowFullScreen',
-  allowtransparency: 'allowTransparency',
   alt: 'alt',
   as: 'as',
   async: 'async',
@@ -64,7 +61,7 @@ var possibleStandardNames = {
   enctype: 'encType',
   for: 'htmlFor',
   form: 'form',
-  formMethod: 'formMethod',
+  formmethod: 'formMethod',
   formaction: 'formAction',
   formenctype: 'formEncType',
   formnovalidate: 'formNoValidate',
@@ -99,7 +96,7 @@ var possibleStandardNames = {
   loop: 'loop',
   low: 'low',
   manifest: 'manifest',
-  marginWidth: 'marginWidth',
+  marginwidth: 'marginWidth',
   marginheight: 'marginHeight',
   max: 'max',
   maxlength: 'maxLength',
@@ -107,7 +104,7 @@ var possibleStandardNames = {
   mediagroup: 'mediaGroup',
   method: 'method',
   min: 'min',
-  minLength: 'minlength',
+  minlength: 'minLength',
   multiple: 'multiple',
   muted: 'muted',
   name: 'name',
@@ -236,7 +233,7 @@ var possibleStandardNames = {
   filter: 'filter',
   filterres: 'filterRes',
   filterunits: 'filterUnits',
-  floodOpacity: 'floodOpacity',
+  floodopacity: 'floodOpacity',
   'flood-opacity': 'floodOpacity',
   floodcolor: 'floodColor',
   'flood-color': 'floodColor',

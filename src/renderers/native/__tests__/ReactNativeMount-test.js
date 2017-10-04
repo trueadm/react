@@ -1,17 +1,14 @@
 /**
- * Copyright 2013-2015, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
 
 'use strict';
 
-var PropTypes;
 var React;
 var ReactNative;
 var createReactNativeComponentClass;
@@ -21,7 +18,6 @@ describe('ReactNative', () => {
   beforeEach(() => {
     jest.resetModules();
 
-    PropTypes = require('prop-types');
     React = require('react');
     ReactNative = require('react-native');
     UIManager = require('UIManager');
@@ -29,10 +25,10 @@ describe('ReactNative', () => {
   });
 
   it('should be able to create and render a native component', () => {
-    var View = createReactNativeComponentClass({
+    var View = createReactNativeComponentClass('View', () => ({
       validAttributes: {foo: true},
       uiViewClassName: 'View',
-    });
+    }));
 
     ReactNative.render(<View foo="test" />, 1);
     expect(UIManager.createView).toBeCalled();
@@ -42,10 +38,10 @@ describe('ReactNative', () => {
   });
 
   it('should be able to create and update a native component', () => {
-    var View = createReactNativeComponentClass({
+    var View = createReactNativeComponentClass('View', () => ({
       validAttributes: {foo: true},
       uiViewClassName: 'View',
-    });
+    }));
 
     ReactNative.render(<View foo="foo" />, 11);
 
@@ -63,48 +59,36 @@ describe('ReactNative', () => {
   });
 
   it('should not call UIManager.updateView after render for properties that have not changed', () => {
-    const Text = createReactNativeComponentClass({
+    const Text = createReactNativeComponentClass('Text', () => ({
       validAttributes: {foo: true},
       uiViewClassName: 'Text',
-    });
+    }));
 
-    // Context hack is required for RN text rendering in stack.
-    // TODO Remove this from the test when RN stack has been deleted.
-    class Hack extends React.Component {
-      static childContextTypes = {isInAParentText: PropTypes.bool};
-      getChildContext() {
-        return {isInAParentText: true};
-      }
-      render() {
-        return this.props.children;
-      }
-    }
-
-    ReactNative.render(<Hack><Text foo="a">1</Text></Hack>, 11);
+    ReactNative.render(<Text foo="a">1</Text>, 11);
     expect(UIManager.updateView).not.toBeCalled();
 
     // If no properties have changed, we shouldn't call updateView.
-    ReactNative.render(<Hack><Text foo="a">1</Text></Hack>, 11);
+    ReactNative.render(<Text foo="a">1</Text>, 11);
     expect(UIManager.updateView).not.toBeCalled();
 
     // Only call updateView for the changed property (and not for text).
-    ReactNative.render(<Hack><Text foo="b">1</Text></Hack>, 11);
+    ReactNative.render(<Text foo="b">1</Text>, 11);
     expect(UIManager.updateView.mock.calls.length).toBe(1);
 
     // Only call updateView for the changed text (and no other properties).
-    ReactNative.render(<Hack><Text foo="b">2</Text></Hack>, 11);
+    ReactNative.render(<Text foo="b">2</Text>, 11);
     expect(UIManager.updateView.mock.calls.length).toBe(2);
 
     // Call updateView for both changed text and properties.
-    ReactNative.render(<Hack><Text foo="c">3</Text></Hack>, 11);
+    ReactNative.render(<Text foo="c">3</Text>, 11);
     expect(UIManager.updateView.mock.calls.length).toBe(4);
   });
 
   it('should not call UIManager.updateView from setNativeProps for properties that have not changed', () => {
-    const View = createReactNativeComponentClass({
+    const View = createReactNativeComponentClass('View', () => ({
       validAttributes: {foo: true},
       uiViewClassName: 'View',
-    });
+    }));
 
     class Subclass extends ReactNative.NativeComponent {
       render() {
@@ -136,10 +120,10 @@ describe('ReactNative', () => {
   });
 
   it('returns the correct instance and calls it in the callback', () => {
-    var View = createReactNativeComponentClass({
+    var View = createReactNativeComponentClass('View', () => ({
       validAttributes: {foo: true},
       uiViewClassName: 'View',
-    });
+    }));
 
     var a;
     var b;
@@ -157,10 +141,10 @@ describe('ReactNative', () => {
   });
 
   it('renders and reorders children', () => {
-    var View = createReactNativeComponentClass({
+    var View = createReactNativeComponentClass('View', () => ({
       validAttributes: {title: true},
       uiViewClassName: 'View',
-    });
+    }));
 
     class Component extends React.Component {
       render() {

@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 'use strict';
@@ -21,8 +19,6 @@ Object.assign(
     ReactFiberTreeReflection: require('ReactFiberTreeReflection'),
     ReactDOMComponentTree: require('ReactDOMComponentTree'),
     ReactInstanceMap: require('ReactInstanceMap'),
-    // This is used for ajaxify on www:
-    DOMProperty: require('DOMProperty'),
     // These are dependencies of TapEventPlugin:
     EventPluginUtils: require('EventPluginUtils'),
     EventPropagators: require('EventPropagators'),

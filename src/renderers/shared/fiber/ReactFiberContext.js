@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactFiberContext
  * @flow
@@ -91,7 +89,6 @@ exports.getMaskedContext = function(
 
   if (__DEV__) {
     const name = getComponentName(workInProgress) || 'Unknown';
-    ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
     checkPropTypes(
       contextTypes,
       context,
@@ -99,7 +96,6 @@ exports.getMaskedContext = function(
       name,
       ReactDebugCurrentFiber.getCurrentFiberStackAddendum,
     );
-    ReactDebugCurrentFiber.resetCurrentFiber();
   }
 
   // Cache unmasked context so we can avoid recreating masked context unless necessary.
@@ -135,6 +131,11 @@ function popContextProvider(fiber: Fiber): void {
 }
 exports.popContextProvider = popContextProvider;
 
+exports.popTopLevelContextObject = function(fiber: Fiber) {
+  pop(didPerformWorkStackCursor, fiber);
+  pop(contextStackCursor, fiber);
+};
+
 exports.pushTopLevelContextObject = function(
   fiber: Fiber,
   context: Object,
@@ -150,11 +151,7 @@ exports.pushTopLevelContextObject = function(
   push(didPerformWorkStackCursor, didChange, fiber);
 };
 
-function processChildContext(
-  fiber: Fiber,
-  parentContext: Object,
-  isReconciling: boolean,
-): Object {
+function processChildContext(fiber: Fiber, parentContext: Object): Object {
   const instance = fiber.stateNode;
   const childContextTypes = fiber.type.childContextTypes;
 
@@ -181,11 +178,11 @@ function processChildContext(
 
   let childContext;
   if (__DEV__) {
-    ReactDebugCurrentFiber.setCurrentFiber(fiber, 'getChildContext');
+    ReactDebugCurrentFiber.setCurrentPhase('getChildContext');
     startPhaseTimer(fiber, 'getChildContext');
     childContext = instance.getChildContext();
     stopPhaseTimer();
-    ReactDebugCurrentFiber.resetCurrentFiber();
+    ReactDebugCurrentFiber.setCurrentPhase(null);
   } else {
     childContext = instance.getChildContext();
   }
@@ -199,21 +196,18 @@ function processChildContext(
   }
   if (__DEV__) {
     const name = getComponentName(fiber) || 'Unknown';
-    // We can only provide accurate element stacks if we pass work-in-progress tree
-    // during the begin or complete phase. However currently this function is also
-    // called from unstable_renderSubtree legacy implementation. In this case it unsafe to
-    // assume anything about the given fiber. We won't pass it down if we aren't sure.
-    // TODO: remove this hack when we delete unstable_renderSubtree in Fiber.
-    const workInProgress = isReconciling ? fiber : null;
-    ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
     checkPropTypes(
       childContextTypes,
       childContext,
       'child context',
       name,
+      // In practice, there is one case in which we won't get a stack. It's when
+      // somebody calls unstable_renderSubtreeIntoContainer() and we process
+      // context from the parent component instance. The stack will be missing
+      // because it's outside of the reconciliation, and so the pointer has not
+      // been set. This is rare and doesn't matter. We'll also remove that API.
       ReactDebugCurrentFiber.getCurrentFiberStackAddendum,
     );
-    ReactDebugCurrentFiber.resetCurrentFiber();
   }
 
   return {...parentContext, ...childContext};
@@ -234,7 +228,7 @@ exports.pushContextProvider = function(workInProgress: Fiber): boolean {
     emptyObject;
 
   // Remember the parent context so we can merge with it later.
-  // Inherit the parent's did-perform-work value to avoid inadvertantly blocking updates.
+  // Inherit the parent's did-perform-work value to avoid inadvertently blocking updates.
   previousContext = contextStackCursor.current;
   push(contextStackCursor, memoizedMergedChildContext, workInProgress);
   push(
@@ -261,11 +255,7 @@ exports.invalidateContextProvider = function(
     // Merge parent and own context.
     // Skip this if we're not updating due to sCU.
     // This avoids unnecessarily recomputing memoized values.
-    const mergedContext = processChildContext(
-      workInProgress,
-      previousContext,
-      true,
-    );
+    const mergedContext = processChildContext(workInProgress, previousContext);
     instance.__reactInternalMemoizedMergedChildContext = mergedContext;
 
     // Replace the old (or empty) context with the new one.

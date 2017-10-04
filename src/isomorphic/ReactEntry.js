@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactEntry
  */
@@ -52,13 +50,14 @@ var React = {
 
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
     ReactCurrentOwner: require('ReactCurrentOwner'),
+    // Used by renderers to avoid bundling object-assign twice in UMD bundles:
+    assign: require('object-assign'),
   },
 };
 
 if (__DEV__) {
   Object.assign(React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED, {
     // These should not be included in production.
-    ReactComponentTreeHook: require('ReactComponentTreeHook'),
     ReactDebugCurrentFrame: require('ReactDebugCurrentFrame'),
   });
 }

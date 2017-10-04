@@ -54,12 +54,40 @@ October 13 in Stockholm, Sweden
 
 [Website](https://statejs.com/)
 
+### Second React Summit - NG 2017
+October 21 in Lagos, Nigeria
+
+[Website](https://reactsummit2017.splashthat.com/) - [Twitter](https://twitter.com/DevCircleLagos/) - [Facebook](https://www.facebook.com/groups/DevCLagos/)
+
 ### ReactiveConf 2017
 October 25–27, Bratislava, Slovakia
 
 [Website](https://reactiveconf.com)
 
+### React Seoul 2017
+November 4 in Seoul, South Korea
 
+[Website](http://seoul.reactjs.kr/en)
+
+### React Day Berlin
+December 2, Berlin, Germany
+
+[Website](https://reactday.berlin) - [Twitter](https://twitter.com/reactdayberlin) - [Facebook](https://www.facebook.com/reactdayberlin/)
+
+### AgentConf 2018
+January 25-28 in Dornbirn, Austria
+
+[Website](http://agent.sh/)
+
+### React Amsterdam 2018
+April 13 in Amsterdam, The Netherlands
+
+[Website](https://react.amsterdam) - [Twitter](https://twitter.com/reactamsterdam) - [Facebook](https://www.facebook.com/reactamsterdam)
+
+### ReactEurope 2018
+May 17-18 in Paris, France
+
+[Website](https://www.react-europe.org) - [Twitter](https://twitter.com/ReactEurope) - [Facebook](https://www.facebook.com/ReactEurope)
 
 ## Past Conferences
 
@@ -68,7 +96,7 @@ January 28 & 29 in Facebook HQ, CA
 
 [Website](http://conf2015.reactjs.org/) - [Schedule](http://conf2015.reactjs.org/schedule.html) - [Videos](https://www.youtube.com/playlist?list=PLb0IAmt7-GS1cbw4qonlQztYV1TAW0sCr)
 
-<iframe width="100%" height="315" src="//www.youtube-nocookie.com/embed/KVZ-P-ZI6W4?list=PLb0IAmt7-GS1cbw4qonlQztYV1TAW0sCr" frameborder="0" allowfullscreen></iframe>
+<iframe width="650" height="315" src="//www.youtube-nocookie.com/embed/KVZ-P-ZI6W4?list=PLb0IAmt7-GS1cbw4qonlQztYV1TAW0sCr" frameborder="0" allowfullscreen></iframe>
 
 ### ReactEurope 2015
 July 2 & 3 in Paris, France

@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -14,7 +12,6 @@
 let createRenderer;
 let React;
 let ReactDOM;
-let ReactDOMFeatureFlags;
 let ReactDOMServer;
 let ReactTestUtils;
 
@@ -25,7 +22,6 @@ describe('ReactTestUtils', () => {
     ReactDOM = require('react-dom');
     ReactDOMServer = require('react-dom/server');
     ReactTestUtils = require('react-dom/test-utils');
-    ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
   });
 
   it('can scryRenderedDOMComponentsWithClass with TextComponent', () => {
@@ -175,9 +171,7 @@ describe('ReactTestUtils', () => {
 
     const markup = ReactDOMServer.renderToString(<Root />);
     const testDocument = getTestDocument(markup);
-    const component = ReactDOMFeatureFlags.useFiber
-      ? ReactDOM.hydrate(<Root />, testDocument)
-      : ReactDOM.render(<Root />, testDocument);
+    const component = ReactDOM.hydrate(<Root />, testDocument);
 
     expect(component.refs.html.tagName).toBe('HTML');
     expect(component.refs.head.tagName).toBe('HEAD');

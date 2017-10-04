@@ -1,9 +1,8 @@
 /**
- * Copyright (c) 2014-present, Facebook, Inc. All rights reserved.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 'use strict';
 
@@ -34,8 +33,12 @@ const defaultOptions = {
 };
 const config = {
   default: {
-    patterns: ['src/**/*.js'],
-    ignore: ['**/third_party/**', '**/node_modules/**'],
+    patterns: ['src/**/*.js', 'www/**/*.js'],
+    ignore: [
+      '**/third_party/**',
+      '**/node_modules/**',
+      '**/jsfiddle-integration*.js',
+    ],
   },
   scripts: {
     patterns: ['scripts/**/*.js', 'fixtures/**/*.js'],

@@ -76,7 +76,7 @@ Ensure that your web application can be fully operated with the keyboard only:
 
 Keyboard focus refers to the current element in the DOM that is selected to accept input from the keyboard. We see it everywhere as a focus outline similar to that shown in the following image:
 
-<img src="/react/img/docs/keyboard-focus.png" alt="Blue keyboard focus outline around a selected link." />
+<img src="../img/docs/keyboard-focus.png" alt="Blue keyboard focus outline around a selected link." />
 
 Only ever use CSS that removes this outline, for example by setting `outline: 0`, if you are replacing it with another focus outline implementation.
 
@@ -132,7 +132,7 @@ the cancel button (preventing the keyboard user from accidentally activating the
 initially triggered the modal.
 
 >Note:
-
+>
 >While this is a very important accessibility feature, it is also a technique that should be used judiciously. Use it to repair the keyboard focus flow when it is disturbed, not to try and anticipate how
 >users want to use applications.
 
@@ -249,7 +249,7 @@ Testing with a screen reader should form part of your accessibility tests.
 
 Please note that browser / screen reader combinations matter. It is recommended that you test your application in the browser best suited to your screen reader of choice.
 
-#### NVDA in FireFox
+#### NVDA in Firefox
 
 [NonVisual Desktop Access](https://www.nvaccess.org/) or NVDA is an open source Windows screen reader that is widely used.
 

@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactFiberHydrationContext
  * @flow
@@ -22,18 +20,22 @@ const {Deletion, Placement} = require('ReactTypeOfSideEffect');
 
 const {createFiberFromHostInstanceForDeletion} = require('ReactFiber');
 
-export type HydrationContext<C> = {
+export type HydrationContext<C, CX> = {
   enterHydrationState(fiber: Fiber): boolean,
   resetHydrationState(): void,
   tryToClaimNextHydratableInstance(fiber: Fiber): void,
-  prepareToHydrateHostInstance(fiber: Fiber, rootContainerInstance: C): boolean,
+  prepareToHydrateHostInstance(
+    fiber: Fiber,
+    rootContainerInstance: C,
+    hostContext: CX,
+  ): boolean,
   prepareToHydrateHostTextInstance(fiber: Fiber): boolean,
   popHydrationState(fiber: Fiber): boolean,
 };
 
 module.exports = function<T, P, I, TI, PI, C, CX, PL>(
   config: HostConfig<T, P, I, TI, PI, C, CX, PL>,
-): HydrationContext<C> {
+): HydrationContext<C, CX> {
   const {
     shouldSetTextContent,
     canHydrateInstance,
@@ -218,6 +220,7 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
   function prepareToHydrateHostInstance(
     fiber: Fiber,
     rootContainerInstance: C,
+    hostContext: CX,
   ): boolean {
     const instance: I = fiber.stateNode;
     const updatePayload = hydrateInstance(
@@ -225,6 +228,7 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
       fiber.type,
       fiber.memoizedProps,
       rootContainerInstance,
+      hostContext,
       fiber,
     );
     // TODO: Type this specific to this type of component.

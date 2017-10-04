@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactTestRendererFiberEntry
  * @preventMunge
@@ -32,7 +30,7 @@ import type {Fiber} from 'ReactFiber';
 import type {FiberRoot} from 'ReactFiberRoot';
 
 type TestRendererOptions = {
-  createNodeMock: (element: ReactElement<any>) => any,
+  createNodeMock: (element: React$Element<any>) => any,
 };
 
 type ReactTestRendererJSON = {|
@@ -285,14 +283,19 @@ function toJSON(inst: Instance | TextInstance): ReactTestRendererNode {
   }
 }
 
-function nodeAndSiblingsArray(nodeWithSibling: ?Fiber) {
+function nodeAndSiblingsTrees(nodeWithSibling: ?Fiber) {
   var array = [];
   var node = nodeWithSibling;
   while (node != null) {
     array.push(node);
     node = node.sibling;
   }
-  return array;
+  const trees = array.map(toTree);
+  return trees.length ? trees : null;
+}
+
+function hasSiblings(node: ?Fiber) {
+  return node && node.sibling;
 }
 
 function toTree(node: ?Fiber) {
@@ -308,7 +311,9 @@ function toTree(node: ?Fiber) {
         type: node.type,
         props: {...node.memoizedProps},
         instance: node.stateNode,
-        rendered: toTree(node.child),
+        rendered: hasSiblings(node.child)
+          ? nodeAndSiblingsTrees(node.child)
+          : toTree(node.child),
       };
     case FunctionalComponent: // 1
       return {
@@ -316,7 +321,9 @@ function toTree(node: ?Fiber) {
         type: node.type,
         props: {...node.memoizedProps},
         instance: null,
-        rendered: toTree(node.child),
+        rendered: hasSiblings(node.child)
+          ? nodeAndSiblingsTrees(node.child)
+          : toTree(node.child),
       };
     case HostComponent: // 5
       return {
@@ -324,7 +331,7 @@ function toTree(node: ?Fiber) {
         type: node.type,
         props: {...node.memoizedProps},
         instance: null, // TODO: use createNodeMock here somehow?
-        rendered: nodeAndSiblingsArray(node.child).map(toTree),
+        rendered: nodeAndSiblingsTrees(node.child),
       };
     case HostText: // 6
       return node.stateNode.text;
@@ -551,7 +558,7 @@ function propsMatch(props: Object, filter: Object): boolean {
 }
 
 var ReactTestRendererFiber = {
-  create(element: ReactElement<any>, options: TestRendererOptions) {
+  create(element: React$Element<any>, options: TestRendererOptions) {
     var createNodeMock = defaultTestOptions.createNodeMock;
     if (options && typeof options.createNodeMock === 'function') {
       createNodeMock = options.createNodeMock;
@@ -586,7 +593,7 @@ var ReactTestRendererFiber = {
         }
         return toTree(root.current);
       },
-      update(newElement: ReactElement<any>) {
+      update(newElement: React$Element<any>) {
         if (root == null || root.current == null) {
           return;
         }

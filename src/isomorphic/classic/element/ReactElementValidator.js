@@ -1,10 +1,8 @@
 /**
- * Copyright 2014-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactElementValidator
  */
@@ -213,16 +211,7 @@ function validatePropTypes(element) {
     return;
   }
   var name = componentClass.displayName || componentClass.name;
-
-  // ReactNative `View.propTypes` have been deprecated in favor of `ViewPropTypes`.
-  // In their place a temporary getter has been added with a deprecated warning message.
-  // Avoid triggering that warning during validation using the temporary workaround,
-  // __propTypesSecretDontUseThesePlease.
-  // TODO (bvaughn) Revert this particular change any time after April 1 ReactNative tag.
-  var propTypes = typeof componentClass.__propTypesSecretDontUseThesePlease ===
-    'object'
-    ? componentClass.__propTypesSecretDontUseThesePlease
-    : componentClass.propTypes;
+  var propTypes = componentClass.propTypes;
 
   if (propTypes) {
     currentlyValidatingElement = element;

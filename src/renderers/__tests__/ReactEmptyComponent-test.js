@@ -1,10 +1,8 @@
 /**
- * Copyright 2014-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -13,7 +11,6 @@
 
 var React;
 var ReactDOM;
-var ReactDOMFeatureFlags;
 var ReactTestUtils;
 var TogglingComponent;
 
@@ -25,7 +22,6 @@ describe('ReactEmptyComponent', () => {
 
     React = require('react');
     ReactDOM = require('react-dom');
-    ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
     ReactTestUtils = require('react-dom/test-utils');
 
     log = jasmine.createSpy();
@@ -79,8 +75,8 @@ describe('ReactEmptyComponent', () => {
     expect(function() {
       ReactTestUtils.renderIntoDocument(<Component />);
     }).toThrowError(
-      'Component.render(): A valid React element (or null) must be returned. You may ' +
-        'have returned undefined, an array or some other invalid object.',
+      'Component(...): Nothing was returned from render. This usually means a return statement is missing. ' +
+        'Or, to render nothing, return null.',
     );
   });
 
@@ -232,23 +228,9 @@ describe('ReactEmptyComponent', () => {
   });
 
   it('can render null at the top level', () => {
-    var ReactFeatureFlags = require('ReactFeatureFlags');
-    ReactFeatureFlags.disableNewFiberFeatures = false;
     var div = document.createElement('div');
-
-    try {
-      if (ReactDOMFeatureFlags.useFiber) {
-        ReactDOM.render(null, div);
-        expect(div.innerHTML).toBe('');
-      } else {
-        // Stack does not implement this.
-        expect(function() {
-          ReactDOM.render(null, div);
-        }).toThrowError('ReactDOM.render(): Invalid component element.');
-      }
-    } finally {
-      ReactFeatureFlags.disableNewFiberFeatures = true;
-    }
+    ReactDOM.render(null, div);
+    expect(div.innerHTML).toBe('');
   });
 
   it('does not break when updating during mount', () => {
@@ -300,21 +282,11 @@ describe('ReactEmptyComponent', () => {
 
     ReactDOM.render(<Empty />, container);
     var noscript1 = container.firstChild;
-    if (ReactDOMFeatureFlags.useFiber) {
-      expect(noscript1).toBe(null);
-    } else {
-      expect(noscript1.nodeName).toBe('#comment');
-    }
+    expect(noscript1).toBe(null);
 
     // This update shouldn't create a DOM node
     ReactDOM.render(<Empty />, container);
     var noscript2 = container.firstChild;
-    if (ReactDOMFeatureFlags.useFiber) {
-      expect(noscript1).toBe(null);
-    } else {
-      expect(noscript2.nodeName).toBe('#comment');
-    }
-
-    expect(noscript1).toBe(noscript2);
+    expect(noscript2).toBe(null);
   });
 });

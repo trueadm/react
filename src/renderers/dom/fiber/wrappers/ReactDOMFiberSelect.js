@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactDOMFiberSelect
  * @flow
@@ -101,14 +99,18 @@ function updateOptions(
     // Do not set `select.value` as exact behavior isn't consistent across all
     // browsers for all cases.
     let selectedValue = '' + (propValue: string);
+    let defaultSelected = null;
     for (let i = 0; i < options.length; i++) {
       if (options[i].value === selectedValue) {
         options[i].selected = true;
         return;
       }
+      if (defaultSelected === null && !options[i].disabled) {
+        defaultSelected = options[i];
+      }
     }
-    if (options.length) {
-      options[0].selected = true;
+    if (defaultSelected !== null) {
+      defaultSelected.selected = true;
     }
   }
 }

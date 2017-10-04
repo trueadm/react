@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactChildren
  */
@@ -265,7 +263,7 @@ function forEachSingleChild(bookKeeping, child, name) {
 /**
  * Iterates through children that are typically specified as `props.children`.
  *
- * See https://facebook.github.io/react/docs/react-api.html#react.children.foreach
+ * See https://reactjs.org/docs/react-api.html#react.children.foreach
  *
  * The provided forEachFunc(child, index) will be called for each
  * leaf child.
@@ -334,7 +332,7 @@ function mapIntoWithKeyPrefixInternal(children, array, prefix, func, context) {
 /**
  * Maps children that are typically specified as `props.children`.
  *
- * See https://facebook.github.io/react/docs/react-api.html#react.children.map
+ * See https://reactjs.org/docs/react-api.html#react.children.map
  *
  * The provided mapFunction(child, key, index) will be called for each
  * leaf child.
@@ -357,7 +355,7 @@ function mapChildren(children, func, context) {
  * Count the number of children that are typically specified as
  * `props.children`.
  *
- * See https://facebook.github.io/react/docs/react-api.html#react.children.count
+ * See https://reactjs.org/docs/react-api.html#react.children.count
  *
  * @param {?*} children Children tree container.
  * @return {number} The number of children.
@@ -370,7 +368,7 @@ function countChildren(children, context) {
  * Flatten a children object (typically specified as `props.children`) and
  * return an array with appropriately re-keyed children.
  *
- * See https://facebook.github.io/react/docs/react-api.html#react.children.toarray
+ * See https://reactjs.org/docs/react-api.html#react.children.toarray
  */
 function toArray(children) {
   var result = [];

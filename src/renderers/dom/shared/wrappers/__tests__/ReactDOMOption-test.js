@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -18,13 +16,11 @@ describe('ReactDOMOption', () => {
 
   var React;
   var ReactDOM;
-  var ReactDOMFeatureFlags;
   var ReactTestUtils;
 
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');
-    ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
     ReactTestUtils = require('react-dom/test-utils');
   });
 
@@ -47,11 +43,9 @@ describe('ReactDOMOption', () => {
     expectDev(
       normalizeCodeLocInfo(console.error.calls.argsFor(0)[0]),
     ).toContain(
-      ReactDOMFeatureFlags.useFiber
-        ? '<div> cannot appear as a child of <option>.\n' +
-            '    in div (at **)\n' +
-            '    in option (at **)'
-        : 'Only strings and numbers are supported as <option> children.',
+      '<div> cannot appear as a child of <option>.\n' +
+        '    in div (at **)\n' +
+        '    in option (at **)',
     );
   });
 

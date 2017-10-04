@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactFiberBeginWork
  * @flow
@@ -72,7 +70,7 @@ if (__DEV__) {
 module.exports = function<T, P, I, TI, PI, C, CX, PL>(
   config: HostConfig<T, P, I, TI, PI, C, CX, PL>,
   hostContext: HostContext<C, CX>,
-  hydrationContext: HydrationContext<C>,
+  hydrationContext: HydrationContext<C, CX>,
   scheduleUpdate: (fiber: Fiber, priorityLevel: PriorityLevel) => void,
   getPriorityContext: (fiber: Fiber, forceAsync: boolean) => PriorityLevel,
 ) {
@@ -209,9 +207,9 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
 
     if (__DEV__) {
       ReactCurrentOwner.current = workInProgress;
-      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, 'render');
+      ReactDebugCurrentFiber.setCurrentPhase('render');
       nextChildren = fn(nextProps, context);
-      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
+      ReactDebugCurrentFiber.setCurrentPhase(null);
     } else {
       nextChildren = fn(nextProps, context);
     }
@@ -283,9 +281,9 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     ReactCurrentOwner.current = workInProgress;
     let nextChildren;
     if (__DEV__) {
-      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, 'render');
+      ReactDebugCurrentFiber.setCurrentPhase('render');
       nextChildren = instance.render();
-      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
+      ReactDebugCurrentFiber.setCurrentPhase(null);
     } else {
       nextChildren = instance.render();
     }
@@ -305,7 +303,7 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     return workInProgress.child;
   }
 
-  function updateHostRoot(current, workInProgress, priorityLevel) {
+  function pushHostRootContext(workInProgress) {
     const root = (workInProgress.stateNode: FiberRoot);
     if (root.pendingContext) {
       pushTopLevelContextObject(
@@ -317,9 +315,11 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
       // Should always be set
       pushTopLevelContextObject(workInProgress, root.context, false);
     }
-
     pushHostContainer(workInProgress, root.containerInfo);
+  }
 
+  function updateHostRoot(current, workInProgress, priorityLevel) {
+    pushHostRootContext(workInProgress);
     const updateQueue = workInProgress.updateQueue;
     if (updateQueue !== null) {
       const prevState = workInProgress.memoizedState;
@@ -684,6 +684,9 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     // TODO: Handle HostComponent tags here as well and call pushHostContext()?
     // See PR 8590 discussion for context
     switch (workInProgress.tag) {
+      case HostRoot:
+        pushHostRootContext(workInProgress);
+        break;
       case ClassComponent:
         pushContextProvider(workInProgress);
         break;
@@ -720,10 +723,6 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
       workInProgress.pendingWorkPriority > priorityLevel
     ) {
       return bailoutOnLowPriority(current, workInProgress);
-    }
-
-    if (__DEV__) {
-      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
     }
 
     switch (workInProgress.tag) {
@@ -777,8 +776,7 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
         pushContextProvider(workInProgress);
         break;
       case HostRoot:
-        const root: FiberRoot = workInProgress.stateNode;
-        pushHostContainer(workInProgress, root.containerInfo);
+        pushHostRootContext(workInProgress);
         break;
       default:
         invariant(

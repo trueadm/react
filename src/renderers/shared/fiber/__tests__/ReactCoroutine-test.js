@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -14,7 +12,6 @@
 var React;
 var ReactNoop;
 var ReactCoroutine;
-var ReactFeatureFlags;
 
 describe('ReactCoroutine', () => {
   beforeEach(() => {
@@ -23,8 +20,6 @@ describe('ReactCoroutine', () => {
     ReactNoop = require('react-noop-renderer');
     // TODO: can we express this test with only public API?
     ReactCoroutine = require('ReactCoroutine');
-    ReactFeatureFlags = require('ReactFeatureFlags');
-    ReactFeatureFlags.disableNewFiberFeatures = false;
   });
 
   function div(...children) {

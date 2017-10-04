@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @emails react-core
  */
@@ -15,7 +13,6 @@ var ChildUpdates;
 var MorphingComponent;
 var React;
 var ReactDOM;
-var ReactDOMFeatureFlags;
 var ReactDOMServer;
 var ReactCurrentOwner;
 var ReactTestUtils;
@@ -28,7 +25,6 @@ describe('ReactCompositeComponent', () => {
     jest.resetModules();
     React = require('react');
     ReactDOM = require('react-dom');
-    ReactDOMFeatureFlags = require('ReactDOMFeatureFlags');
     ReactDOMServer = require('react-dom/server');
     ReactCurrentOwner = require('react')
       .__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner;
@@ -125,25 +121,19 @@ describe('ReactCompositeComponent', () => {
     var container = document.createElement('div');
     container.innerHTML = markup;
     ReactDOM.render(<Parent />, container);
-    if (ReactDOMFeatureFlags.useFiber) {
-      expectDev(console.warn.calls.count()).toBe(1);
-      expectDev(console.warn.calls.argsFor(0)[0]).toContain(
-        'render(): Calling ReactDOM.render() to hydrate server-rendered markup ' +
-          'will stop working in React v17. Replace the ReactDOM.render() call ' +
-          'with ReactDOM.hydrate() if you want React to attach to the server HTML.',
-      );
-    } else {
-      expectDev(console.warn.calls.count()).toBe(0);
-    }
+    expectDev(console.warn.calls.count()).toBe(1);
+    expectDev(console.warn.calls.argsFor(0)[0]).toContain(
+      'render(): Calling ReactDOM.render() to hydrate server-rendered markup ' +
+        'will stop working in React v17. Replace the ReactDOM.render() call ' +
+        'with ReactDOM.hydrate() if you want React to attach to the server HTML.',
+    );
 
     // New explicit API
     console.warn.calls.reset();
-    if (ReactDOMFeatureFlags.useFiber) {
-      container = document.createElement('div');
-      container.innerHTML = markup;
-      ReactDOM.hydrate(<Parent />, container);
-      expectDev(console.warn.calls.count()).toBe(0);
-    }
+    container = document.createElement('div');
+    container.innerHTML = markup;
+    ReactDOM.hydrate(<Parent />, container);
+    expectDev(console.warn.calls.count()).toBe(0);
   });
 
   it('should react to state changes from callbacks', () => {

@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactFiber
  * @flow
@@ -13,7 +11,6 @@
 'use strict';
 
 import type {ReactElement, Source} from 'ReactElementType';
-import type {ReactInstance, DebugID} from 'ReactInstanceType';
 import type {
   ReactCoroutine,
   ReactFragment,
@@ -149,9 +146,9 @@ export type Fiber = {|
   // workInProgress : Fiber ->  alternate The alternate used for reuse happens
   // to be the same as work in progress.
   // __DEV__ only
-  _debugID?: DebugID,
+  _debugID?: number,
   _debugSource?: Source | null,
-  _debugOwner?: Fiber | ReactInstance | null, // Stack compatible
+  _debugOwner?: Fiber | null,
   _debugIsCurrentlyTiming?: boolean,
 |};
 
@@ -265,7 +262,7 @@ exports.createWorkInProgress = function(
   } else {
     // We already have an alternate.
     // Reset the effect tag.
-    workInProgress.effectTag = NoWork;
+    workInProgress.effectTag = NoEffect;
 
     // The effect list is no longer valid.
     workInProgress.nextEffect = null;
@@ -351,7 +348,7 @@ function createFiberFromElementType(
   type: mixed,
   key: null | string,
   internalContextTag: TypeOfInternalContext,
-  debugOwner: null | Fiber | ReactInstance,
+  debugOwner: null | Fiber,
 ): Fiber {
   let fiber;
   if (typeof type === 'function') {

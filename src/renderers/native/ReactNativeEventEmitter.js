@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactNativeEventEmitter
  * @flow
@@ -95,12 +93,12 @@ var ReactNativeEventEmitter = {
    *
    * @param {rootNodeID} rootNodeID React root node ID that event occurred on.
    * @param {TopLevelType} topLevelType Top level type of event.
-   * @param {object} nativeEventParam Object passed from native.
+   * @param {?object} nativeEventParam Object passed from native.
    */
   _receiveRootNodeIDEvent: function(
     rootNodeID: number,
     topLevelType: string,
-    nativeEventParam: Object,
+    nativeEventParam: ?Object,
   ) {
     var nativeEvent = nativeEventParam || EMPTY_NATIVE_EVENT;
     var inst = ReactNativeComponentTree.getInstanceFromNode(rootNodeID);
@@ -124,11 +122,10 @@ var ReactNativeEventEmitter = {
    * @param {object} nativeEventParam Object passed from native.
    */
   receiveEvent: function(
-    tag: number,
+    rootNodeID: number,
     topLevelType: string,
     nativeEventParam: Object,
   ) {
-    var rootNodeID = tag;
     ReactNativeEventEmitter._receiveRootNodeIDEvent(
       rootNodeID,
       topLevelType,

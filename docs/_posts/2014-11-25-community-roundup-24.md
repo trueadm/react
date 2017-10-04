@@ -1,7 +1,7 @@
 ---
 title: "Community Round-up #24"
 layout: post
-author: steveluscher
+author: [steveluscher]
 ---
 
 ## Keep it Simple
@@ -14,11 +14,11 @@ Murilo Pereira ([mpereira](https://github.com/mpereira)) tussles with the topic 
 
 I ([steveluscher](https://github.com/steveluscher)) spoke at Manning Publications' “Powered By JavaScript” Strangeloop pre-conf in St. Louis. There, I proposed a new notation to talk about development complexity – Big-Coffee Notation ☕(n) – and spoke about the features of React that help keep our Big-Coffee from going quadratic, as our user interfaces get more complex.
 
-<iframe width="100%" height="315" src="//www.youtube-nocookie.com/embed/rI0GQc__0SM" frameborder="0" allowfullscreen></iframe>
+<iframe width="650" height="315" src="//www.youtube-nocookie.com/embed/rI0GQc__0SM" frameborder="0" allowfullscreen></iframe>
 
 James Pearce ([jamesgpearce](https://github.com/jamesgpearce)) carried Big-Coffee all the way to Raleigh, NC. At the _All Things Open_ conference, he spoke about some of the design decisions that went into React, particularly those that lend themselves to simpler, more reliable code.
 
-<iframe width="100%" height="315" src="//www.youtube-nocookie.com/embed/m2fuO2wl_3c" frameborder="0" allowfullscreen></iframe>
+<iframe width="650" height="315" src="//www.youtube-nocookie.com/embed/m2fuO2wl_3c" frameborder="0" allowfullscreen></iframe>
 
 ## All About Isomorphism
 
@@ -38,7 +38,7 @@ Ryan Florence ([rpflorence](https://github.com/rpflorence])) and Michael Jackson
 
 Jonathan Beebe ([somethingkindawierd](https://github.com/somethingkindawierd)) spoke about how he uses React to build tools that deliver hope to those trying to make the best of a bad situation. Watch his talk from this year's _Nodevember_ conference in Nashville
 
-<iframe width="100%" height="315" src="//www.youtube-nocookie.com/embed/uZgAq1CZ1N8" frameborder="0" allowfullscreen></iframe>
+<iframe width="650" height="315" src="//www.youtube-nocookie.com/embed/uZgAq1CZ1N8" frameborder="0" allowfullscreen></iframe>
 
 If you take a peek under the covers, you'll find that React powers [Carousel](https://blog.carousel.com/2014/11/introducing-carousel-for-web-ipad-and-android-tablet/), Dropbox's new photo and video gallery app.
 
@@ -48,7 +48,7 @@ We enjoyed a cinematic/narrative experience with this React-powered, interactive
 
 Spend the next 60 seconds watching Daniel Woelfel ([dwwoelfel](https://github.com/dwwoelfel)) serialize a React app's state as a string, then deserialize it to produce a working UI. Read about how he uses this technique to [reproduce bugs](http://blog.circleci.com/local-state-global-concerns/) reported to him by his users.
 
-<iframe width="100%" height="315" src="//www.youtube-nocookie.com/embed/5yHFTN-_mOo" frameborder="0" allowfullscreen></iframe>
+<iframe width="650" height="315" src="//www.youtube-nocookie.com/embed/5yHFTN-_mOo" frameborder="0" allowfullscreen></iframe>
 
 ## Community Components
 
@@ -95,5 +95,3 @@ We're counting down the days until [React.js Conf](http://conf.reactjs.com) at F
     <blockquote class="twitter-tweet" lang="en"><p>If anyone in Sydney is curious about <a href="https://twitter.com/reactjs">@reactjs</a>, I&#39;m presenting at <a href="https://twitter.com/sydjs">@sydjs</a> tonight on how to use it and why it is the future. <a href="https://twitter.com/hashtag/javascript?src=hash">#javascript</a></p>&mdash; Jed Watson (@JedWatson) <a href="https://twitter.com/JedWatson/status/534943557568565248">November 19, 2014</a></blockquote>
   </div>
 </div>
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>

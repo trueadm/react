@@ -25,7 +25,7 @@ const facebookWWWSrcDependencies = [
 // these files need to be copied to the react-native build
 const reactNativeSrcDependencies = [
   // TODO: copy this to RN repository and delete from React
-  'src/renderers/shared/stack/PooledClass.js',
+  'src/renderers/native/PooledClass.js',
   'src/renderers/shared/fiber/isomorphic/ReactTypes.js',
   'src/renderers/native/ReactNativeTypes.js',
 ];
@@ -128,10 +128,7 @@ function copyNodePackageTemplate(packageName) {
   // if the package directory already exists, we skip copying to it
   if (!fs.existsSync(to) && fs.existsSync(from)) {
     return asyncCopyTo(from, to).then(() =>
-      Promise.all([
-        asyncCopyTo(resolve('./LICENSE'), `${to}/LICENSE`),
-        asyncCopyTo(resolve('./PATENTS'), `${to}/PATENTS`),
-      ])
+      asyncCopyTo(resolve('./LICENSE'), `${to}/LICENSE`)
     );
   } else {
     return Promise.resolve();

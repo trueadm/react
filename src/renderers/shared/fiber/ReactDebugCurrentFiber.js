@@ -1,10 +1,8 @@
 /**
- * Copyright 2013-present, Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *
  * @providesModule ReactDebugCurrentFiber
  * @flow
@@ -31,8 +29,9 @@ function getCurrentFiberOwnerName(): string | null {
     if (fiber === null) {
       return null;
     }
-    if (fiber._debugOwner != null) {
-      return getComponentName(fiber._debugOwner);
+    const owner = fiber._debugOwner;
+    if (owner !== null && typeof owner !== 'undefined') {
+      return getComponentName(owner);
     }
   }
   return null;
@@ -57,9 +56,13 @@ function resetCurrentFiber() {
   ReactDebugCurrentFiber.phase = null;
 }
 
-function setCurrentFiber(fiber: Fiber | null, phase: LifeCyclePhase | null) {
+function setCurrentFiber(fiber: Fiber) {
   ReactDebugCurrentFrame.getCurrentStack = getCurrentFiberStackAddendum;
   ReactDebugCurrentFiber.current = fiber;
+  ReactDebugCurrentFiber.phase = null;
+}
+
+function setCurrentPhase(phase: LifeCyclePhase | null) {
   ReactDebugCurrentFiber.phase = phase;
 }
 
@@ -68,6 +71,7 @@ var ReactDebugCurrentFiber = {
   phase: (null: LifeCyclePhase | null),
   resetCurrentFiber,
   setCurrentFiber,
+  setCurrentPhase,
   getCurrentFiberOwnerName,
   getCurrentFiberStackAddendum,
 };
