@@ -45,7 +45,7 @@ class Optimizer {
       optimizedTrees: 0,
       inlinedComponents: 0,
     };
-    setGlobals(this.moduleEnv, mocks, this.serializeComponentTree.bind(this));
+    setGlobals(this.moduleEnv, mocks, this._serializeComponentTree.bind(this));
   }
   serialize(ast) {
     // clone AST befor hande?
@@ -64,12 +64,12 @@ class Optimizer {
       code: serialized.code,
     };
   }
-  serializeComponentTree(componentName, componentType) {
+  _serializeComponentTree(componentName, componentType) {
 		const component = this.react.componentsFromNames.get(componentName);
 		const callExpression = t.callExpression(t.functionExpression(null, component.ast.params, component.ast.body), []);
 		const effects = this.realm.evaluateNodeForEffectsInGlobalEnv(callExpression, this.realm.tracers[0]);
 		const generator = effects[1];
-		const renderValue = this.foldComponentTree(component, componentType);
+		const renderValue = this._foldComponentTree(component, componentType);
 		if (renderValue !== null) {
       this.stats.optimizedTrees++;
 			generator.body.push(sanitizeValue(renderValue));
@@ -78,7 +78,7 @@ class Optimizer {
 		}
 		return componentType;
 	}
-	foldComponentTree(component, componentType) {
+	_foldComponentTree(component, componentType) {
 		component.type = componentType;
 		const reconciler = new Reconciler(this.react, this.moduleEnv, this.stats);
 		return reconciler.render(component);
