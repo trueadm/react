@@ -10,17 +10,18 @@
 
 const {
   __object,
+  __abstract,
 } = require('./evaluator');
 const reactClassMock = require('./mocks/reactClass');
 
-function createMockReact(env) {
+function createMockReact(env, name) {
   const Component = env.eval(reactClassMock);
-  Component.intrinsicName = 'React.Component';
-  Component.properties.get('prototype').descriptor.value.intrinsicName = 'React.Component.prototype';
+  Component.intrinsicName = `require('${name}').Component`;
+  Component.properties.get('prototype').descriptor.value.intrinsicName = `require('${name}').Component.prototype`;
 
-  const React = __object({
+  const React = __abstract(__object({
     Component,
-  }, 'React');
+  }, `require('${name}')`), `require('${name}')`);
 
   return React;
 }

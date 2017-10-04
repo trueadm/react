@@ -116,6 +116,9 @@ function __object(shape, name) {
   const obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
   Object.keys(shape).forEach(id => {
     obj.$Set(id, shape[id], obj);
+    if (name) {
+      shape[id].intrinsicName = `${name}.${id}`;
+    }
   });
   if (name) {
     obj.intrinsicName = name;
@@ -427,7 +430,7 @@ function setGlobals(moduleEnv, mocks, optimizeComponent) {
         switch (requireName) {
           case "react":
           case "React":
-            return createMockReact(moduleEnv);
+            return createMockReact(moduleEnv, requireName);
           default:
             return createAbstractValue(`require('${requireName}')`);
         }

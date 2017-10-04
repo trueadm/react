@@ -10,33 +10,16 @@
 
 var React = require('react');
 
-class C extends React.Component {
+class App extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      a: 1,
+    };
+  }
   render() {
-    return <div>!</div>;
+    return <div>Hello world</div>;
   }
 }
-
-function A(props: {x: number}) {
-  return <div>Hello {props.x}</div>;
-}
-
-function B() {
-  return <div>World</div>;
-}
-
-function App() {
-  return (
-    <div>
-      <A x={42} />
-      <B />
-      <C />
-    </div>
-  );
-}
-
-App.getTrials = function*(renderer, Root) {
-  renderer.update(<Root />);
-  yield ['simple render', renderer.toJSON()];
-};
 
 module.exports = App;
