@@ -6,11 +6,11 @@
   var _$1 = _$0.module;
 
   var _1 = function (props) {
-    var lol = props.ExternalModule.foo();
-    return <div>
-      {lol}
+    var _3 = props.externalFunction;
 
-    </div>;
+    var _2 = <div>{_3}</div>;
+
+    return _2;
   };
 
   var _0 = _$1;

@@ -8,14 +8,13 @@
  */
 'use strict';
 
-const ExternalModule = require('ExternalModule');
+const externalFunction = require('ExternalModule');
 
-function App(props: {ExternalModule: {foo: Function}}) {
-  var lol = props.ExternalModule.foo();
+function App(props: {externalFunction: Function}) {
+  var test = props.externalFunction;
   return (
     <div>
-      {lol}
-
+      {test}
     </div>
   );
 }

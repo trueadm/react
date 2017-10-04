@@ -7,10 +7,12 @@ function flowAnnotationToObject(annotation) {
 		return flowAnnotationToObject(annotation.typeAnnotation);
 	} else if (annotation.type === 'GenericTypeAnnotation') {
 		if (annotation.id.type === 'Identifier') {
-			return annotation.id.name;
+			return annotation.id.name.toLowerCase();
 		} else {
 			debugger;
 		}
+	} else if (annotation.type === 'EmptyTypeAnnotation') {
+		return 'empty';
 	} else if (annotation.type === 'BooleanTypeAnnotation') {
 		return 'boolean';
 	} else if (annotation.type === 'StringTypeAnnotation') {
