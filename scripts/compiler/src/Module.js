@@ -24,13 +24,10 @@ class Module {
   }
   async compileReactComponentTrees() {
 		const optimizer = new Optimizer(this.react);
-		const output = optimizer.serialize(this.ast);
+		const {code, stats} = optimizer.serialize(this.ast);
     return {
-      stats: {
-        optimizedTrees: 0,
-        inlinedComponents: 0
-      },
-      source: output,
+      stats,
+      source: code,
     };
   }
 }

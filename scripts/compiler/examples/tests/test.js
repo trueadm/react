@@ -10,16 +10,57 @@
 
 var React = require('react');
 
-class App extends React.Component {
+class C extends React.Component {
   constructor() {
     super();
-    this.state = {
-      a: 1,
-    };
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick(e) {
+    // do something
   }
   render() {
-    return <div>Hello world</div>;
+    return <div onClick={this.handleClick}>!</div>;
   }
+}
+
+class D extends React.Component {
+  constructor() {
+    super();
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick(e) {
+    // do something
+  }
+  render() {
+    return <div onClick={this.handleClick}>!</div>;
+  }
+}
+
+
+function A(props: {x: number}) {
+  return <div>Hello {props.x}</div>;
+}
+
+function B() {
+  return <div>World</div>;
+}
+
+class Lol {
+  foo() {
+
+  }
+}
+
+function App() {
+  var lol = new Lol();
+  return (
+    <div>
+      <A x={42} />
+      <B />
+      <C />
+      <D />
+    </div>
+  );
 }
 
 module.exports = App;

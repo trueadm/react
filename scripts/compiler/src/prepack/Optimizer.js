@@ -40,7 +40,11 @@ class Optimizer {
 		};
 		this.realm = this.moduleEnv.lexicalEnvironment.realm;
 		this.react = react;
-		this.functions = null;
+    this.functions = null;
+    this.stats = {
+      optimizedTrees: 0,
+      inlinedComponents: 0,
+    };
     setGlobals(this.moduleEnv, mocks, this.serializeComponentTree.bind(this));
   }
   serialize(ast) {
@@ -55,7 +59,10 @@ class Optimizer {
 		const sources = [{ filePath: "", fileContents: code }];
     const serialized = serializer.init(sources, false);
 	
-    return serialized.code;
+    return {
+      stats: this.stats,
+      code: serialized.code,
+    };
   }
   serializeComponentTree(componentName, componentType) {
 		const component = this.react.componentsFromNames.get(componentName);
@@ -64,15 +71,16 @@ class Optimizer {
 		const generator = effects[1];
 		const renderValue = this.foldComponentTree(component, componentType);
 		if (renderValue !== null) {
+      this.stats.optimizedTrees++;
 			generator.body.push(sanitizeValue(renderValue));
 			this.functions.writeEffects.set(componentName, effects);
-			this.functions.nameToFunctionValue.set(componentName, componentType);
+      this.functions.nameToFunctionValue.set(componentName, componentType);
 		}
 		return componentType;
 	}
 	foldComponentTree(component, componentType) {
 		component.type = componentType;
-		const reconciler = new Reconciler(this.react, this.moduleEnv, this.functions);
+		const reconciler = new Reconciler(this.react, this.moduleEnv, this.stats);
 		return reconciler.render(component);
 	}
 }
