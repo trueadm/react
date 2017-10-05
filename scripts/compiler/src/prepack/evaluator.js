@@ -39,6 +39,7 @@ const { NativeFunctionValue } = require("prepack/lib/values");
 
 class NoTempVariablesGenerator extends Generator {
   derive(types, values, args, buildFunction, kind) {
+    debugger;
     let result = AbstractValue.createFromTemplate(
       realm,
       _preludeGenerator => _args => {

@@ -1,6 +1,6 @@
 'use strict';
 
-const { __abstract, __object } = require("../prepack/evaluator");
+const { __abstract, __object, createAbstractFunction } = require("../prepack/evaluator");
 
 function flowAnnotationToObject(annotation, path) {
 	if (annotation.type === 'TypeAnnotation') {

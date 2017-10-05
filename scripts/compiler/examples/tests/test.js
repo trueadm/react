@@ -8,29 +8,10 @@
  */
 'use strict';
 
-const externalFunction = require('ExternalModule');
+const externalThing = __abstract('function', 'externalThing');
 
-type AppProps = {
-  externalFunction: Function
-};
-
-const Bar = function (props: {number: number}) {
-  return <span>{props.number}</span>;
-};
-Bar.defaultProps = {
-  number: 123,
-};
-
-const Foo = () => <Bar />;
-
-function App(props: AppProps) {
-  var test = props.externalFunction();
-  return (
-    <div>
-      {test}
-      <Foo />
-    </div>
-  );
+var Test = function Test() {
+  return externalThing();
 }
 
-module.exports = App;
+module.exports = Test;

@@ -30,12 +30,11 @@ function isReactClassComponent(type) {
 }
 
 class Reconciler {
-  constructor(react, moduleEnv, stats) {
+  constructor(react, realm, stats) {
     this.react = react;
-    this.moduleEnv = moduleEnv;
-    this.realm = moduleEnv.lexicalEnvironment.realm;
-    this.realm.react = react;
-    this.rootConfig = new ComponentTree(moduleEnv);
+    this.realm = realm;
+    realm.react = react;
+    this.rootConfig = new ComponentTree();
     this.stats = stats;
   }
   render(component) {
