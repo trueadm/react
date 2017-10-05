@@ -66,7 +66,7 @@ class Optimizer {
   }
   _serializeComponentTree(componentName, componentType) {
 		const component = this.react.componentsFromNames.get(componentName);
-		const callExpression = t.callExpression(t.functionExpression(null, component.ast.params, component.ast.body), []);
+		const callExpression = t.callExpression(t.arrowFunctionExpression(component.ast.params, component.ast.body), []);
 		const effects = this.realm.evaluateNodeForEffectsInGlobalEnv(callExpression);
 		const generator = effects[1];
     const renderValue = this._foldComponentTree(component, componentType);

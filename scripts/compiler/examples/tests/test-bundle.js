@@ -6,10 +6,28 @@
   var _$2 = _$1.props;
   var _$3 = _$1.module;
 
-  var _2 = function (props) {
-    var _3 = <div>{_$0}</div>;
+  var _4 = function (props) {
+    var _6 = props.number;
 
-    return _3;
+    var _5 = <span>{_6}</span>;
+
+    return _5;
+  };
+
+  var _3 = function () {
+    var _7 = <span>{123}</span>;
+
+    return _7;
+  };
+
+  var _2 = function (props) {
+    var _a = <span>{123}</span>;
+
+    var _9 = [_$0, _a];
+
+    var _8 = <div>{_9}</div>;
+
+    return _8;
   };
 
   var _0 = _$2;

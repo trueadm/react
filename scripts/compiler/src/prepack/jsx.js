@@ -111,20 +111,6 @@ function createReactElement(realm, type, key, ref, props) {
   return obj;
 }
 
-function createReactElementWithSpread(realm, type, spread) {
-  let obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
-  CreateDataPropertyOrThrow(
-    realm,
-    obj,
-    '$$typeof',
-    getReactElementSymbol(realm)
-  );
-  CreateDataPropertyOrThrow(realm, obj, 'type', type);
-  CreateDataPropertyOrThrow(realm, obj, 'props', spread);
-  CreateDataPropertyOrThrow(realm, obj, '_owner', realm.intrinsics.null);
-  return obj;
-}
-
 function createReactProps(realm, type, attributes, children, env) {
   let obj = ObjectCreate(realm, realm.intrinsics.ObjectPrototype);
   for (let [key, value] of attributes) {

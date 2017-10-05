@@ -91,6 +91,20 @@ function getReactComponents(ast, componentsFromBindings) {
         }
       }
     },
+    VariableDeclarator(path) {
+      const node = path.node;
+      if (componentsFromBindings.has(node.id)) {
+        let uniqueComponentName = node.id.name;
+
+        if (componentsFromNames.has(uniqueComponentName)) {
+          uniqueComponentName += `_${createRandomString()}`;
+        }
+        const component = new FunctionalComponent(uniqueComponentName, node.init, path);
+        componentsFromIdentifiers.set(node.id, component);
+        componentsFromNames.set(uniqueComponentName, component);
+        componentsFromBindings.get(node.id).component = component;
+      }
+    },
     AssignmentExpression(path) {
       const node = path.node;
       const left = node.left;
@@ -103,7 +117,6 @@ function getReactComponents(ast, componentsFromBindings) {
         left.property.name === "defaultProps"
       ) {
         const name = left.object.name;
-
         if (path.scope.hasBinding(name)) {
           const binding = path.scope.getBinding(name);
           const component = binding.component;
@@ -111,12 +124,31 @@ function getReactComponents(ast, componentsFromBindings) {
           component.defaultPropsObjectExpression = node.right;
         }
       }
-    }
+    },
   });
   return {
     componentsFromIdentifiers,
     componentsFromNames
   };
+}
+
+function replaceComponentReferences(name, id, path, react) {
+  // if we've renamed the component due to prevent conflicts, we also need to go through and
+  // update any references to it
+  if (name !== id.name) {
+    const binding = react.componentsFromBindings.get(id);
+    binding.referencePaths.forEach(referencePath => {
+      const newNode = referencePath.node;
+
+      if (newNode.type === 'Identifier') {
+        referencePath.replaceWith(t.identifier(name));
+      } else if (newNode.type === 'JSXIdentifier') {
+        referencePath.replaceWith(t.jSXIdentifier(name));
+      } else {
+        debugger;
+      }
+    });
+  }
 }
 
 function prepareModuleForPrepack(ast, react) {
@@ -152,8 +184,8 @@ function prepareModuleForPrepack(ast, react) {
 
       // replace functional component with a Prepack component helper
       if (id !== undefined && react.componentsFromIdentifiers.has(id)) {
-				const name = react.componentsFromIdentifiers.get(id).name;
-	
+        const name = react.componentsFromIdentifiers.get(id).name;
+        
         path.replaceWith(
           t.variableDeclaration("var", [
             t.variableDeclarator(
@@ -164,25 +196,28 @@ function prepareModuleForPrepack(ast, react) {
               ])
             )
           ])
-				);
-				
-				// if we've renamed the component due to prevent conflicts, we also need to go through and
-				// update any references to it
-				if (name !== id.name) {
-					const binding = react.componentsFromBindings.get(node.id);
-					binding.referencePaths.forEach(referencePath => {
-						const newNode = referencePath.node;
+        );
+        replaceComponentReferences(name, id, path, react);
+      }
+    },
+    VariableDeclarator(path) {
+      const node = path.node;
+      const id = node.id;
 
-						if (newNode.type === 'Identifier') {
-							referencePath.replaceWith(t.identifier(name));
-						} else if (newNode.type === 'JSXIdentifier') {
-							referencePath.replaceWith(t.jSXIdentifier(name));
-						} else {
-							debugger;
-						}
-					});
-				}
-
+      // replace functional component with a Prepack component helper
+      if (id !== undefined && react.componentsFromIdentifiers.has(id)) {
+        const name = react.componentsFromIdentifiers.get(id).name;
+        
+        path.replaceWith(
+          t.variableDeclarator(
+            t.identifier(name),
+            t.callExpression(t.identifier("__constructReactComponent"), [
+              t.stringLiteral(name),
+              t.arrowFunctionExpression(node.init.params, node.init.body, false)
+            ])
+          )
+        );
+        replaceComponentReferences(name, id, path, react);
       }
     },
     Function({ node }) {
