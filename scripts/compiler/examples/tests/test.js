@@ -10,8 +10,12 @@
 
 const externalFunction = require('ExternalModule');
 
-function App(props: {externalFunction: Function}) {
-  var test = props.externalFunction;
+type AppProps = {
+  externalFunction: Function
+};
+
+function App(props: AppProps) {
+  var test = props.externalFunction();
   return (
     <div>
       {test}

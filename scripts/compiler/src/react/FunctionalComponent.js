@@ -2,12 +2,28 @@
 
 const { __abstract, __object } = require("../prepack/evaluator");
 
-function flowAnnotationToObject(annotation) {
+function flowAnnotationToObject(annotation, path) {
 	if (annotation.type === 'TypeAnnotation') {
-		return flowAnnotationToObject(annotation.typeAnnotation);
+		return flowAnnotationToObject(annotation.typeAnnotation, path);
 	} else if (annotation.type === 'GenericTypeAnnotation') {
 		if (annotation.id.type === 'Identifier') {
-			return annotation.id.name.toLowerCase();
+			const identifier = annotation.id.name;
+
+			switch (identifier) {
+				case 'Function':
+					return 'function';
+				case 'Object':
+					return 'object';
+				case 'any':
+				case 'empty:':
+					return 'empty';
+				default:
+					// get the Flow type
+					if (path.scope.hasBinding(identifier) === true) {
+						const flowNode = path.scope.getBinding(identifier).path.node.right;
+						return flowAnnotationToObject(flowNode, path);
+					}
+			}
 		} else {
 			debugger;
 		}
@@ -24,7 +40,7 @@ function flowAnnotationToObject(annotation) {
 		annotation.properties.forEach(property => {
 			if (property.type === 'ObjectTypeProperty') {
 				if (property.key.type === 'Identifier') {
-					obj[property.key.name] = flowAnnotationToObject(property.value);
+					obj[property.key.name] = flowAnnotationToObject(property.value, path);
 				} else {
 					debugger;
 				}
@@ -38,14 +54,14 @@ function flowAnnotationToObject(annotation) {
 	}
 }
 
-function getPropTypes(ast) {
+function getPropTypes(ast, path) {
 	if (ast.params.length > 0 && ast.params[0].typeAnnotation !== undefined) {
-		return flowAnnotationToObject(ast.params[0].typeAnnotation);
+		return flowAnnotationToObject(ast.params[0].typeAnnotation, path);
 	}
 	return null;
 }
 
-function getPropsName(ast) {
+function getPropsName(ast, path) {
 	if (ast.params.length > 0 && ast.params[0].type === 'Identifier') {
 		return ast.params[0].name;
 	}
@@ -68,12 +84,12 @@ function convertToAbstractValue(value, name) {
 }
 
 class FunctionalComponent {
-	constructor(name, ast) {
+	constructor(name, ast, path) {
 		this.name = name;
 		this.ast = ast;
 		this.type = null;
-		this.propTypes = getPropTypes(this.ast);
-		this.propsName = getPropsName(this.ast);
+		this.propTypes = getPropTypes(this.ast, path);
+		this.propsName = getPropsName(this.ast, path);
 		this.defaultPropsObjectExpression = null;
 	}
 	getInitialProps() {

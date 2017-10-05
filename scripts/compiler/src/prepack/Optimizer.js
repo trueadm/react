@@ -67,9 +67,9 @@ class Optimizer {
   _serializeComponentTree(componentName, componentType) {
 		const component = this.react.componentsFromNames.get(componentName);
 		const callExpression = t.callExpression(t.functionExpression(null, component.ast.params, component.ast.body), []);
-		const effects = this.realm.evaluateNodeForEffectsInGlobalEnv(callExpression, this.realm.tracers[0]);
+		const effects = this.realm.evaluateNodeForEffectsInGlobalEnv(callExpression);
 		const generator = effects[1];
-		const renderValue = this._foldComponentTree(component, componentType);
+    const renderValue = this._foldComponentTree(component, componentType);
 		if (renderValue !== null) {
       this.stats.optimizedTrees++;
 			generator.body.push(sanitizeValue(renderValue));

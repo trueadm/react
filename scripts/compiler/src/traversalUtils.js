@@ -84,7 +84,7 @@ function getReactComponents(ast, componentsFromBindings) {
           if (componentsFromNames.has(uniqueComponentName)) {
 						uniqueComponentName += `_${createRandomString()}`;
           }
-          const component = new FunctionalComponent(uniqueComponentName, node);
+          const component = new FunctionalComponent(uniqueComponentName, node, path);
           componentsFromIdentifiers.set(node.id, component);
           componentsFromNames.set(uniqueComponentName, component);
           componentsFromBindings.get(node.id).component = component;

@@ -1,18 +1,21 @@
 (function () {
   "use strict";
 
-  var _$0 = this;
+  var _$1 = this;
 
-  var _$1 = _$0.module;
+  var _$2 = _$1.props;
+  var _$3 = _$1.module;
 
-  var _1 = function (props) {
-    var _3 = props.externalFunction;
+  var _2 = function (props) {
+    var _3 = <div>{_$0}</div>;
 
-    var _2 = <div>{_3}</div>;
-
-    return _2;
+    return _3;
   };
 
-  var _0 = _$1;
-  _0.exports = _1;
+  var _0 = _$2;
+
+  var _$0 = _0.externalFunction();
+
+  var _1 = _$3;
+  _1.exports = _2;
 }).call(this);
