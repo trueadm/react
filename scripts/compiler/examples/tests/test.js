@@ -8,10 +8,12 @@
  */
 'use strict';
 
-const externalThing = __abstract('function', 'externalThing');
+function Foo() {
 
-var Test = function Test() {
-  return externalThing();
 }
 
-module.exports = Test;
+function Test() {
+  return <div><Foo /></div>
+}
+
+global.test = Test;

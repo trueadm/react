@@ -14,8 +14,6 @@ const {
   NativeFunctionValue
 } = require("prepack/lib/values");
 const ComponentTree = require("./ComponentTree");
-const {call} = require('../prepack/evaluator');
-const t = require("babel-types");
 
 function isReactElement(value) {
   return value instanceof ObjectValue && value.properties.has("$$typeof");
