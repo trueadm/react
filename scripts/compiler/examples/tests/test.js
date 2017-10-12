@@ -8,12 +8,17 @@
  */
 'use strict';
 
-function Foo() {
 
+const someExternalFunction = __abstract('function', 'someExternalFunction');
+
+function Foo() {
+  return someExternalFunction();
 }
 
 function Test() {
   return <div><Foo /></div>
 }
+
+__registerAdditionalFunctionToPrepack(Test);
 
 global.test = Test;
