@@ -8,17 +8,15 @@
  */
 'use strict';
 
-
-const someExternalFunction = __abstract('function', 'someExternalFunction');
-
-function Foo() {
-  return someExternalFunction();
+function Controller(props) {
+  let x = props.title;
+  return <span>The title is {x}</span>;
 }
 
-function Test() {
-  return <div><Foo /></div>
+function Test(props: { foo: string }) {
+  return <div><Controller title={props.foo} /></div>
 }
 
-__registerAdditionalFunctionToPrepack(Test);
+__registerReactComponentRoot(Test);
 
 global.test = Test;

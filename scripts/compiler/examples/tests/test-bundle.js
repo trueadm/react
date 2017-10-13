@@ -3,18 +3,17 @@
 
   var _$1 = this;
 
-  var _1 = function () {
-    return _2();
+  var _0 = function (props: {
+    foo: string
+  }) {
+    var _$0 = props.foo;
+    return <div><span>The title is {_$0}</span></div>;
   };
 
-  var _0 = function () {
-    var _$0 = _2();
-
-    var _3 = <div>{_$0}</div>;
-
-    return _3;
+  var _1 = function (props) {
+    let x = props.title;
+    return <span>The title is {x}</span>;
   };
 
-  var _2 = someExternalFunction;
   _$1.test = _0;
 }).call(this);

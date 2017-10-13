@@ -40,7 +40,8 @@ class Optimizer {
       uniqueSuffix: "",
       maxStackDepth: 100,
       reactEnabled: true,
-      additionalGlobals: initializeGlobals
+      additionalGlobals: initializeGlobals,
+      inlineExpressions: true,
     };
     // setGlobals(this.moduleEnv, mocks, this._serializeComponentTree.bind(this));
   }
