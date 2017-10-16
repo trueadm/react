@@ -9,12 +9,11 @@
 'use strict';
 
 function Controller(props) {
-  let x = props.title;
-  return <span>The title is {x}</span>;
+  return props.branch ? <span>The title is {props.person.title.toString()}</span> : <div>Hello world</div>;
 }
 
-function Test(props: { foo: string }) {
-  return <div><Controller title={props.foo} /></div>
+function Test({person, branch}: {person: {title: string}, branch: boolean}) {
+  return <div><Controller person={person} branch={branch} /></div>
 }
 
 __registerReactComponentRoot(Test);

@@ -42,6 +42,7 @@ class Optimizer {
       reactEnabled: true,
       additionalGlobals: initializeGlobals,
       inlineExpressions: true,
+      omitInvariants: true,
     };
     // setGlobals(this.moduleEnv, mocks, this._serializeComponentTree.bind(this));
   }
@@ -55,10 +56,7 @@ class Optimizer {
     );
 
     return {
-      stats: {
-        optimizedTrees: 0,
-        inlinedComponents: 0
-      },
+      stats: serialized.reactStatistics,
       code: serialized.code
     };
   }

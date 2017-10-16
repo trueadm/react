@@ -1,19 +1,30 @@
 (function () {
   "use strict";
 
-  var _$1 = this;
+  var _$3 = this;
 
-  var _0 = function (props: {
-    foo: string
+  var _0 = function ({
+    person,
+    branch
+  }: {
+    person: {
+      title: string
+    };
+    branch: boolean;
   }) {
-    var _$0 = props.foo;
-    return <div><span>The title is {_$0}</span></div>;
+    var _$0 = person;
+    var _$1 = branch;
+
+    if (_$1) {
+      var _$2 = person.title;
+    }
+
+    return <div>{_$1 ? <span>The title is {_$2}</span> : <div>Hello world</div>}</div>;
   };
 
   var _1 = function (props) {
-    let x = props.title;
-    return <span>The title is {x}</span>;
+    return props.branch ? <span>The title is {props.person.title.toString()}</span> : <div>Hello world</div>;
   };
 
-  _$1.test = _0;
+  _$3.test = _0;
 }).call(this);
