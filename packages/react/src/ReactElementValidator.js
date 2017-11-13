@@ -272,7 +272,8 @@ export function createElementWithValidation(type, props, children) {
     typeof type === 'string' ||
     typeof type === 'function' ||
     typeof type === 'symbol' ||
-    typeof type === 'number';
+    typeof type === 'number' ||
+    typeof type === 'object' && type !== null && typeof type.render === 'function';
   // We warn in this case but don't throw. We expect the element creation to
   // succeed and there will likely be errors in render.
   if (!validType) {

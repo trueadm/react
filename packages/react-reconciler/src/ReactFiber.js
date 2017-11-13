@@ -24,6 +24,7 @@ import {NoEffect} from 'shared/ReactTypeOfSideEffect';
 import {
   IndeterminateComponent,
   ClassComponent,
+  StatefulFunctionalComponent,
   HostRoot,
   HostComponent,
   HostText,
@@ -311,6 +312,15 @@ export function createFiberFromElement(
   } else if (
     typeof type === 'object' &&
     type !== null &&
+    typeof type.render === 'function'
+  ) {
+    // a stateful functional component
+    fiber = createFiber(StatefulFunctionalComponent, key, internalContextTag);
+    fiber.type = type;
+    fiber.pendingProps = element.props;
+  } else if (
+    typeof type === 'object' &&
+    type !== null &&
     typeof type.tag === 'number'
   ) {
     // Currently assumed to be a continuation and therefore is a fiber already.
@@ -342,7 +352,7 @@ export function createFiberFromElement(
     invariant(
       false,
       'Element type is invalid: expected a string (for built-in components) ' +
-        'or a class/function (for composite components) but got: %s.%s',
+        'or a class/function/object (for composite components) but got: %s.%s',
       type == null ? type : typeof type,
       info,
     );

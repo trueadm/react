@@ -18,6 +18,7 @@ import type {ExpirationTime} from './ReactFiberExpirationTime';
 import {
   IndeterminateComponent,
   FunctionalComponent,
+  StatefulFunctionalComponent,
   ClassComponent,
   HostRoot,
   HostComponent,
@@ -43,6 +44,7 @@ import ReactDebugCurrentFiber from './ReactDebugCurrentFiber';
 import {cancelWorkTimer} from './ReactDebugFiberPerf';
 
 import ReactFiberClassComponent from './ReactFiberClassComponent';
+import ReactFiberStatefulFunctionalComponent from './ReactFiberStatefulFunctionalComponent';
 import {
   mountChildFibersInPlace,
   reconcileChildFibers,
@@ -92,6 +94,17 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     // resumeMountClassInstance,
     updateClassInstance,
   } = ReactFiberClassComponent(
+    scheduleWork,
+    computeExpirationForFiber,
+    memoizeProps,
+    memoizeState,
+  );
+
+  const {
+    createStatefulFunctionalComponent,
+    mountStatefulFunctionalComponent,
+    updateStatefulFunctionalComponent: _updateStatefulFunctionalInstance,
+  } = ReactFiberStatefulFunctionalComponent(
     scheduleWork,
     computeExpirationForFiber,
     memoizeProps,
@@ -254,7 +267,90 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     );
   }
 
+  function updateStatefulFunctionalComponent(
+    current: Fiber | null,
+    workInProgress: Fiber,
+    renderExpirationTime: ExpirationTime,
+  ) {
+    // Push context providers early to prevent context stack mismatches.
+    // During mounting we don't know the child context yet as the instance doesn't exist.
+    // We will invalidate the child context in finishClassComponent() right after rendering.
+    const hasContext = pushContextProvider(workInProgress);
+
+    let shouldUpdate;
+    if (current === null) {
+      if (!workInProgress.stateNode) {
+        // In the initial pass we might need to construct the instance.
+        createStatefulFunctionalComponent(workInProgress, workInProgress.pendingProps);
+        mountStatefulFunctionalComponent(workInProgress, renderExpirationTime);
+        shouldUpdate = true;
+      } else {
+        invariant(false, 'Resuming work not yet implemented.');
+        // In a resume, we'll already have an instance we can reuse.
+        // shouldUpdate = resumeMountClassInstance(workInProgress, renderExpirationTime);
+      }
+    } else {
+      shouldUpdate = _updateStatefulFunctionalInstance(
+        current,
+        workInProgress,
+        renderExpirationTime,
+      );
+    }
+    return finishStatefulFunctionalComponent(
+      current,
+      workInProgress,
+      shouldUpdate,
+      hasContext,
+    );
+  }
+
   function finishClassComponent(
+    current: Fiber | null,
+    workInProgress: Fiber,
+    shouldUpdate: boolean,
+    hasContext: boolean,
+  ) {
+    // Refs should update even if shouldComponentUpdate returns false
+    markRef(current, workInProgress);
+
+    if (!shouldUpdate) {
+      // Context providers should defer to sCU for rendering
+      if (hasContext) {
+        invalidateContextProvider(workInProgress, false);
+      }
+
+      return bailoutOnAlreadyFinishedWork(current, workInProgress);
+    }
+
+    const instance = workInProgress.stateNode;
+
+    // Rerender
+    ReactCurrentOwner.current = workInProgress;
+    let nextChildren;
+    if (__DEV__) {
+      ReactDebugCurrentFiber.setCurrentPhase('render');
+      nextChildren = instance.render();
+      ReactDebugCurrentFiber.setCurrentPhase(null);
+    } else {
+      nextChildren = instance.render();
+    }
+    // React DevTools reads this flag.
+    workInProgress.effectTag |= PerformedWork;
+    reconcileChildren(current, workInProgress, nextChildren);
+    // Memoize props and state using the values we just used to render.
+    // TODO: Restructure so we never read values from the instance.
+    memoizeState(workInProgress, instance.state);
+    memoizeProps(workInProgress, instance.props);
+
+    // The context might have changed so we need to recalculate it.
+    if (hasContext) {
+      invalidateContextProvider(workInProgress, true);
+    }
+
+    return workInProgress.child;
+  }
+
+  function finishStatefulFunctionalComponent(
     current: Fiber | null,
     workInProgress: Fiber,
     shouldUpdate: boolean,
@@ -741,6 +837,12 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
         );
       case FunctionalComponent:
         return updateFunctionalComponent(current, workInProgress);
+      case StatefulFunctionalComponent:
+        return updateStatefulFunctionalComponent(
+          current,
+          workInProgress,
+          renderExpirationTime,
+        );
       case ClassComponent:
         return updateClassComponent(
           current,
