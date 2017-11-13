@@ -24,6 +24,7 @@ import {
   IndeterminateComponent,
   FunctionalComponent,
   ClassComponent,
+  StatefulFunctionalComponent,
   HostRoot,
   HostComponent,
   HostText,
@@ -407,6 +408,7 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     switch (workInProgress.tag) {
       case FunctionalComponent:
         return null;
+      case StatefulFunctionalComponent:
       case ClassComponent: {
         // We are leaving this subtree, so pop context if any.
         popContextProvider(workInProgress);

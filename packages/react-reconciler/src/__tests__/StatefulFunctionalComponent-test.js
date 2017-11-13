@@ -7,25 +7,30 @@
 
 'use strict';
 
-var React;
-var ReactNoop;
+let React;
+let ReactTestRenderer;
 
 describe.only('Stateful Functional Components', () => {
   beforeEach(() => {
     jest.resetModules();
     React = require('react');
-    ReactNoop = require('react-noop-renderer');
+    ReactTestRenderer = require('react-test-renderer');
   });
 
   const StatefulFunctionalComponent = {
-    render(props) {
-      return <div>{props.title}</div>;
-    }
-  }
+    initialState() {
+      return {
+        title: 'State!',
+      };
+    },
+    render(props, state) {
+      return <div>{props.title}. {state.title}</div>;
+    },
+  };
 
   it('renders hello world div', () => {
-    ReactNoop.render(<StatefulFunctionalComponent title="Hello world" />);
-    ReactNoop.flush();
-    expect(ReactNoop.getChildren()).toEqual([{text: '10'}]);
+    const input = <StatefulFunctionalComponent title="Hello world" />;
+    const tree = ReactTestRenderer.create(input).toJSON();
+    expect(tree).toMatchSnapshot();
   });
 });

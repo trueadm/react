@@ -10,6 +10,7 @@
 import type {Fiber} from './ReactFiber';
 import type {ExpirationTime} from './ReactFiberExpirationTime';
 
+import {Update} from 'shared/ReactTypeOfSideEffect';
 import {enableAsyncSubtreeAPI} from 'shared/ReactFeatureFlags';
 import emptyObject from 'fbjs/lib/emptyObject';
 import * as ReactInstanceMap from 'shared/ReactInstanceMap';
@@ -27,6 +28,7 @@ function createInstance(state, context) {
     context,
     state,
     updater: null,
+    _reactInternalFiber: null,
   };
 }
 
@@ -44,21 +46,21 @@ export default function(
   }
 
   function createStatefulFunctionalComponent(workInProgress: Fiber, props: any) {
-    const initialState = workInProgress.initialState;
+    const initialStateFunc = workInProgress.type.initialState;
     const unmaskedContext = getUnmaskedContext(workInProgress);
     const needsContext = isContextConsumer(workInProgress);
     const context = needsContext
       ? getMaskedContext(workInProgress, unmaskedContext)
       : emptyObject;
     let state = emptyObject;
-    if (typeof initialState === 'function') {
+    if (typeof initialStateFunc === 'function') {
       // in DEV mode we ensure the "this" of getInitialState is null so
       // stateful functional components can't be used like class components
       if (__DEV__) {
         // eslint-disable-next-line
-        state = initialState.call(null, props, context);
+        state = initialStateFunc.call(undefined, props, context);
       } else {
-        state = initialState(props, context);
+        state = initialStateFunc(props, context);
       }
     }
     const instance = createInstance(state, context);
@@ -84,6 +86,7 @@ export default function(
     const unmaskedContext = getUnmaskedContext(workInProgress);
     const type = workInProgress.type;
     const willMountFunc = type.willMountFunc;
+    const didMountFunc = type.didMountFunc;
 
     instance.state = workInProgress.memoizedState = state;
     instance.context = getMaskedContext(workInProgress, unmaskedContext);
@@ -91,16 +94,30 @@ export default function(
     if (enableAsyncSubtreeAPI) {
       workInProgress.internalContextTag |= AsyncUpdates;
     }
-
     if (willMountFunc === 'function') {
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = willMountFunc.call(null, props, state, reduce, context);
+        willMountFunc.call(undefined, props, state);
       } else {
-        shouldUpdate = willMountFunc(props, state, reduce, context);
+        willMountFunc(props, state);
+      }
+      // If we had additional state updates during this life-cycle, let's
+      // process them now.
+      const updateQueue = workInProgress.updateQueue;
+      if (updateQueue !== null) {
+        // instance.state = processUpdateQueue(
+        //   current,
+        //   workInProgress,
+        //   updateQueue,
+        //   instance,
+        //   props,
+        //   renderExpirationTime,
+        // );
       }
     }
-  }
+    if (typeof didMountFunc === 'function') {
+      workInProgress.effectTag |= Update;
+    }
   }
 
   function updateStatefulFunctionalComponent(
@@ -120,11 +137,14 @@ export default function(
     if (shouldUpdateFunc === 'function') {
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = shouldUpdateFunc.call(null, oldProps, newProps, oldState, newState);
+        shouldUpdate = shouldUpdateFunc.call(undefined, oldProps, newProps, oldState, newState);
       } else {
         shouldUpdate = shouldUpdateFunc(oldProps, newProps, oldState, newState);
       }
     }
+    if (shouldUpdate) {
+    }
+    return shouldUpdate;
   }
 
   return {
@@ -133,3 +153,4 @@ export default function(
     updateStatefulFunctionalComponent,
   };
 }
+

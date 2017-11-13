@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Stateful Functional Components renders hello world div 1`] = `
+<div>
+  Hello world
+  . 
+  State!
+</div>
+`;

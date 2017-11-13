@@ -369,24 +369,27 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     }
 
     const instance = workInProgress.stateNode;
+    const type = workInProgress.type;
+    const props = workInProgress.pendingProps;
+    const state = instance.state;
 
     // Rerender
     ReactCurrentOwner.current = workInProgress;
     let nextChildren;
     if (__DEV__) {
       ReactDebugCurrentFiber.setCurrentPhase('render');
-      nextChildren = instance.render();
+      nextChildren = type.render.call(undefined, props, state);
       ReactDebugCurrentFiber.setCurrentPhase(null);
     } else {
-      nextChildren = instance.render();
+      nextChildren = type.render(props, state);
     }
     // React DevTools reads this flag.
     workInProgress.effectTag |= PerformedWork;
     reconcileChildren(current, workInProgress, nextChildren);
     // Memoize props and state using the values we just used to render.
     // TODO: Restructure so we never read values from the instance.
-    memoizeState(workInProgress, instance.state);
-    memoizeProps(workInProgress, instance.props);
+    memoizeState(workInProgress, state);
+    memoizeProps(workInProgress, props);
 
     // The context might have changed so we need to recalculate it.
     if (hasContext) {
