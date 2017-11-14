@@ -21,16 +21,33 @@ describe.only('Stateful Functional Components', () => {
     initialState() {
       return {
         title: 'State!',
+        counter: 0,
       };
     },
+    reducer(action, state) {
+      if (action === 'INCREMENT') {
+        return {counter: state.counter + 1};
+      }
+    },
+    willReceiveProps(oldProps, newProps, oldState, newState, reduce) {
+      reduce('INCREMENT');
+    },
     render(props, state) {
-      return <div>{props.title}. {state.title}</div>;
+      return <div>{props.title}. {state.title} - counter: {state.counter}</div>;
     },
   };
 
   it('renders hello world div', () => {
-    const input = <StatefulFunctionalComponent title="Hello world" />;
-    const tree = ReactTestRenderer.create(input).toJSON();
-    expect(tree).toMatchSnapshot();
+    const mount = <StatefulFunctionalComponent title="Hello world" />;
+    const renderer = ReactTestRenderer.create(mount);
+    expect(renderer.toJSON()).toMatchSnapshot();
+
+    let update = <StatefulFunctionalComponent title="Hello world #2" />;
+    renderer.update(update);
+    expect(renderer.toJSON()).toMatchSnapshot();
+
+    update = <StatefulFunctionalComponent title="Hello world #3" />;
+    renderer.update(update);
+    expect(renderer.toJSON()).toMatchSnapshot();
   });
 });

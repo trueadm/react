@@ -89,6 +89,7 @@ export default function(
       }
       const expirationTime = computeExpirationForFiber(fiber);
       const update = {
+        action: null,
         expirationTime,
         partialState,
         callback,
@@ -108,6 +109,7 @@ export default function(
       }
       const expirationTime = computeExpirationForFiber(fiber);
       const update = {
+        action: null,
         expirationTime,
         partialState: state,
         callback,
@@ -127,6 +129,7 @@ export default function(
       }
       const expirationTime = computeExpirationForFiber(fiber);
       const update = {
+        action: null,
         expirationTime,
         partialState: null,
         callback,

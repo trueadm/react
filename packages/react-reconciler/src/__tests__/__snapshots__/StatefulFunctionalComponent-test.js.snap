@@ -5,5 +5,27 @@ exports[`Stateful Functional Components renders hello world div 1`] = `
   Hello world
   . 
   State!
+   - counter: 
+  0
+</div>
+`;
+
+exports[`Stateful Functional Components renders hello world div 2`] = `
+<div>
+  Hello world #2
+  . 
+  State!
+   - counter: 
+  1
+</div>
+`;
+
+exports[`Stateful Functional Components renders hello world div 3`] = `
+<div>
+  Hello world #3
+  . 
+  State!
+   - counter: 
+  2
 </div>
 `;

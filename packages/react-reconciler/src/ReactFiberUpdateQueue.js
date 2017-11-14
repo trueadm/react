@@ -181,7 +181,17 @@ function getStateFromUpdate(update, instance, prevState, props) {
   const partialState = update.partialState;
   if (typeof partialState === 'function') {
     const updateFn = partialState;
-    return updateFn.call(instance, prevState, props);
+    const action = update.action;
+    if (action !== null) {
+      if (__DEV__) {
+        // eslint-disable-next-line
+        return updateFn.call(undefined, action, prevState, props);
+      } else {
+        return updateFn(action, prevState, props);
+      }
+    } else {
+      return updateFn.call(instance, prevState, props);
+    }
   } else {
     return partialState;
   }

@@ -334,6 +334,7 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     }
 
     const update = {
+      action: null,
       expirationTime,
       partialState: {element},
       callback,

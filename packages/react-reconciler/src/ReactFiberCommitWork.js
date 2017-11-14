@@ -17,6 +17,7 @@ import {
 } from 'shared/ReactFeatureFlags';
 import {
   ClassComponent,
+  StatefulFunctionalComponent,
   HostRoot,
   HostComponent,
   HostText,
@@ -108,6 +109,48 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
             instance.state = finishedWork.memoizedState;
             instance.componentDidUpdate(prevProps, prevState);
             stopPhaseTimer();
+          }
+        }
+        const updateQueue = finishedWork.updateQueue;
+        if (updateQueue !== null) {
+          commitCallbacks(updateQueue, instance);
+        }
+        return;
+      }
+      case StatefulFunctionalComponent: {
+        const instance = finishedWork.stateNode;
+        if (finishedWork.effectTag & Update) {
+          if (current === null) {
+            const props = instance.props = finishedWork.memoizedProps;
+            const state = instance.state = finishedWork.memoizedState;
+            const didMountFunc = current.type.didMount;
+            if (typeof didMountFunc === 'function') {
+              startPhaseTimer(finishedWork, 'didMount');
+              if (__DEV__) {
+                // eslint-disable-next-line
+                didMountFunc.call(undefined, props, state, instance.reduceFunc);
+              } else {
+                didMountFunc(props, state, instance.reduceFunc);
+              }
+              stopPhaseTimer();
+            }
+          } else {
+            const prevProps = current.memoizedProps;
+            const prevState = current.memoizedState;
+            const nextProps = instance.props = finishedWork.memoizedProps;
+            const nextState = instance.state = finishedWork.memoizedState;
+            const didUpdateFunc = current.type.didUpdate;
+
+            if (typeof didUpdateFunc === 'function') {
+              startPhaseTimer(finishedWork, 'didUpdate');
+              if (__DEV__) {
+                // eslint-disable-next-line
+                didUpdateFunc.call(undefined, prevProps, nextProps, prevState, nextState, instance.reduceFunc);
+              } else {
+                didUpdateFunc(prevProps, nextProps, prevState, nextState, instance.reduceFunc);
+              }
+              stopPhaseTimer();
+            }
           }
         }
         const updateQueue = finishedWork.updateQueue;

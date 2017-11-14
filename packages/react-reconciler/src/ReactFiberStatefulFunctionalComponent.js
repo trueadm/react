@@ -14,7 +14,10 @@ import {Update} from 'shared/ReactTypeOfSideEffect';
 import {enableAsyncSubtreeAPI} from 'shared/ReactFeatureFlags';
 import emptyObject from 'fbjs/lib/emptyObject';
 import * as ReactInstanceMap from 'shared/ReactInstanceMap';
+import invariant from 'fbjs/lib/invariant';
 
+import {startPhaseTimer, stopPhaseTimer} from './ReactDebugFiberPerf';
+import {hasContextChanged} from './ReactFiberContext';
 import {AsyncUpdates} from './ReactTypeOfInternalContext';
 import {
   cacheContext,
@@ -22,13 +25,17 @@ import {
   getUnmaskedContext,
   isContextConsumer,
 } from './ReactFiberContext';
+import {
+  insertUpdateIntoFiber,
+  processUpdateQueue,
+} from './ReactFiberUpdateQueue';
 
-function createInstance(state, context) {
+function createInstance(state, context, reduceFunc) {
   return {
     context,
     state,
-    updater: null,
     _reactInternalFiber: null,
+    reduceFunc: null,
   };
 }
 
@@ -39,6 +46,24 @@ export default function(
   memoizeState: (workInProgress: Fiber, state: any) => void,
 ) {
 
+  function reduceFunc(instance, _reducerFunc, action, callback) {
+    const fiber = ReactInstanceMap.get(instance);
+    callback = callback === undefined ? null : callback;
+    const expirationTime = computeExpirationForFiber(fiber);
+    const update = {
+      action,
+      expirationTime,
+      partialState: _reducerFunc,
+      callback,
+      isReplace: false,
+      isForced: false,
+      nextCallback: null,
+      next: null,
+    };
+    insertUpdateIntoFiber(fiber, update);
+    scheduleWork(fiber, expirationTime);
+  }
+
   function adoptFunctionalComponentInstance(workInProgress: Fiber, instance: any): void {
     workInProgress.stateNode = instance;
     // The instance needs access to the fiber so that it can schedule updates
@@ -46,7 +71,8 @@ export default function(
   }
 
   function createStatefulFunctionalComponent(workInProgress: Fiber, props: any) {
-    const initialStateFunc = workInProgress.type.initialState;
+    const type = workInProgress.type;
+    const initialStateFunc = type.initialState;
     const unmaskedContext = getUnmaskedContext(workInProgress);
     const needsContext = isContextConsumer(workInProgress);
     const context = needsContext
@@ -64,6 +90,7 @@ export default function(
       }
     }
     const instance = createInstance(state, context);
+    instance.reduceFunc = reduceFunc.bind(null, instance, type.reducer);
     adoptFunctionalComponentInstance(workInProgress, instance);
 
     // Cache unmasked context so we can avoid recreating masked context unless necessary.
@@ -105,14 +132,14 @@ export default function(
       // process them now.
       const updateQueue = workInProgress.updateQueue;
       if (updateQueue !== null) {
-        // instance.state = processUpdateQueue(
-        //   current,
-        //   workInProgress,
-        //   updateQueue,
-        //   instance,
-        //   props,
-        //   renderExpirationTime,
-        // );
+        instance.state = processUpdateQueue(
+          current,
+          workInProgress,
+          updateQueue,
+          instance,
+          props,
+          renderExpirationTime,
+        );
       }
     }
     if (typeof didMountFunc === 'function') {
@@ -128,12 +155,79 @@ export default function(
     const instance = workInProgress.stateNode;
     const type = workInProgress.type;
     const oldProps = workInProgress.memoizedProps;
-    const oldContext = instance.context;
-    const oldState = workInProgress.memoizedState;
     let newProps = workInProgress.pendingProps;
+    
+    if (!newProps) {
+      // If there aren't any new props, then we'll reuse the memoized props.
+      // This could be from already completed work.
+      newProps = oldProps;
+      invariant(
+        newProps != null,
+        'There should always be pending or memoized props. This error is ' +
+          'likely caused by a bug in React. Please file an issue.',
+      );
+    }
+    const oldContext = instance.context;
+    const newUnmaskedContext = getUnmaskedContext(workInProgress);
+    const newContext = getMaskedContext(workInProgress, newUnmaskedContext);
+
+    // Note: During these life-cycles, instance.props/instance.state are what
+    // ever the previously attempted to render - not the "current". However,
+    // during componentDidUpdate we pass the "current" props.
+    const willReceivePropsFunc = type.willReceiveProps;
+    const oldState = instance.state = workInProgress.memoizedState;
+
+    if (
+      typeof willReceivePropsFunc === 'function' &&
+      (oldProps !== newProps || oldContext !== newContext)
+    ) {
+      if (__DEV__) {
+        // eslint-disable-next-line
+        shouldUpdate = willReceivePropsFunc.call(undefined, oldProps, newProps, oldState, newState, instance.reduceFunc);
+      } else {
+        shouldUpdate = willReceivePropsFunc(oldProps, newProps, oldState, newState, instance.reduceFunc);
+      }
+    }
+    // Compute the next state using the memoized state and the update queue.
+    // TODO: Previous state can be null.
+    let newState;
+    if (workInProgress.updateQueue !== null) {
+      newState = processUpdateQueue(
+        current,
+        workInProgress,
+        workInProgress.updateQueue,
+        instance,
+        newProps,
+        renderExpirationTime,
+      );
+    } else {
+      newState = oldState;
+    }
+
+    if (
+      oldProps === newProps &&
+      oldState === newState &&
+      !hasContextChanged() &&
+      !(
+        workInProgress.updateQueue !== null &&
+        workInProgress.updateQueue.hasForceUpdate
+      )
+    ) {
+      // If an update was already in progress, we should schedule an Update
+      // effect even though we're bailing out, so that cWU/cDU are called.
+      if (typeof instance.componentDidUpdate === 'function') {
+        if (
+          oldProps !== current.memoizedProps ||
+          oldState !== current.memoizedState
+        ) {
+          workInProgress.effectTag |= Update;
+        }
+      }
+      return false;
+    }
+
     const shouldUpdateFunc = type.shouldUpdate;
     let shouldUpdate = true;
-
     if (shouldUpdateFunc === 'function') {
       if (__DEV__) {
         // eslint-disable-next-line
@@ -143,7 +237,41 @@ export default function(
       }
     }
     if (shouldUpdate) {
+      const willUpdateFunc = type.willUpdate;
+      if (typeof willUpdateFunc === 'function') {
+        startPhaseTimer(workInProgress, 'willUpdate');
+        if (__DEV__) {
+          // eslint-disable-next-line
+          willUpdateFunc.call(undefined, oldProps, newProps, oldState, newState, instance.reduceFunc);
+        } else {
+          willUpdateFunc(oldProps, newProps, oldState, newState, instance.reduceFunc);
+        }
+        stopPhaseTimer();
+        workInProgress.effectTag |= Update;
+      }
+    } else {
+      const didUpdateFunc = type.didUpdate;
+      // If an update was already in progress, we should schedule an Update
+      // effect even though we're bailing out, so that cWU/cDU are called.
+      if (typeof didUpdateFunc === 'function') {
+        if (
+          oldProps !== current.memoizedProps ||
+          oldState !== current.memoizedState
+        ) {
+          workInProgress.effectTag |= Update;
+        }
+      }
+
+      // If shouldComponentUpdate returned false, we should still update the
+      // memoized props/state to indicate that this work can be reused.
+      memoizeProps(workInProgress, newProps);
+      memoizeState(workInProgress, newState);
     }
+    // Update the existing instance's state, props, and context pointers even
+    // if shouldComponentUpdate returns false.
+    instance.state = newState;
+    instance.context = newContext;
+
     return shouldUpdate;
   }
 
