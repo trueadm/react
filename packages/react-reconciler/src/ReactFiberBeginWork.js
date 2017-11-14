@@ -372,16 +372,20 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     const type = workInProgress.type;
     const props = workInProgress.pendingProps;
     const state = instance.state;
+    const context = instance.context;
+    const reduce = instance.reduceFunc;
+    const setState = instance.setStateFunc;
 
     // Rerender
     ReactCurrentOwner.current = workInProgress;
     let nextChildren;
+    const _config = {props, state, context, reduce, setState};
     if (__DEV__) {
       ReactDebugCurrentFiber.setCurrentPhase('render');
-      nextChildren = type.render.call(undefined, props, state);
+      nextChildren = type.render.call(undefined, _config);
       ReactDebugCurrentFiber.setCurrentPhase(null);
     } else {
-      nextChildren = type.render(props, state);
+      nextChildren = type.render(_config);
     }
     // React DevTools reads this flag.
     workInProgress.effectTag |= PerformedWork;

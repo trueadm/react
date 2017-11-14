@@ -36,6 +36,7 @@ function createInstance(state, context, reduceFunc) {
     state,
     _reactInternalFiber: null,
     reduceFunc: null,
+    setStateFunc: null,
   };
 }
 
@@ -54,6 +55,24 @@ export default function(
       action,
       expirationTime,
       partialState: _reducerFunc,
+      callback,
+      isReplace: false,
+      isForced: false,
+      nextCallback: null,
+      next: null,
+    };
+    insertUpdateIntoFiber(fiber, update);
+    scheduleWork(fiber, expirationTime);
+  }
+
+  function setStateFunc(instance, partialState, callback) {
+    const fiber = ReactInstanceMap.get(instance);
+    callback = callback === undefined ? null : callback;
+    const expirationTime = computeExpirationForFiber(fiber);
+    const update = {
+      action: null,
+      expirationTime,
+      partialState,
       callback,
       isReplace: false,
       isForced: false,
@@ -91,6 +110,7 @@ export default function(
     }
     const instance = createInstance(state, context);
     instance.reduceFunc = reduceFunc.bind(null, instance, type.reducer);
+    instance.setStateFunc = setStateFunc.bind(null, instance);
     adoptFunctionalComponentInstance(workInProgress, instance);
 
     // Cache unmasked context so we can avoid recreating masked context unless necessary.
@@ -181,11 +201,18 @@ export default function(
       typeof willReceivePropsFunc === 'function' &&
       (oldProps !== newProps || oldContext !== newContext)
     ) {
+      const config = {
+        prevProps: oldProps,
+        nextProps: newProps,
+        state: oldState,
+        reduce: instance.reduceFunc,
+        setState: instance.setStateFunc,
+      };
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = willReceivePropsFunc.call(undefined, oldProps, newProps, oldState, newState, instance.reduceFunc);
+        shouldUpdate = willReceivePropsFunc.call(undefined, config);
       } else {
-        shouldUpdate = willReceivePropsFunc(oldProps, newProps, oldState, newState, instance.reduceFunc);
+        shouldUpdate = willReceivePropsFunc(config);
       }
     }
     // Compute the next state using the memoized state and the update queue.
@@ -229,22 +256,36 @@ export default function(
     const shouldUpdateFunc = type.shouldUpdate;
     let shouldUpdate = true;
     if (shouldUpdateFunc === 'function') {
+      const config = {
+        prevProps: oldProps,
+        nextProps: newProps,
+        prevState: oldState,
+        nextState: newState,
+        context: oldContext,
+      };
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = shouldUpdateFunc.call(undefined, oldProps, newProps, oldState, newState);
+        shouldUpdate = shouldUpdateFunc.call(undefined, config);
       } else {
-        shouldUpdate = shouldUpdateFunc(oldProps, newProps, oldState, newState);
+        shouldUpdate = shouldUpdateFunc(config);
       }
     }
     if (shouldUpdate) {
       const willUpdateFunc = type.willUpdate;
       if (typeof willUpdateFunc === 'function') {
+        const config = {
+          prevProps: oldProps,
+          nextProps: newProps,
+          prevState: oldState,
+          nextState: newState,
+          context: oldContext,
+        };
         startPhaseTimer(workInProgress, 'willUpdate');
         if (__DEV__) {
           // eslint-disable-next-line
-          willUpdateFunc.call(undefined, oldProps, newProps, oldState, newState, instance.reduceFunc);
+          willUpdateFunc.call(undefined, config);
         } else {
-          willUpdateFunc(oldProps, newProps, oldState, newState, instance.reduceFunc);
+          willUpdateFunc(oldProps, config);
         }
         stopPhaseTimer();
         workInProgress.effectTag |= Update;

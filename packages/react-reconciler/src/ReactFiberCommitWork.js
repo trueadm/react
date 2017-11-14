@@ -123,14 +123,22 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
           if (current === null) {
             const props = instance.props = finishedWork.memoizedProps;
             const state = instance.state = finishedWork.memoizedState;
+            const context = instance.context;
             const didMountFunc = current.type.didMount;
             if (typeof didMountFunc === 'function') {
+              const _config = {
+                props,
+                state,
+                context,
+                reduce: instance.reduceFunc,
+                setState: instance.setStateFunc,
+              };
               startPhaseTimer(finishedWork, 'didMount');
               if (__DEV__) {
                 // eslint-disable-next-line
-                didMountFunc.call(undefined, props, state, instance.reduceFunc);
+                didMountFunc.call(undefined, _config);
               } else {
-                didMountFunc(props, state, instance.reduceFunc);
+                didMountFunc(_config);
               }
               stopPhaseTimer();
             }
@@ -140,14 +148,24 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
             const nextProps = instance.props = finishedWork.memoizedProps;
             const nextState = instance.state = finishedWork.memoizedState;
             const didUpdateFunc = current.type.didUpdate;
+            const context = instance.context;
 
             if (typeof didUpdateFunc === 'function') {
+              const _config = {
+                prevProps,
+                nextProps,
+                prevState,
+                nextState,
+                context,
+                reduce: instance.reduceFunc,
+                setState: instance.setStateFunc,
+              };
               startPhaseTimer(finishedWork, 'didUpdate');
               if (__DEV__) {
                 // eslint-disable-next-line
-                didUpdateFunc.call(undefined, prevProps, nextProps, prevState, nextState, instance.reduceFunc);
+                didUpdateFunc.call(undefined, _config);
               } else {
-                didUpdateFunc(prevProps, nextProps, prevState, nextState, instance.reduceFunc);
+                didUpdateFunc(_config);
               }
               stopPhaseTimer();
             }

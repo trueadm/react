@@ -17,7 +17,7 @@ describe.only('Stateful Functional Components', () => {
     ReactTestRenderer = require('react-test-renderer');
   });
 
-  const StatefulFunctionalComponent = {
+  const StatefulFunctionalReducerComponent = {
     initialState() {
       return {
         title: 'State!',
@@ -29,24 +29,24 @@ describe.only('Stateful Functional Components', () => {
         return {counter: state.counter + 1};
       }
     },
-    willReceiveProps(oldProps, newProps, oldState, newState, reduce) {
+    willReceiveProps({reduce}) {
       reduce('INCREMENT');
     },
-    render(props, state) {
+    render({props, state}) {
       return <div>{props.title}. {state.title} - counter: {state.counter}</div>;
     },
   };
 
   it('renders hello world div', () => {
-    const mount = <StatefulFunctionalComponent title="Hello world" />;
+    const mount = <StatefulFunctionalReducerComponent title="Hello world" />;
     const renderer = ReactTestRenderer.create(mount);
     expect(renderer.toJSON()).toMatchSnapshot();
 
-    let update = <StatefulFunctionalComponent title="Hello world #2" />;
+    let update = <StatefulFunctionalReducerComponent title="Hello world #2" />;
     renderer.update(update);
     expect(renderer.toJSON()).toMatchSnapshot();
 
-    update = <StatefulFunctionalComponent title="Hello world #3" />;
+    update = <StatefulFunctionalReducerComponent title="Hello world #3" />;
     renderer.update(update);
     expect(renderer.toJSON()).toMatchSnapshot();
   });
