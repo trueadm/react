@@ -124,48 +124,52 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
             const props = instance.props = finishedWork.memoizedProps;
             const state = instance.state = finishedWork.memoizedState;
             const context = instance.context;
-            const didMountFunc = current.type.didMount;
+            const didMountFunc = finishedWork.type.didMount;
             if (typeof didMountFunc === 'function') {
-              const _config = {
-                props,
-                state,
-                context,
-                reduce: instance.reduceFunc,
-                setState: instance.setStateFunc,
-              };
               startPhaseTimer(finishedWork, 'didMount');
               if (__DEV__) {
                 // eslint-disable-next-line
-                didMountFunc.call(undefined, _config);
+                didMountFunc.call(undefined, props, state, {
+                  context,
+                  reduce: instance.reduceFunc,
+                  setState: instance.setStateFunc,
+                });
               } else {
-                didMountFunc(_config);
+                didMountFunc(props, state, {
+                  context,
+                  reduce: instance.reduceFunc,
+                  setState: instance.setStateFunc,
+                });
               }
               stopPhaseTimer();
             }
           } else {
             const prevProps = current.memoizedProps;
             const prevState = current.memoizedState;
-            const nextProps = instance.props = finishedWork.memoizedProps;
-            const nextState = instance.state = finishedWork.memoizedState;
+            const props = instance.props = finishedWork.memoizedProps;
+            const state = instance.state = finishedWork.memoizedState;
             const didUpdateFunc = current.type.didUpdate;
             const context = instance.context;
 
             if (typeof didUpdateFunc === 'function') {
-              const _config = {
-                prevProps,
-                nextProps,
-                prevState,
-                nextState,
-                context,
-                reduce: instance.reduceFunc,
-                setState: instance.setStateFunc,
-              };
               startPhaseTimer(finishedWork, 'didUpdate');
               if (__DEV__) {
                 // eslint-disable-next-line
-                didUpdateFunc.call(undefined, _config);
+                didUpdateFunc.call(undefined, props, state, {
+                  prevProps,
+                  prevState,
+                  context,
+                  reduce: instance.reduceFunc,
+                  setState: instance.setStateFunc,
+                });
               } else {
-                didUpdateFunc(_config);
+                didUpdateFunc(props, state, {
+                  prevProps,
+                  prevState,
+                  context,
+                  reduce: instance.reduceFunc,
+                  setState: instance.setStateFunc,
+                });
               }
               stopPhaseTimer();
             }

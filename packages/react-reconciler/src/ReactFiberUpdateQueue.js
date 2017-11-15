@@ -29,6 +29,7 @@ type PartialState<State, Props> =
 type Callback = mixed;
 
 export type Update<State> = {
+  action: any,
   expirationTime: ExpirationTime,
   partialState: PartialState<any, any>,
   callback: Callback | null,
@@ -185,12 +186,12 @@ function getStateFromUpdate(update, instance, prevState, props) {
     if (action !== null) {
       if (__DEV__) {
         // eslint-disable-next-line
-        return updateFn.call(undefined, action, prevState, props);
+        return updateFn.call(undefined, action, prevState);
       } else {
-        return updateFn(action, prevState, props);
+        return updateFn(action, prevState);
       }
     } else {
-      return updateFn.call(instance, prevState, props);
+      return updateFn.call(instance, prevState);
     }
   } else {
     return partialState;

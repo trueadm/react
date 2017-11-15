@@ -30,7 +30,15 @@ import {
   processUpdateQueue,
 } from './ReactFiberUpdateQueue';
 
-function createInstance(state, context, reduceFunc) {
+export type StatefulFunctionalComponent = {|
+  context: Object,
+  state: Object,
+  _reactInternalFiber: Fiber | null,
+  reduceFunc: Function | null,
+  setStateFunc: Function | null,
+|}
+
+function createInstance(state, context, reduceFunc): StatefulFunctionalComponent {
   return {
     context,
     state,
@@ -103,7 +111,7 @@ export default function(
       // stateful functional components can't be used like class components
       if (__DEV__) {
         // eslint-disable-next-line
-        state = initialStateFunc.call(undefined, props, context);
+        state = initialStateFunc.call(null, props, context);
       } else {
         state = initialStateFunc(props, context);
       }
@@ -201,18 +209,19 @@ export default function(
       typeof willReceivePropsFunc === 'function' &&
       (oldProps !== newProps || oldContext !== newContext)
     ) {
-      const config = {
-        prevProps: oldProps,
-        nextProps: newProps,
-        state: oldState,
-        reduce: instance.reduceFunc,
-        setState: instance.setStateFunc,
-      };
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = willReceivePropsFunc.call(undefined, config);
+        willReceivePropsFunc.call(undefined, oldProps, oldState, {
+          nextProps: newProps,
+          reduce: instance.reduceFunc,
+          setState: instance.setStateFunc,
+        });
       } else {
-        shouldUpdate = willReceivePropsFunc(config);
+        willReceivePropsFunc({
+          nextProps: newProps,
+          reduce: instance.reduceFunc,
+          setState: instance.setStateFunc,
+        });
       }
     }
     // Compute the next state using the memoized state and the update queue.
@@ -255,37 +264,28 @@ export default function(
 
     const shouldUpdateFunc = type.shouldUpdate;
     let shouldUpdate = true;
+    const config = {
+      context: oldContext,
+      nextState: newState,
+      nextProps: newProps,
+    };
     if (shouldUpdateFunc === 'function') {
-      const config = {
-        prevProps: oldProps,
-        nextProps: newProps,
-        prevState: oldState,
-        nextState: newState,
-        context: oldContext,
-      };
       if (__DEV__) {
         // eslint-disable-next-line
-        shouldUpdate = shouldUpdateFunc.call(undefined, config);
+        shouldUpdate = shouldUpdateFunc.call(null, oldProps, oldState, config);
       } else {
-        shouldUpdate = shouldUpdateFunc(config);
+        shouldUpdate = shouldUpdateFunc(oldProps, oldState, config);
       }
     }
     if (shouldUpdate) {
       const willUpdateFunc = type.willUpdate;
       if (typeof willUpdateFunc === 'function') {
-        const config = {
-          prevProps: oldProps,
-          nextProps: newProps,
-          prevState: oldState,
-          nextState: newState,
-          context: oldContext,
-        };
         startPhaseTimer(workInProgress, 'willUpdate');
         if (__DEV__) {
           // eslint-disable-next-line
-          willUpdateFunc.call(undefined, config);
+          willUpdateFunc.call(null, oldProps, oldState, config);
         } else {
-          willUpdateFunc(oldProps, config);
+          willUpdateFunc(oldProps, oldState, config);
         }
         stopPhaseTimer();
         workInProgress.effectTag |= Update;
