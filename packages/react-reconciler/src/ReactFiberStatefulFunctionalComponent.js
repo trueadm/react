@@ -268,6 +268,7 @@ export default function(
       context: oldContext,
       nextState: newState,
       nextProps: newProps,
+      nextContent: newContext,
     };
     if (shouldUpdateFunc === 'function') {
       if (__DEV__) {
