@@ -37,6 +37,18 @@ import {
   ForceUpdate,
 } from './ReactUpdateQueue';
 import {NoWork} from './ReactFiberExpirationTime';
+import {
+  cacheContext,
+  getMaskedContext,
+  getUnmaskedContext,
+  isContextConsumer,
+  hasContextChanged,
+} from './ReactFiberContext';
+import {
+  recalculateCurrentTime,
+  computeExpirationForFiber,
+  scheduleWork,
+} from './ReactFiberScheduler';
 
 const fakeInternalInstance = {};
 const isArray = Array.isArray;
@@ -149,25 +161,6 @@ export function applyDerivedStateFromProps(
     updateQueue.baseState = memoizedState;
   }
 }
-
-export default function(
-  legacyContext: LegacyContext,
-  scheduleWork: (fiber: Fiber, expirationTime: ExpirationTime) => void,
-  computeExpirationForFiber: (
-    currentTime: ExpirationTime,
-    fiber: Fiber,
-  ) => ExpirationTime,
-  memoizeProps: (workInProgress: Fiber, props: any) => void,
-  memoizeState: (workInProgress: Fiber, state: any) => void,
-  recalculateCurrentTime: () => ExpirationTime,
-) {
-  const {
-    cacheContext,
-    getMaskedContext,
-    getUnmaskedContext,
-    isContextConsumer,
-    hasContextChanged,
-  } = legacyContext;
 
   const classComponentUpdater = {
     isMounted,
@@ -1045,11 +1038,10 @@ export default function(
     return shouldUpdate;
   }
 
-  return {
+  export {
     adoptClassInstance,
     constructClassInstance,
     mountClassInstance,
     resumeMountClassInstance,
     updateClassInstance,
   };
-}
