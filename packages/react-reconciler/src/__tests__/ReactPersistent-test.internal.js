@@ -14,7 +14,7 @@ let React;
 let ReactNoopPersistent;
 let ReactPortal;
 
-describe('ReactPersistent', () => {
+xdescribe('ReactPersistent', () => {
   beforeEach(() => {
     jest.resetModules();
 

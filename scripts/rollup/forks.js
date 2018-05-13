@@ -74,6 +74,23 @@ const forks = Object.freeze({
     return null;
   },
 
+  'react-reconciler/src/ReactFiberHostConfig': (bundleType, entry) => {
+    switch (entry) {
+      case 'react-dom':
+        return 'react-dom/src/client/ReactDOMHostConfig.js';
+      case 'react-art':
+        return 'react-art/src/ReactARTHostConfig.js';
+      case 'react-native-renderer':
+        return 'react-native-renderer/src/ReactNativeHostConfig.js';
+      case 'react-native-renderer/fabric':
+        return 'react-native-renderer/src/ReactFabricHostConfig.js';
+      case 'react-test-renderer':
+        return 'react-test-renderer/src/ReactTestHostConfig.js';
+      default:
+        return null;
+    }
+  },
+
   // This logic is forked on www to blacklist warnings.
   'shared/lowPriorityWarning': (bundleType, entry) => {
     switch (bundleType) {
