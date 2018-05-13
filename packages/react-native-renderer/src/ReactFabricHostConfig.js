@@ -122,15 +122,14 @@ type TextInstance = {
   node: Node,
 };
 
-const ReactFabricHostConfig = {
-  appendInitialChild(
+export function appendInitialChild(
     parentInstance: Instance,
     child: Instance | TextInstance,
   ): void {
     FabricUIManager.appendChild(parentInstance.node, child.node);
-  },
+  }
 
-  createInstance(
+  export function createInstance(
     type: string,
     props: Props,
     rootContainerInstance: Container,
@@ -169,9 +168,9 @@ const ReactFabricHostConfig = {
       node: node,
       canonical: component,
     };
-  },
+  }
 
-  createTextInstance(
+  export function createTextInstance(
     text: string,
     rootContainerInstance: Container,
     hostContext: {},
@@ -191,39 +190,39 @@ const ReactFabricHostConfig = {
     return {
       node: node,
     };
-  },
+  }
 
-  finalizeInitialChildren(
+  export function finalizeInitialChildren(
     parentInstance: Instance,
     type: string,
     props: Props,
     rootContainerInstance: Container,
   ): boolean {
     return false;
-  },
+  }
 
-  getRootHostContext(): {} {
+  export function getRootHostContext(): {} {
     return emptyObject;
-  },
+  }
 
-  getChildHostContext(): {} {
+  export function getChildHostContext(): {} {
     return emptyObject;
-  },
+  }
 
-  getPublicInstance(instance: Instance): * {
+  export function getPublicInstance(instance: Instance): * {
     return instance.canonical;
-  },
+  }
 
-  now: ReactNativeFrameScheduling.now,
+  export const now = ReactNativeFrameScheduling.now;
 
   // The Fabric renderer is secondary to the existing React Native renderer.
-  isPrimaryRenderer: false,
+  export const isPrimaryRenderer = false;
 
-  prepareForCommit(): void {
+  export function prepareForCommit(): void {
     // Noop
-  },
+  }
 
-  prepareUpdate(
+  export function prepareUpdate(
     instance: Instance,
     type: string,
     oldProps: Props,
@@ -240,20 +239,20 @@ const ReactFabricHostConfig = {
     // TODO: If the event handlers have changed, we need to update the current props
     // in the commit phase but there is no host config hook to do it yet.
     return updatePayload;
-  },
+  }
 
-  resetAfterCommit(): void {
+  export function resetAfterCommit(): void {
     // Noop
-  },
+  }
 
-  scheduleDeferredCallback: ReactNativeFrameScheduling.scheduleDeferredCallback,
-  cancelDeferredCallback: ReactNativeFrameScheduling.cancelDeferredCallback,
+  export const scheduleDeferredCallback = ReactNativeFrameScheduling.scheduleDeferredCallback;
+  export const cancelDeferredCallback = ReactNativeFrameScheduling.cancelDeferredCallback;
 
-  shouldDeprioritizeSubtree(type: string, props: Props): boolean {
+  export function shouldDeprioritizeSubtree(type: string, props: Props): boolean {
     return false;
-  },
+  }
 
-  shouldSetTextContent(type: string, props: Props): boolean {
+  export function shouldSetTextContent(type: string, props: Props): boolean {
     // TODO (bvaughn) Revisit this decision.
     // Always returning false simplifies the createInstance() implementation,
     // But creates an additional child Fiber for raw text children.
@@ -261,10 +260,13 @@ const ReactFabricHostConfig = {
     // It's not clear to me which is better so I'm deferring for now.
     // More context @ github.com/facebook/react/pull/8560#discussion_r92111303
     return false;
-  },
+  }
 
-  persistence: {
-    cloneInstance(
+  export const supportsMutation = false;
+  export const supportsPersistence = true;
+  export const supportsHydration = false;
+
+    export function cloneInstance(
       instance: Instance,
       updatePayload: null | Object,
       type: string,
@@ -296,31 +298,27 @@ const ReactFabricHostConfig = {
         node: clone,
         canonical: instance.canonical,
       };
-    },
+    }
 
-    createContainerChildSet(container: Container): ChildSet {
+    export function createContainerChildSet(container: Container): ChildSet {
       return FabricUIManager.createChildSet(container);
-    },
+    }
 
-    appendChildToContainerChildSet(
+    export function appendChildToContainerChildSet(
       childSet: ChildSet,
       child: Instance | TextInstance,
     ): void {
       FabricUIManager.appendChildToSet(childSet, child.node);
-    },
+    }
 
-    finalizeContainerChildren(
+    export function finalizeContainerChildren(
       container: Container,
       newChildren: ChildSet,
     ): void {
       FabricUIManager.completeRoot(container, newChildren);
-    },
+    }
 
-    replaceContainerChildren(
+    export function replaceContainerChildren(
       container: Container,
       newChildren: ChildSet,
-    ): void {},
-  },
-};
-
-export default ReactFabricHostConfig;
+    ): void {}

@@ -61,8 +61,8 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     appendInitialChild,
     finalizeInitialChildren,
     prepareUpdate,
-    mutation,
-    persistence,
+    supportsMutation,
+    supportsPersistence,
   } = config;
 
   const {
@@ -199,7 +199,7 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
   let updateHostContainer;
   let updateHostComponent;
   let updateHostText;
-  if (mutation) {
+  if (supportsMutation) {
     if (enableMutatingReconciler) {
       // Mutation mode
       updateHostContainer = function(workInProgress: Fiber) {
@@ -237,7 +237,7 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
     } else {
       invariant(false, 'Mutating reconciler is disabled.');
     }
-  } else if (persistence) {
+  } else if (supportsPersistence) {
     if (enablePersistentReconciler) {
       // Persistent host tree mode
       const {
@@ -245,7 +245,7 @@ export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
         createContainerChildSet,
         appendChildToContainerChildSet,
         finalizeContainerChildren,
-      } = persistence;
+      } = config;
 
       // An unfortunate fork of appendAllChildren because we have two different parent types.
       const appendAllChildrenToContainer = function(

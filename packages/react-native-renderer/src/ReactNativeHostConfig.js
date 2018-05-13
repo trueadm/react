@@ -58,15 +58,15 @@ function recursivelyUncacheFiberNode(node: Instance | TextInstance) {
   }
 }
 
-const ReactNativeHostConfig = {
-  appendInitialChild(
+
+  export function appendInitialChild(
     parentInstance: Instance,
     child: Instance | TextInstance,
   ): void {
     parentInstance._children.push(child);
-  },
+  }
 
-  createInstance(
+  export function createInstance(
     type: string,
     props: Props,
     rootContainerInstance: Container,
@@ -104,9 +104,9 @@ const ReactNativeHostConfig = {
     // Not sure how to avoid this cast. Flow is okay if the component is defined
     // in the same file but if it's external it can't see the types.
     return ((component: any): Instance);
-  },
+  }
 
-  createTextInstance(
+  export function createTextInstance(
     text: string,
     rootContainerInstance: Container,
     hostContext: {},
@@ -124,9 +124,9 @@ const ReactNativeHostConfig = {
     precacheFiberNode(internalInstanceHandle, tag);
 
     return tag;
-  },
+  }
 
-  finalizeInitialChildren(
+  export function finalizeInitialChildren(
     parentInstance: Instance,
     type: string,
     props: Props,
@@ -152,29 +152,33 @@ const ReactNativeHostConfig = {
     );
 
     return false;
-  },
+  }
 
-  getRootHostContext(): {} {
+  export function getRootHostContext(): {} {
     return emptyObject;
-  },
+  }
 
-  getChildHostContext(): {} {
+  export function getChildHostContext(): {} {
     return emptyObject;
-  },
+  }
 
-  getPublicInstance(instance: Instance): * {
+  export function getPublicInstance(instance: Instance): * {
     return instance;
-  },
+  }
 
-  now: ReactNativeFrameScheduling.now,
+  export const now = ReactNativeFrameScheduling.now;
 
-  isPrimaryRenderer: true,
+  export const isPrimaryRenderer = true;
 
-  prepareForCommit(): void {
+  export const supportsMutation = true;
+  export const supportsPersistence = false;
+  export const supportsHydration = false;
+
+  export function prepareForCommit(): void {
     // Noop
-  },
+  }
 
-  prepareUpdate(
+  export function prepareUpdate(
     instance: Instance,
     type: string,
     oldProps: Props,
@@ -183,20 +187,20 @@ const ReactNativeHostConfig = {
     hostContext: {},
   ): null | Object {
     return emptyObject;
-  },
+  }
 
-  resetAfterCommit(): void {
+  export function resetAfterCommit(): void {
     // Noop
-  },
+  }
 
-  scheduleDeferredCallback: ReactNativeFrameScheduling.scheduleDeferredCallback,
-  cancelDeferredCallback: ReactNativeFrameScheduling.cancelDeferredCallback,
+  export const scheduleDeferredCallback = ReactNativeFrameScheduling.scheduleDeferredCallback;
+  export const cancelDeferredCallback = ReactNativeFrameScheduling.cancelDeferredCallback;
 
-  shouldDeprioritizeSubtree(type: string, props: Props): boolean {
+  export function shouldDeprioritizeSubtree(type: string, props: Props): boolean {
     return false;
-  },
+  }
 
-  shouldSetTextContent(type: string, props: Props): boolean {
+  export function shouldSetTextContent(type: string, props: Props): boolean {
     // TODO (bvaughn) Revisit this decision.
     // Always returning false simplifies the createInstance() implementation,
     // But creates an additional child Fiber for raw text children.
@@ -204,10 +208,9 @@ const ReactNativeHostConfig = {
     // It's not clear to me which is better so I'm deferring for now.
     // More context @ github.com/facebook/react/pull/8560#discussion_r92111303
     return false;
-  },
+  }
 
-  mutation: {
-    appendChild(
+    export function appendChild(
       parentInstance: Instance,
       child: Instance | TextInstance,
     ): void {
@@ -239,9 +242,9 @@ const ReactNativeHostConfig = {
           [], // removeAtIndices
         );
       }
-    },
+    }
 
-    appendChildToContainer(
+    export function appendChildToContainer(
       parentInstance: Container,
       child: Instance | TextInstance,
     ): void {
@@ -250,9 +253,9 @@ const ReactNativeHostConfig = {
         parentInstance, // containerTag
         [childTag], // reactTags
       );
-    },
+    }
 
-    commitTextUpdate(
+    export function commitTextUpdate(
       textInstance: TextInstance,
       oldText: string,
       newText: string,
@@ -262,18 +265,18 @@ const ReactNativeHostConfig = {
         'RCTRawText', // viewName
         {text: newText}, // props
       );
-    },
+    }
 
-    commitMount(
+    export function commitMount(
       instance: Instance,
       type: string,
       newProps: Props,
       internalInstanceHandle: Object,
     ): void {
       // Noop
-    },
+    }
 
-    commitUpdate(
+    export function commitUpdate(
       instance: Instance,
       updatePayloadTODO: Object,
       type: string,
@@ -301,9 +304,9 @@ const ReactNativeHostConfig = {
           updatePayload, // props
         );
       }
-    },
+    }
 
-    insertBefore(
+    export function insertBefore(
       parentInstance: Instance,
       child: Instance | TextInstance,
       beforeChild: Instance | TextInstance,
@@ -340,9 +343,9 @@ const ReactNativeHostConfig = {
           [], // removeAtIndices
         );
       }
-    },
+    }
 
-    insertInContainerBefore(
+    export function insertInContainerBefore(
       parentInstance: Container,
       child: Instance | TextInstance,
       beforeChild: Instance | TextInstance,
@@ -355,9 +358,9 @@ const ReactNativeHostConfig = {
         typeof parentInstance !== 'number',
         'Container does not support insertBefore operation',
       );
-    },
+    }
 
-    removeChild(
+    export function removeChild(
       parentInstance: Instance,
       child: Instance | TextInstance,
     ): void {
@@ -375,9 +378,9 @@ const ReactNativeHostConfig = {
         [], // addAtIndices
         [index], // removeAtIndices
       );
-    },
+    }
 
-    removeChildFromContainer(
+    export function removeChildFromContainer(
       parentInstance: Container,
       child: Instance | TextInstance,
     ): void {
@@ -390,12 +393,8 @@ const ReactNativeHostConfig = {
         [], // addAtIndices
         [0], // removeAtIndices
       );
-    },
+    }
 
-    resetTextContent(instance: Instance): void {
+    export function resetTextContent(instance: Instance): void {
       // Noop
-    },
-  },
-};
-
-export default ReactNativeHostConfig;
+    }
