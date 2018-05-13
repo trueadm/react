@@ -1,8 +1,5 @@
 const forkConfig = require('../rollup/forks');
 
-const obj = {};
-jest.mock('fbjs/lib/emptyObject', () => obj);
-
 const shimHostConfigPath = 'react-reconciler/src/ReactFiberHostConfig';
 jest.mock('react-reconciler', () => {
   return (config) => {
