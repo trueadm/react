@@ -29,7 +29,7 @@ xdescribe('ReactPersistent', () => {
   });
 
   function render(element) {
-    ReactNoopPersistent.render(element);
+    ReactNoopPersistent.renderToPersistentRootWithID(element, DEFAULT_ROOT_ID);
   }
 
   function div(...children) {
@@ -42,7 +42,7 @@ xdescribe('ReactPersistent', () => {
   }
 
   function getChildren() {
-    return ReactNoopPersistent.getChildren();
+    return ReactNoopPersistent.getChildren(DEFAULT_ROOT_ID);
   }
 
   it('can update child nodes of a host instance', () => {
