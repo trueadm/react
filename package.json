@@ -105,7 +105,7 @@
     "testRegex": "/scripts/jest/dont-run-jest-directly\\.js$"
   },
   "scripts": {
-    "build": "npm run version-check && node --max-old-space-size=8192 ./scripts/rollup/build.js",
+    "build": "npm run version-check && node --max-old-space-size=16384 ./scripts/rollup/build.js",
     "flow-coverage": "flow-coverage-report --config ./.flowcoverage",
     "linc": "node ./scripts/tasks/linc.js",
     "lint": "node ./scripts/tasks/eslint.js",
