@@ -22,6 +22,7 @@ import {
   warnForDeletedHydratableText,
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
+  setupRichEventHandle,
 } from './ReactDOMComponent';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
@@ -212,6 +213,29 @@ export function createInstance(
   precacheFiberNode(internalInstanceHandle, domElement);
   updateFiberProps(domElement, props);
   return domElement;
+}
+
+export function handleRichEvents(
+  oldListeners: Array<any>,
+  newListeners: Array<any>,
+  rootContainerInstance: Container,
+  richEventsMap: Map<any>,
+) {
+  for (let i = 0, length = newListeners.length; i < length; i += 2) {
+    const impl = newListeners[i].impl;
+    const config = newListeners[i].config;
+    const listener = newListeners[i + 1];
+
+    if (oldListeners === null) {
+      setupRichEventHandle(
+        impl,
+        config,
+        listener,
+        rootContainerInstance,
+        richEventsMap,
+      );
+    }
+  }
 }
 
 export function appendInitialChild(

@@ -39,6 +39,7 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   IncompleteClassComponent,
+  RichEvents,
 } from 'shared/ReactWorkTags';
 import {
   Placement,
@@ -65,6 +66,7 @@ import {
   createContainerChildSet,
   appendChildToContainerChildSet,
   finalizeContainerChildren,
+  handleRichEvents,
 } from './ReactFiberHostConfig';
 import {
   getRootHostContainer,
@@ -788,6 +790,19 @@ function completeWork(
       }
       break;
     }
+    case RichEvents: {
+      const oldProps = current !== null ? current.memoizedProps : null;
+      const rootContainerInstance = getRootHostContainer();
+      const oldListeners = oldProps !== null ? oldProps.listeners : null;
+      const newListeners = newProps !== null ? newProps.listeners : null;
+      handleRichEvents(
+        oldListeners,
+        newListeners,
+        rootContainerInstance,
+        workInProgress.stateNode,
+      );
+      break;
+    }
     default:
       invariant(
         false,
@@ -798,5 +813,25 @@ function completeWork(
 
   return null;
 }
+
+// function getChildDomElementsFromFiber(fiber) {
+//   const domElements = [];
+//   let currentFiber = fiber.child;
+
+//   while (currentFiber !== null) {
+//     if ((currentFiber.tag & HostComponent) !== 0) {
+//       domElements.push(currentFiber.stateNode);
+//       currentFiber = currentFiber.return;
+//     } else if (currentFiber.child !== null) {
+//       currentFiber = currentFiber.child;
+//     }
+//     if (currentFiber.sibling !== null) {
+//       currentFiber = currentFiber.sibling;
+//     } else {
+//       break;
+//     }
+//   }
+//   return domElements;
+// }
 
 export {completeWork};

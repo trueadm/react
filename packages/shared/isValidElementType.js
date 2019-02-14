@@ -18,6 +18,7 @@ import {
   REACT_SUSPENSE_TYPE,
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
+  REACT_RICH_EVENTS_TYPE,
 } from 'shared/ReactSymbols';
 
 export default function isValidElementType(type: mixed) {
@@ -30,6 +31,7 @@ export default function isValidElementType(type: mixed) {
     type === REACT_PROFILER_TYPE ||
     type === REACT_STRICT_MODE_TYPE ||
     type === REACT_SUSPENSE_TYPE ||
+    type === REACT_RICH_EVENTS_TYPE ||
     (typeof type === 'object' &&
       type !== null &&
       (type.$$typeof === REACT_LAZY_TYPE ||

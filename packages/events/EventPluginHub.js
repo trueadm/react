@@ -27,6 +27,8 @@ import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {AnyNativeEvent} from './PluginModuleType';
 import type {TopLevelType} from './TopLevelEventTypes';
 
+export const richEventImplementations = new Map();
+
 /**
  * Internal queue of events that have accumulated their dispatches and are
  * waiting to have their dispatches executed.

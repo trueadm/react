@@ -35,6 +35,7 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   IncompleteClassComponent,
+  RichEvents,
 } from 'shared/ReactWorkTags';
 import {
   NoEffect,
@@ -905,6 +906,19 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
     );
     resetHydrationState();
   }
+  return workInProgress.child;
+}
+
+function updateHostRichEvents(current, workInProgress, renderExpirationTime) {
+  const nextProps = workInProgress.pendingProps;
+  let nextChildren = nextProps.children;
+  
+  reconcileChildren(
+    current,
+    workInProgress,
+    nextChildren,
+    renderExpirationTime,
+  );
   return workInProgress.child;
 }
 
@@ -2170,6 +2184,8 @@ function beginWork(
       }
       break;
     }
+    case RichEvents:
+      return updateHostRichEvents(current, workInProgress, renderExpirationTime);
   }
   invariant(
     false,

@@ -37,6 +37,7 @@ import {
   FunctionComponent,
   MemoComponent,
   LazyComponent,
+  RichEvents,
 } from 'shared/ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
 
@@ -59,6 +60,7 @@ import {
   REACT_SUSPENSE_TYPE,
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
+  REACT_RICH_EVENTS_TYPE,
 } from 'shared/ReactSymbols';
 
 let hasBadMapPolyfill;
@@ -452,6 +454,13 @@ export function createFiberFromTypeAndProps(
     fiberTag = HostComponent;
   } else {
     getTag: switch (type) {
+      case REACT_RICH_EVENTS_TYPE:
+        return createFiberFromRichEvents(
+          pendingProps,
+          mode,
+          expirationTime,
+          key,
+        );
       case REACT_FRAGMENT_TYPE:
         return createFiberFromFragment(
           pendingProps.children,
@@ -571,6 +580,18 @@ export function createFiberFromFragment(
   key: null | string,
 ): Fiber {
   const fiber = createFiber(Fragment, elements, key, mode);
+  fiber.expirationTime = expirationTime;
+  return fiber;
+}
+
+export function createFiberFromRichEvents(
+  pendingProps: any,
+  mode: TypeOfMode,
+  expirationTime: ExpirationTime,
+  key: null | string,
+): Fiber {
+  const fiber = createFiber(RichEvents, pendingProps, key, mode);
+  fiber.stateNode = new Map();
   fiber.expirationTime = expirationTime;
   return fiber;
 }

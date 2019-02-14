@@ -21,6 +21,7 @@ import {
   REACT_MEMO_TYPE,
   REACT_FRAGMENT_TYPE,
   REACT_ELEMENT_TYPE,
+  REACT_RICH_EVENTS_TYPE,
 } from 'shared/ReactSymbols';
 import checkPropTypes from 'prop-types/checkPropTypes';
 import warning from 'shared/warning';
@@ -328,6 +329,8 @@ export function createElementWithValidation(type, props, children) {
 
   if (type === REACT_FRAGMENT_TYPE) {
     validateFragmentProps(element);
+  } else if (type === REACT_RICH_EVENTS_TYPE) {
+    // TODO
   } else {
     validatePropTypes(element);
   }

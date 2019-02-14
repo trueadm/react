@@ -8,6 +8,7 @@
 import ReactVersion from 'shared/ReactVersion';
 import {
   REACT_CONCURRENT_MODE_TYPE,
+  REACT_RICH_EVENTS_TYPE,
   REACT_FRAGMENT_TYPE,
   REACT_PROFILER_TYPE,
   REACT_STRICT_MODE_TYPE,
@@ -89,6 +90,8 @@ const React = {
 
   unstable_ConcurrentMode: REACT_CONCURRENT_MODE_TYPE,
   unstable_Profiler: REACT_PROFILER_TYPE,
+
+  unstable_RichEvents: REACT_RICH_EVENTS_TYPE,
 
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: ReactSharedInternals,
 };
