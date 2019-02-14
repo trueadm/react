@@ -819,7 +819,7 @@ function completeWork(
 //   let currentFiber = fiber.child;
 
 //   while (currentFiber !== null) {
-//     if ((currentFiber.tag & HostComponent) !== 0) {
+//     if (currentFiber.tag === HostComponent) {
 //       domElements.push(currentFiber.stateNode);
 //       currentFiber = currentFiber.return;
 //     } else if (currentFiber.child !== null) {

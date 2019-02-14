@@ -10,7 +10,6 @@
 // TODO: direct imports like some-package/src/* are bad. Fix me.
 import {getCurrentFiberOwnerNameInDevOrNull} from 'react-reconciler/src/ReactCurrentFiber';
 import {registrationNameModules} from 'events/EventPluginRegistry';
-import {richEventImplementations} from 'events/EventPluginHub';
 import warning from 'shared/warning';
 import {canUseDOM} from 'shared/ExecutionEnvironment';
 import warningWithoutStack from 'shared/warningWithoutStack';
@@ -1263,18 +1262,9 @@ export function setupRichEventHandle(
   richEventsMap,
 ) {
   const {listenTo: listenToArray} = impl;
-  if (richEventImplementations.has(impl)) {
-    // TODO check if configs are different
-  }
-  richEventImplementations.set(impl, config);
+  richEventsMap.set(impl, {}); // TODO make this the rich event state
   for (let i = 0; i < listenToArray.length; i++) {
     const eventName = listenToArray[i];
-    let eventStore = richEventsMap.get(eventName);
-    if (eventStore === undefined) {
-      eventStore = new Map();
-      richEventsMap.set(eventName, eventStore);
-    }
-    eventStore.set(impl, listener);
-    listenTo(eventName, rootContainerInstance);
+    ensureListeningTo(rootContainerInstance, eventName);
   }
 }

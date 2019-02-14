@@ -8,7 +8,7 @@
  */
 
 const onPressImpl = {
-  listenTo: ['keypress', 'click'],
+  listenTo: ['onKeyPress', 'onClick'],
   extractEvents() {
 
   },

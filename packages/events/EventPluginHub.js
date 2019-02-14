@@ -8,6 +8,7 @@
 
 import {rethrowCaughtError} from 'shared/ReactErrorUtils';
 import invariant from 'shared/invariant';
+import {RichEvents} from 'shared/ReactWorkTags';
 
 import {
   injectEventPluginOrder,
@@ -26,8 +27,6 @@ import type {ReactSyntheticEvent} from './ReactSyntheticEventType';
 import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {AnyNativeEvent} from './PluginModuleType';
 import type {TopLevelType} from './TopLevelEventTypes';
-
-export const richEventImplementations = new Map();
 
 /**
  * Internal queue of events that have accumulated their dispatches and are
@@ -153,6 +152,23 @@ export function getListener(inst: Fiber, registrationName: string) {
   return listener;
 }
 
+function extractRichEvents(
+  topLevelType: TopLevelType,
+  targetInst: null | Fiber,
+  nativeEvent: AnyNativeEvent,
+  nativeEventTarget: EventTarget,
+) {
+  let events = null;
+  let currentFiber = targetInst;
+  while (currentFiber !== null) {
+    if (currentFiber.tag === RichEvents) {
+      debugger;
+    }
+    currentFiber = currentFiber.return;
+  }
+  return events;
+}
+
 /**
  * Allows registered plugins an opportunity to extract events from top-level
  * native browser events.
@@ -166,7 +182,12 @@ function extractEvents(
   nativeEvent: AnyNativeEvent,
   nativeEventTarget: EventTarget,
 ): Array<ReactSyntheticEvent> | ReactSyntheticEvent | null {
-  let events = null;
+  let events = extractRichEvents(
+    topLevelType,
+    targetInst,
+    nativeEvent,
+    nativeEventTarget,
+  );
   for (let i = 0; i < plugins.length; i++) {
     // Not every plugin in the ordering may be loaded at runtime.
     const possiblePlugin: PluginModule<AnyNativeEvent> = plugins[i];
