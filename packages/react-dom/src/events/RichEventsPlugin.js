@@ -23,7 +23,7 @@ function RichEventsContext(nativeEvent) {
 RichEventsContext.prototype.createRichEvent = function(
   name,
   listener,
-  impl,
+  capture,
   targetElement,
   targetFiber,
   nativeEvent,
@@ -31,7 +31,7 @@ RichEventsContext.prototype.createRichEvent = function(
   return {
     name,
     listener,
-    impl,
+    capture,
     targetElement,
     targetFiber,
     nativeEvent,
@@ -42,8 +42,7 @@ RichEventsContext.prototype.accumulateTwoPhaseDispatches = function(richEvent) {
   if (Array.isArray(richEvent)) {
     // TODO
   } else {
-    const impl = richEvent.impl;
-    if (impl.capture) {
+    if (richEvent.capture) {
       this.capturePhaseEvents.unshift(richEvent);
     } else {
       this.bubblePhaseEvents.push(richEvent);
@@ -88,8 +87,7 @@ const RichEventsPlugin = {
         for (let i = 0; i < listeners.length; i += 2) {
           const richEvent = listeners[i];
           const listener = listeners[i + 1];
-          const impl = richEvent.impl;
-          const props = richEvent.props;
+          const {impl, name, props} = richEvent;
 
           let state = currentFiber.stateNode.get(impl);
           if (state === undefined) {
@@ -104,6 +102,7 @@ const RichEventsPlugin = {
             targetElement: nativeEventTarget,
           };
           impl.processRichEvents(
+            name,
             event,
             props,
             state,
