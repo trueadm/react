@@ -8,7 +8,6 @@
 
 import {rethrowCaughtError} from 'shared/ReactErrorUtils';
 import invariant from 'shared/invariant';
-import {RichEvents} from 'shared/ReactWorkTags';
 
 import {
   injectEventPluginOrder,
@@ -152,22 +151,6 @@ export function getListener(inst: Fiber, registrationName: string) {
   return listener;
 }
 
-function extractRichEvents(
-  topLevelType: TopLevelType,
-  targetInst: null | Fiber,
-  nativeEvent: AnyNativeEvent,
-  nativeEventTarget: EventTarget,
-) {
-  let events = null;
-  let currentFiber = targetInst;
-  while (currentFiber !== null) {
-    if (currentFiber.tag === RichEvents) {
-      debugger;
-    }
-    currentFiber = currentFiber.return;
-  }
-  return events;
-}
 
 /**
  * Allows registered plugins an opportunity to extract events from top-level
@@ -182,12 +165,7 @@ function extractEvents(
   nativeEvent: AnyNativeEvent,
   nativeEventTarget: EventTarget,
 ): Array<ReactSyntheticEvent> | ReactSyntheticEvent | null {
-  let events = extractRichEvents(
-    topLevelType,
-    targetInst,
-    nativeEvent,
-    nativeEventTarget,
-  );
+  let events = null;
   for (let i = 0; i < plugins.length; i++) {
     // Not every plugin in the ordering may be loaded at runtime.
     const possiblePlugin: PluginModule<AnyNativeEvent> = plugins[i];

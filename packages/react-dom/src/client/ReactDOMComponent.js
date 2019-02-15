@@ -1262,7 +1262,6 @@ export function setupRichEventHandle(
   richEventsMap,
 ) {
   const {listenTo: listenToArray} = impl;
-  richEventsMap.set(impl, {}); // TODO make this the rich event state
   for (let i = 0; i < listenToArray.length; i++) {
     const eventName = listenToArray[i];
     ensureListeningTo(rootContainerInstance, eventName);

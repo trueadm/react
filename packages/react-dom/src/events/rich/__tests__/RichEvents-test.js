@@ -32,28 +32,54 @@ describe('SyntheticEvent', () => {
 
   it('should support onPress', () => {
     let buttonRef = React.createRef();
-    let didPress = false;
+    let events = [];
 
-    function handleOnPress() {
-      didPress = true;
+    function handleOnPress1() {
+      events.push('press 1');
+    }
+
+    function handleOnPress2() {
+      events.push('press 2');
+    }
+
+    function handleOnClick() {
+      events.push('click');
+    }
+
+    function handleKeyPress() {
+      events.push('keypress');
     }
 
     function Component() {
       return (
-        <React.unstable_RichEvents listeners={[onPress, handleOnPress]}>
-          <button ref={buttonRef}>
-            Press me!
-          </button>
+        <React.unstable_RichEvents listeners={[onPress, handleOnPress1]}>
+          <React.unstable_RichEvents listeners={[onPress, handleOnPress2]}>
+            <button ref={buttonRef} onClick={handleOnClick} onKeyPress={handleKeyPress}>
+              Press me!
+            </button>
+          </React.unstable_RichEvents>
         </React.unstable_RichEvents>
       );
     }
 
     ReactDOM.render(<Component />, container);
 
-    const event = document.createEvent('Event');
-    event.initEvent('click', true, true);
-    buttonRef.current.dispatchEvent(event);
+    const clickEvent = document.createEvent('Event');
+    clickEvent.initEvent('click', true, true);
+    buttonRef.current.dispatchEvent(clickEvent);
 
-    expect(didPress).toBe(true);
+    expect(events).toEqual(['click', 'press 2', 'press 1']);
+
+    events = [];
+    const keyPressEvent = new KeyboardEvent('keypress', {
+      which: 13,
+      keyCode: 13,
+      bubbles: true,
+      cancelable: true,
+    });
+    buttonRef.current.dispatchEvent(keyPressEvent);
+
+    // press 2 should not occur as press 1 will preventDefault
+    expect(events).toEqual(['keypress', 'press 2']);
   });
 });
