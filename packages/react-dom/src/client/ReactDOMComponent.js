@@ -1254,7 +1254,7 @@ export function restoreControlledState(
   }
 }
 
-export function setupRichEventHandle(
+export function updateRichEventHandle(
   impl,
   config,
   listener,

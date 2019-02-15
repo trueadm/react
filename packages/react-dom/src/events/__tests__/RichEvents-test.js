@@ -1,4 +1,4 @@
-/**
+\/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -11,7 +11,7 @@
 
 let React;
 let ReactDOM;
-let onPress;
+let Press;
 
 describe('SyntheticEvent', () => {
   let container;
@@ -19,7 +19,7 @@ describe('SyntheticEvent', () => {
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');
-    onPress = require('react-dom/events/press').onPress;
+    Press = require('react/events/press');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -31,6 +31,7 @@ describe('SyntheticEvent', () => {
   });
 
   it('should support onPress', () => {
+    const {onPress} = Press;
     let buttonRef = React.createRef();
     let events = [];
 
@@ -52,8 +53,8 @@ describe('SyntheticEvent', () => {
 
     function Component() {
       return (
-        <React.unstable_RichEvents listeners={[onPress, handleOnPress1]}>
-          <React.unstable_RichEvents listeners={[onPress, handleOnPress2]}>
+        <React.unstable_RichEvents listeners={[onPress(), handleOnPress1]}>
+          <React.unstable_RichEvents listeners={[onPress(), handleOnPress2]}>
             <button ref={buttonRef} onClick={handleOnClick} onKeyPress={handleKeyPress}>
               Press me!
             </button>
@@ -81,5 +82,41 @@ describe('SyntheticEvent', () => {
 
     // press 2 should not occur as press 1 will preventDefault
     expect(events).toEqual(['keypress', 'press 2']);
+  });
+
+  it('should support onPressIn and onPressOut', () => {
+    const {onPressIn, onPressOut} = Press;
+    let divRef = React.createRef();
+    let events = [];
+
+    function handleOnPressIn() {
+      events.push('onPressIn');
+    }
+
+    function handleOnPressOut() {
+      events.push('onPressOut');
+    }
+
+    function Component() {
+      return (
+        <React.unstable_RichEvents listeners={[onPressIn(), handleOnPressIn, onPressOut(), handleOnPressOut]}>
+          <div ref={divRef}>
+            Press me!
+          </div>
+        </React.unstable_RichEvents>
+      );
+    }
+
+    ReactDOM.render(<Component />, container);
+
+    const pointerEnterEvent = document.createEvent('Event');
+    pointerEnterEvent.initEvent('pointerenter', true, true);
+    divRef.current.dispatchEvent(pointerEnterEvent);
+
+    const pointerLeaveEvent = document.createEvent('Event');
+    pointerLeaveEvent.initEvent('pointerleave', true, true);
+    divRef.current.dispatchEvent(pointerLeaveEvent);
+
+    expect(events).toEqual(['onPressIn', 'onPressOut']);
   });
 });

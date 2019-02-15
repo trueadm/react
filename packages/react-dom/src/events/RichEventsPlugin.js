@@ -10,11 +10,14 @@ import {RichEvents} from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
 
+// To improve performance, this set contains the current "active" fiber
+// of a pair of fibers who are each other's alternate.
+export const currentRichEventFibers = new Set();
+
 function RichEventsContext(nativeEvent) {
   this.capturePhaseEvents = [];
   this.bubblePhaseEvents = [];
   this.nativeEvent = nativeEvent;
-
 }
 
 RichEventsContext.prototype.createRichEvent = function(
@@ -77,6 +80,9 @@ const RichEventsPlugin = {
     let currentFiber = targetInst;
     while (currentFiber !== null) {
       if (currentFiber.tag === RichEvents) {
+        if (!currentRichEventFibers.has(currentFiber)) {
+          currentFiber = currentFiber.alternate;
+        }
         const listeners = currentFiber.memoizedProps.listeners;
         
         for (let i = 0; i < listeners.length; i += 2) {

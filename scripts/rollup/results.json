@@ -60,8 +60,8 @@
       "filename": "react-dom.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 721011,
-      "gzip": 166399
+      "size": 783423,
+      "gzip": 178314
     },
     {
       "filename": "react-dom.production.min.js",
@@ -102,8 +102,8 @@
       "filename": "react-dom-test-utils.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 45651,
-      "gzip": 12521
+      "size": 47898,
+      "gzip": 13220
     },
     {
       "filename": "react-dom-test-utils.production.min.js",
@@ -137,7 +137,7 @@
       "filename": "react-dom-unstable-native-dependencies.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 61723,
+      "size": 61722,
       "gzip": 16156
     },
     {
@@ -179,8 +179,8 @@
       "filename": "react-dom-server.browser.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 118094,
-      "gzip": 31495
+      "size": 125836,
+      "gzip": 33643
     },
     {
       "filename": "react-dom-server.browser.production.min.js",
@@ -207,8 +207,8 @@
       "filename": "react-dom-server.node.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 120062,
-      "gzip": 32036
+      "size": 127943,
+      "gzip": 34197
     },
     {
       "filename": "react-dom-server.node.production.min.js",
@@ -1028,6 +1028,13 @@
       "packageName": "eslint-plugin-react-hooks",
       "size": 27786,
       "gzip": 6149
+    },
+    {
+      "filename": "react-dom-unstable-fire.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-dom",
+      "size": 783776,
+      "gzip": 178456
     }
   ]
 }

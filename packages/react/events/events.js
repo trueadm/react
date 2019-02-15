@@ -9,8 +9,8 @@
 
 'use strict';
 
-const Press = require('../src/events/rich/Press');
+const PressEvents = require('events/rich-events/Press');
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest
-module.exports = Press.default || Press;
+module.exports = PressEvents.default || PressEvents;

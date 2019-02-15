@@ -87,6 +87,7 @@ import {
   popHydrationState,
 } from './ReactFiberHydrationContext';
 import {enableSuspenseServerRenderer} from 'shared/ReactFeatureFlags';
+import warningWithoutStack from 'shared/warningWithoutStack';
 
 function markUpdate(workInProgress: Fiber) {
   // Tag the fiber with an update effect. This turns a Placement into
@@ -795,12 +796,21 @@ function completeWork(
       const rootContainerInstance = getRootHostContainer();
       const oldListeners = oldProps !== null ? oldProps.listeners : null;
       const newListeners = newProps !== null ? newProps.listeners : null;
-      handleRichEvents(
-        oldListeners,
-        newListeners,
-        rootContainerInstance,
-        workInProgress.stateNode,
-      );
+      if (newListeners != null) {
+        handleRichEvents(
+          workInProgress,
+          oldListeners,
+          newListeners,
+          rootContainerInstance,
+          workInProgress.stateNode,
+        );
+      } else if (__DEV__) {
+        warningWithoutStack(
+          false,
+          'A <RichEvents> element has been used but has no listeners prop specified.' +
+            'Ensure a listeners prop is specified as an array.',
+        );
+      }
       break;
     }
     default:

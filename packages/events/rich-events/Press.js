@@ -7,7 +7,7 @@
  * @flow
  */
 
-const onPressImpl = {
+const PressImpl = {
   listenTo: ['onKeyPress', 'onClick'],
   createInitialState(props) {
     return {};
@@ -37,7 +37,7 @@ const onPressImpl = {
       const event = context.createRichEvent(
         'onPress',
         richEventListener,
-        onPressImpl,
+        PressImpl,
         targetElement,
         targetFiber,
       );
@@ -46,24 +46,26 @@ const onPressImpl = {
   },
 };
 
+const defaultConfig = {
+  capture: false,
+  props: null,
+  impl: PressImpl,
+};
+
+const defaultCaptureConfig = {
+  capture: true,
+  props: null,
+  impl: PressImpl,
+};
+
 export function onPress(props) {
-  return {
-    capture: true,
-    props,
-    impl: onPressImpl,
-  };
+  return {...defaultConfig, props};
 }
-onPress.capture = false;
-onPress.props = {};
-onPress.impl = onPressImpl;
 
 export function onPressCapture(props) {
-  return {
-    capture: true,
-    props,
-    impl: onPressImpl,
-  };
+  return {...defaultCaptureConfig, props};
 }
-onPressCapture.capture = true;
-onPressCapture.props = {};
-onPressCapture.impl = onPressImpl;
+
+export function onPressIn(props) {
+  return {...defaultConfig, props};
+}

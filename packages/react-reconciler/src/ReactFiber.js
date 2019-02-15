@@ -591,6 +591,8 @@ export function createFiberFromRichEvents(
   key: null | string,
 ): Fiber {
   const fiber = createFiber(RichEvents, pendingProps, key, mode);
+  fiber.elementType = REACT_RICH_EVENTS_TYPE;
+  fiber.type = REACT_PROFILER_TYPE;
   fiber.stateNode = new Map();
   fiber.expirationTime = expirationTime;
   return fiber;

@@ -22,7 +22,7 @@ import {
   warnForDeletedHydratableText,
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
-  setupRichEventHandle,
+  updateRichEventHandle,
 } from './ReactDOMComponent';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
@@ -40,6 +40,7 @@ import {
   DOCUMENT_FRAGMENT_NODE,
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
+import {currentRichEventFibers} from '../events/RichEventsPlugin';
 
 import type {DOMContainer} from './ReactDOM';
 
@@ -216,25 +217,28 @@ export function createInstance(
 }
 
 export function handleRichEvents(
+  richEventFiber: Fiber,
   oldListeners: Array<any>,
   newListeners: Array<any>,
   rootContainerInstance: Container,
   richEventsMap: Map<any>,
 ) {
+  currentRichEventFibers.add(richEventFiber);
   for (let i = 0, length = newListeners.length; i < length; i += 2) {
     const impl = newListeners[i].impl;
     const config = newListeners[i].config;
     const listener = newListeners[i + 1];
 
-    if (oldListeners === null) {
-      setupRichEventHandle(
-        impl,
-        config,
-        listener,
-        rootContainerInstance,
-        richEventsMap,
-      );
+    if (oldListeners !== null) {
+      currentRichEventFibers.delete(richEventFiber.alternate);
     }
+    updateRichEventHandle(
+      impl,
+      config,
+      listener,
+      rootContainerInstance,
+      richEventsMap,
+    );
   }
 }
 
