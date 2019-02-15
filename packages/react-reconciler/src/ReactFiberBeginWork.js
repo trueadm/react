@@ -912,13 +912,26 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
 function updateHostRichEvents(current, workInProgress, renderExpirationTime) {
   const nextProps = workInProgress.pendingProps;
   let nextChildren = nextProps.children;
-  
+
   reconcileChildren(
     current,
     workInProgress,
     nextChildren,
     renderExpirationTime,
   );
+  if (__DEV__) {
+    // Check if Rich event has any text nodes as direct nodes and warn
+    let child = workInProgress.child;
+    while (child !== null) {
+      if (child.tag === HostText) {
+        warningWithoutStack(
+          false,
+          '<RichEvents> cannot have text nodes as direct children',
+        );
+      }
+      child = child.sibling;
+    }
+  }
   return workInProgress.child;
 }
 
@@ -2185,7 +2198,11 @@ function beginWork(
       break;
     }
     case RichEvents:
-      return updateHostRichEvents(current, workInProgress, renderExpirationTime);
+      return updateHostRichEvents(
+        current,
+        workInProgress,
+        renderExpirationTime,
+      );
   }
   invariant(
     false,
