@@ -18,7 +18,7 @@ const listenTo = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel');
+  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
 }
 
 const PressImpl = {
@@ -65,7 +65,8 @@ const PressImpl = {
       }
     } else if (
       topLevelType === 'pointerdown' ||
-      topLevelType === 'touchstart'
+      topLevelType === 'touchstart' ||
+      topLevelType === 'mousedown'
     ) {
       if (name === 'onPressIn') {
         const event = context.createRichEvent(
@@ -83,7 +84,8 @@ const PressImpl = {
       topLevelType === 'pointerup' ||
       topLevelType === 'pointercancel' ||
       topLevelType === 'touchend' ||
-      topLevelType === 'touchcancel'
+      topLevelType === 'touchcancel' ||
+      topLevelType === 'mouseup'
     ) {
       if (name === 'onPressOut') {
         const event = context.createRichEvent(
