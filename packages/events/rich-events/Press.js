@@ -14,15 +14,13 @@ const PressImpl = {
   },
   processRichEvents(
     name,
-    {listener, nativeEvent, targetElement, targetFiber, topLevelType},
+    { listener, nativeEvent, targetElement, targetFiber, topLevelType },
     props,
     state,
     context,
   ): void {
     if (topLevelType === 'click' || topLevelType === 'keypress') {
-      const isCaptureOnPress = name === 'onPressCapture';
-
-      if (name === 'onPress' || isCaptureOnPress) {
+      if (name === 'onPress') {
         let richEventListener = listener;
 
         if (topLevelType === 'keypress') {
@@ -45,7 +43,7 @@ const PressImpl = {
         const event = context.createRichEvent(
           'press',
           richEventListener,
-          isCaptureOnPress,
+          false,
           targetElement,
           targetFiber,
         );
@@ -84,14 +82,6 @@ const PressImpl = {
 export function onPress(props) {
   return {
     name: 'onPress',
-    props,
-    impl: PressImpl,
-  };
-}
-
-export function onPressCapture(props) {
-  return {
-    name: 'onPressCapture',
     props,
     impl: PressImpl,
   };
