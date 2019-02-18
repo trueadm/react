@@ -19,16 +19,21 @@ const PressImpl = {
     state,
     context,
   ): void {
-    const isCaptureOnPress = name === 'onPressCapture';
-    if (name === 'onPress' || isCaptureOnPress) {
-      let richEventListener = listener;
-      const isKeyPress =
-        topLevelType === 'keypress' &&
-        (nativeEvent.which === 13 ||
-          nativeEvent.which === 32 ||
-          nativeEvent.keyCode === 13);
-      if (topLevelType === 'click' || isKeyPress) {
-        if (isKeyPress) {
+    if (topLevelType === 'click' || topLevelType === 'keypress') {
+      const isCaptureOnPress = name === 'onPressCapture';
+
+      if (name === 'onPress' || isCaptureOnPress) {
+        let richEventListener = listener;
+
+        if (topLevelType === 'keypress') {
+          const isValidKeyPress =
+            nativeEvent.which === 13 ||
+            nativeEvent.which === 32 ||
+            nativeEvent.keyCode === 13;
+
+          if (!isValidKeyPress) {
+            return;
+          }
           // Wrap listener with prevent default behaviour
           richEventListener = e => {
             if (!e.isDefaultPrevented() && !e.nativeEvent.defaultPrevented) {
@@ -41,6 +46,28 @@ const PressImpl = {
           'press',
           richEventListener,
           isCaptureOnPress,
+          targetElement,
+          targetFiber,
+        );
+        context.accumulateTwoPhaseDispatches(event);
+      }
+    } else if (topLevelType === 'pointerdown') {
+      if (name === 'onPressIn') {
+        const event = context.createRichEvent(
+          'pressin',
+          listener,
+          false,
+          targetElement,
+          targetFiber,
+        );
+        context.accumulateTwoPhaseDispatches(event);
+      }
+    } else if (topLevelType === 'pointerup') {
+      if (name === 'onPressOut') {
+        const event = context.createRichEvent(
+          'pressup',
+          listener,
+          false,
           targetElement,
           targetFiber,
         );
@@ -69,6 +96,14 @@ export function onPressCapture(props) {
 export function onPressIn(props) {
   return {
     name: 'onPressIn',
+    props,
+    impl: PressImpl,
+  };
+}
+
+export function onPressOut(props) {
+  return {
+    name: 'onPressOut',
     props,
     impl: PressImpl,
   };

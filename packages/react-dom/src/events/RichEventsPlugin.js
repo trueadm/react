@@ -56,11 +56,12 @@ RichEventsContext.prototype.extractEvents = function() {
   for (let i = 0; i < richEvents.length; i++) {
     const richEvent = richEvents[i];
     const syntheticEvent = SyntheticEvent.getPooled(
-      richEvent.name,
+      null,
       richEvent.targetFiber,
       this.nativeEvent,
       richEvent.targetElement,
     );
+    syntheticEvent.type = richEvent.name;
     syntheticEvent._dispatchInstances = [richEvent.targetFiber];
     syntheticEvent._dispatchListeners = [richEvent.listener];
     events = accumulateInto(events, syntheticEvent);
