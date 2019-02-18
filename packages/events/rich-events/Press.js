@@ -61,6 +61,8 @@ const PressImpl = {
           targetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
+      } else if (name === 'onPressChange') {
+        listener(true);
       }
     } else if (topLevelType === 'pointerup') {
       if (name === 'onPressOut') {
@@ -72,6 +74,8 @@ const PressImpl = {
           targetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
+      } else if (name === 'onPressChange') {
+        listener(false);
       }
     }
   },
@@ -104,6 +108,14 @@ export function onPressIn(props) {
 export function onPressOut(props) {
   return {
     name: 'onPressOut',
+    props,
+    impl: PressImpl,
+  };
+}
+
+export function onPressChange(props) {
+  return {
+    name: 'onPressChange',
     props,
     impl: PressImpl,
   };
