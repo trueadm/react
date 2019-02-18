@@ -7,14 +7,28 @@
  * @flow
  */
 
+const listenTo = [
+  'onKeyPress',
+  'onClick',
+  'onPointerDown',
+  'onPointerUp',
+  'onPointerCancel',
+];
+
+// In the case we don't have PointerEvents (Safari), we listen to touch events
+// too
+if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
+  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel');
+}
+
 const PressImpl = {
-  listenTo: ['onKeyPress', 'onClick', 'onPointerDown', 'onPointerUp'],
+  listenTo,
   createInitialState(props) {
     return {};
   },
   processRichEvents(
     name,
-    { listener, nativeEvent, targetElement, targetFiber, topLevelType },
+    {listener, nativeEvent, targetElement, targetFiber, topLevelType},
     props,
     state,
     context,
@@ -49,7 +63,10 @@ const PressImpl = {
         );
         context.accumulateTwoPhaseDispatches(event);
       }
-    } else if (topLevelType === 'pointerdown') {
+    } else if (
+      topLevelType === 'pointerdown' ||
+      topLevelType === 'touchstart'
+    ) {
       if (name === 'onPressIn') {
         const event = context.createRichEvent(
           'pressin',
@@ -62,7 +79,12 @@ const PressImpl = {
       } else if (name === 'onPressChange') {
         listener(true);
       }
-    } else if (topLevelType === 'pointerup') {
+    } else if (
+      topLevelType === 'pointerup' ||
+      topLevelType === 'pointercancel' ||
+      topLevelType === 'touchend' ||
+      topLevelType === 'touchcancel'
+    ) {
       if (name === 'onPressOut') {
         const event = context.createRichEvent(
           'pressup',

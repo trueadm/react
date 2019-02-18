@@ -792,6 +792,7 @@ function completeWork(
       break;
     }
     case RichEvents: {
+      popHostContext(workInProgress);
       const oldProps = current !== null ? current.memoizedProps : null;
       const rootContainerInstance = getRootHostContainer();
       const oldListeners = oldProps !== null ? oldProps.listeners : null;
@@ -823,25 +824,5 @@ function completeWork(
 
   return null;
 }
-
-// function getChildDomElementsFromFiber(fiber) {
-//   const domElements = [];
-//   let currentFiber = fiber.child;
-
-//   while (currentFiber !== null) {
-//     if (currentFiber.tag === HostComponent) {
-//       domElements.push(currentFiber.stateNode);
-//       currentFiber = currentFiber.return;
-//     } else if (currentFiber.child !== null) {
-//       currentFiber = currentFiber.child;
-//     }
-//     if (currentFiber.sibling !== null) {
-//       currentFiber = currentFiber.sibling;
-//     } else {
-//       break;
-//     }
-//   }
-//   return domElements;
-// }
 
 export {completeWork};
