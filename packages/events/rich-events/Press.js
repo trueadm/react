@@ -21,8 +21,6 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
 }
 
-const emptyFunction = () => { };
-
 const PressImpl = {
   listenTo,
   createInitialState(config) {
