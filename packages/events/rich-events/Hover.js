@@ -7,7 +7,11 @@
  * @flow
  */
 
-const listenTo = ['onPointerOver', 'onPointerOut', 'onPointerCancel'];
+const listenTo = [
+  'onPointerOver',
+  'onPointerOut',
+  'onPointerCancel',
+];
 
 // In the case we don't have PointerEvents (Safari), we listen to mouse events
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
@@ -23,15 +27,12 @@ const HoverImpl = {
       isHovered: false,
     };
   },
-  processRichEvents(context, config, state): void {
-    const {
-      eventTarget,
-      eventTargetFiber,
-      eventType,
-      eventListener,
-      nativeEvent,
-      richEventType,
-    } = context;
+  processRichEvents(
+    context,
+    config,
+    state,
+  ): void {
+    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
     const related = nativeEvent.relatedTarget;
     const richEventFiber = context.richEventFiber;
     let relatedInsideRichEvent = false;
@@ -39,10 +40,7 @@ const HoverImpl = {
     if (related != null) {
       let relatedFiber = context.getClosestInstanceFromNode(related);
       while (relatedFiber !== null) {
-        if (
-          relatedFiber === richEventFiber ||
-          relatedFiber === richEventFiber.alternate
-        ) {
+        if (relatedFiber === richEventFiber || relatedFiber === richEventFiber.alternate) {
           return;
         }
         relatedFiber = relatedFiber.return;
@@ -73,11 +71,7 @@ const HoverImpl = {
         }
         state.isHovered = true;
       }
-    } else if (
-      eventType === 'pointerout' ||
-      eventType === 'mouseout' ||
-      eventType === 'pointercancel'
-    ) {
+    } else if (eventType === 'pointerout' || eventType === 'mouseout' || eventType === 'pointercancel') {
       if (richEventType === 'onHoverOut') {
         context.dispatchTwoPhaseEvent(
           'hoverout',

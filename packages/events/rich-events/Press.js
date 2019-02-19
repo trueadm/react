@@ -18,14 +18,10 @@ const listenTo = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push(
-    'onTouchStart',
-    'onTouchEnd',
-    'onTouchCancel',
-    'onMouseDown',
-    'onMouseUp',
-  );
+  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
 }
+
+const emptyFunction = () => {};
 
 const PressImpl = {
   listenTo,
@@ -34,15 +30,12 @@ const PressImpl = {
       isPressed: false,
     };
   },
-  processRichEvents(context, config, state): void {
-    const {
-      eventTarget,
-      eventTargetFiber,
-      eventType,
-      eventListener,
-      nativeEvent,
-      richEventType,
-    } = context;
+  processRichEvents(
+    context,
+    config,
+    state,
+  ): void {
+    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
 
     if (eventType === 'click' || eventType === 'keypress') {
       if (richEventType === 'onPress') {
@@ -79,6 +72,11 @@ const PressImpl = {
       eventType === 'touchstart' ||
       eventType === 'mousedown'
     ) {
+      // iOS needs the elements to have a touch region in order for
+      // onClicks to properly work
+      if (eventType === 'touchstart' && eventTarget.onclick == null) {
+        eventTarget.onclick = emptyFunction;
+      }
       if (richEventType === 'onPressIn') {
         context.dispatchTwoPhaseEvent(
           'pressin',
