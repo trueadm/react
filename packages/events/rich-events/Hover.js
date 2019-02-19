@@ -18,9 +18,9 @@ const HoverImpl = {
   listenTo,
   createInitialState(config) {
     return {
-      touchStarted: false,
-      touchEnded: false,
       isHovered: false,
+      touchEnded: false,
+      touchStarted: false,
     };
   },
   processRichEvents(context, config, state): void {

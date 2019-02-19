@@ -27,9 +27,9 @@ const PressImpl = {
   listenTo,
   createInitialState(config) {
     return {
-      touchFiber: null,
-      ignoreClick: false,
       isPressed: false,
+      simulateClick: false,
+      touchFiber: null,
     };
   },
   processRichEvents(
@@ -40,8 +40,8 @@ const PressImpl = {
     const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
 
     if (eventType === 'click' || eventType === 'keypress') {
-      if (state.ignoreClick) {
-        state.ignoreClick = false;
+      if (state.simulateClick) {
+        state.simulateClick = false;
         return;
       }
       if (richEventType === 'onPress') {
@@ -78,8 +78,8 @@ const PressImpl = {
       eventType === 'touchstart' ||
       eventType === 'mousedown'
     ) {
-      if (eventType === 'touchstart') {
-        state.ignoreClick = true;
+      if (eventType === 'touchstart' || eventType === 'pointerdown') {
+        state.simulateClick = true;
         state.touchFiber = eventTargetFiber;
       }
       if (richEventType === 'onPressIn') {
@@ -119,7 +119,7 @@ const PressImpl = {
         }
         state.isPressed = false;
       }
-      if (state.ignoreClick && state.touchFiber !== null) {
+      if (state.simulateClick && state.touchFiber !== null) {
         let traverseFiber = eventTargetFiber;
         let triggerPress = false;
 
