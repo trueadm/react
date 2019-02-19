@@ -23,9 +23,8 @@ function RichEventsContext(nativeEvent, eventType) {
   this.eventTarget = null;
   this.eventTargetFiber = null;
   this.eventType = eventType;
+  this.fiber = null;
   this.nativeEvent = nativeEvent;
-  this.richEventType = null;
-  this.richEventFiber = null;
 }
 
 RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
@@ -68,6 +67,14 @@ RichEventsContext.prototype.extractEvents = function() {
 
 RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
 
+RichEventsContext.prototype.addRootListeners = function() {
+
+};
+
+RichEventsContext.prototype.removeRootListeners = function() {
+
+};
+
 const RichEventsPlugin = {
   extractEvents: function(
     topLevelType,
@@ -86,22 +93,19 @@ const RichEventsPlugin = {
         const listeners = currentFiber.memoizedProps.listeners;
         context.richEventFiber = currentFiber;
 
-        for (let i = 0; i < listeners.length; i += 2) {
+        for (let i = 0; i < listeners.length; ++i) {
           const richEvent = listeners[i];
-          const eventListener = listeners[i + 1];
-          const {impl, type, config} = richEvent;
+          const {impl, props} = richEvent;
 
-          context.richEventType = type;
-          context.eventListener = eventListener;
-          context.eventTargetFiber = targetInst;
+          context.fiber = targetInst;
           context.eventTarget = nativeEventTarget;
 
           let state = currentFiber.stateNode.get(impl);
           if (state === undefined) {
-            state = impl.createInitialState(config);
+            state = impl.createInitialState(props);
             currentFiber.stateNode.set(impl, state);
           }
-          impl.processRichEvents(context, config, state);
+          impl.onChildEvent(context, props, state);
         }
       }
       currentFiber = currentFiber.return;

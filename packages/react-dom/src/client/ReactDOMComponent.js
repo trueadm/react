@@ -1261,9 +1261,9 @@ export function updateRichEventHandle(
   rootContainerInstance,
   richEventsMap,
 ) {
-  const {listenTo: listenToArray} = impl;
-  for (let i = 0; i < listenToArray.length; i++) {
-    const eventName = listenToArray[i];
-    ensureListeningTo(rootContainerInstance, eventName);
+  const {childEventTypes} = impl;
+  for (let i = 0; i < childEventTypes.length; i++) {
+    const childEventType = childEventTypes[i];
+    ensureListeningTo(rootContainerInstance, childEventType);
   }
 }
