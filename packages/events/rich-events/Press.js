@@ -18,7 +18,13 @@ const listenTo = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
+  listenTo.push(
+    'onTouchStart',
+    'onTouchEnd',
+    'onTouchCancel',
+    'onMouseDown',
+    'onMouseUp',
+  );
 }
 
 const emptyFunction = () => {};
@@ -27,17 +33,26 @@ const PressImpl = {
   listenTo,
   createInitialState(config) {
     return {
+      touchFiber: null,
+      ignoreClick: false,
       isPressed: false,
     };
   },
-  processRichEvents(
-    context,
-    config,
-    state,
-  ): void {
-    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
+  processRichEvents(context, config, state): void {
+    const {
+      eventTarget,
+      eventTargetFiber,
+      eventType,
+      eventListener,
+      nativeEvent,
+      richEventType,
+    } = context;
 
     if (eventType === 'click' || eventType === 'keypress') {
+      if (state.ignoreClick) {
+        state.ignoreClick = false;
+        return;
+      }
       if (richEventType === 'onPress') {
         let richEventListener = eventListener;
 
@@ -72,10 +87,9 @@ const PressImpl = {
       eventType === 'touchstart' ||
       eventType === 'mousedown'
     ) {
-      // iOS needs the elements to have a touch region in order for
-      // onClicks to properly work
-      if (eventType === 'touchstart' && eventTarget.onclick == null) {
-        eventTarget.onclick = emptyFunction;
+      if (eventType === 'touchstart') {
+        state.ignoreClick = true;
+        state.touchFiber = eventTargetFiber;
       }
       if (richEventType === 'onPressIn') {
         context.dispatchTwoPhaseEvent(
@@ -113,6 +127,28 @@ const PressImpl = {
           eventListener(false);
         }
         state.isPressed = false;
+      }
+      if (state.ignoreClick) {
+        let traverseFiber = eventTargetFiber;
+        let triggerPress = false;
+
+        while (traverseFiber !== null) {
+          if (traverseFiber === eventTargetFiber) {
+            triggerPress = true;
+          }
+          traverseFiber = traverseFiber.return;
+        }
+        if (triggerPress) {
+          context.dispatchTwoPhaseEvent(
+            'press',
+            eventListener,
+            nativeEvent,
+            eventTarget,
+            eventTargetFiber,
+            false,
+          );
+        }
+        state.touchFiber = null;
       }
     }
   },
