@@ -1,4 +1,4 @@
-\/**
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -110,11 +110,11 @@ describe('SyntheticEvent', () => {
     ReactDOM.render(<Component />, container);
 
     const pointerEnterEvent = document.createEvent('Event');
-    pointerEnterEvent.initEvent('pointerenter', true, true);
+    pointerEnterEvent.initEvent('pointerdown', true, true);
     divRef.current.dispatchEvent(pointerEnterEvent);
 
     const pointerLeaveEvent = document.createEvent('Event');
-    pointerLeaveEvent.initEvent('pointerleave', true, true);
+    pointerLeaveEvent.initEvent('pointerup', true, true);
     divRef.current.dispatchEvent(pointerLeaveEvent);
 
     expect(events).toEqual(['onPressIn', 'onPressOut']);
