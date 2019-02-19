@@ -23,18 +23,16 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 
 const PressImpl = {
   listenTo,
-  createInitialState(props) {
+  createInitialState(config) {
     return {};
   },
   processRichEvents(
-    name,
-    {listener, nativeEvent, targetElement, targetFiber, topLevelType},
-    props,
-    state,
+    {type, listener, nativeEvent, targetElement, targetFiber, topLevelType},
+    config,
     context,
   ): void {
     if (topLevelType === 'click' || topLevelType === 'keypress') {
-      if (name === 'onPress') {
+      if (type === 'onPress') {
         let richEventListener = listener;
 
         if (topLevelType === 'keypress') {
@@ -68,7 +66,7 @@ const PressImpl = {
       topLevelType === 'touchstart' ||
       topLevelType === 'mousedown'
     ) {
-      if (name === 'onPressIn') {
+      if (type === 'onPressIn') {
         const event = context.createRichEvent(
           'pressin',
           listener,
@@ -77,7 +75,7 @@ const PressImpl = {
           targetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (name === 'onPressChange') {
+      } else if (type === 'onPressChange') {
         listener(true);
       }
     } else if (
@@ -87,7 +85,7 @@ const PressImpl = {
       topLevelType === 'touchcancel' ||
       topLevelType === 'mouseup'
     ) {
-      if (name === 'onPressOut') {
+      if (type === 'onPressOut') {
         const event = context.createRichEvent(
           'pressup',
           listener,
@@ -96,41 +94,57 @@ const PressImpl = {
           targetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (name === 'onPressChange') {
+      } else if (type === 'onPressChange') {
         listener(false);
       }
     }
   },
 };
 
-export function onPress(props) {
+export function onPress(config) {
   return {
-    name: 'onPress',
-    props,
+    type: 'onPress',
+    config,
     impl: PressImpl,
   };
 }
 
-export function onPressIn(props) {
+onPress.type = 'onPress';
+onPress.config = null;
+onPress.impl = PressImpl;
+
+export function onPressIn(config) {
   return {
-    name: 'onPressIn',
-    props,
+    type: 'onPressIn',
+    config,
     impl: PressImpl,
   };
 }
 
-export function onPressOut(props) {
+onPressIn.type = 'onPressIn';
+onPressIn.config = null;
+onPressIn.impl = PressImpl;
+
+export function onPressOut(config) {
   return {
-    name: 'onPressOut',
-    props,
+    type: 'onPressOut',
+    config,
     impl: PressImpl,
   };
 }
 
-export function onPressChange(props) {
+onPressOut.type = 'onPressOut';
+onPressOut.config = null;
+onPressOut.impl = PressImpl;
+
+export function onPressChange(config) {
   return {
-    name: 'onPressChange',
-    props,
+    type: 'onPressChange',
+    config,
     impl: PressImpl,
   };
 }
+
+onPressChange.type = 'onPressChange';
+onPressChange.config = null;
+onPressChange.impl = PressImpl;

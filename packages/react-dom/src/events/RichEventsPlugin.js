@@ -6,9 +6,11 @@
  * @flow
  */
 
-import {RichEvents} from 'shared/ReactWorkTags';
+import { RichEvents } from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
+
+import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
@@ -18,9 +20,10 @@ function RichEventsContext(nativeEvent) {
   this.capturePhaseEvents = [];
   this.bubblePhaseEvents = [];
   this.nativeEvent = nativeEvent;
+  this.currentFiber = null;
 }
 
-RichEventsContext.prototype.createRichEvent = function(
+RichEventsContext.prototype.createRichEvent = function (
   name,
   listener,
   capture,
@@ -38,7 +41,7 @@ RichEventsContext.prototype.createRichEvent = function(
   };
 };
 
-RichEventsContext.prototype.accumulateTwoPhaseDispatches = function(richEvent) {
+RichEventsContext.prototype.accumulateTwoPhaseDispatches = function (richEvent) {
   if (Array.isArray(richEvent)) {
     // TODO
   } else {
@@ -50,7 +53,7 @@ RichEventsContext.prototype.accumulateTwoPhaseDispatches = function(richEvent) {
   }
 };
 
-RichEventsContext.prototype.extractEvents = function() {
+RichEventsContext.prototype.extractEvents = function () {
   let events;
   const richEvents = [...this.capturePhaseEvents, ...this.bubblePhaseEvents];
   for (let i = 0; i < richEvents.length; i++) {
@@ -69,8 +72,10 @@ RichEventsContext.prototype.extractEvents = function() {
   return events;
 };
 
+RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
+
 const RichEventsPlugin = {
-  extractEvents: function(
+  extractEvents: function (
     topLevelType,
     targetInst,
     nativeEvent,
@@ -84,31 +89,25 @@ const RichEventsPlugin = {
           currentFiber = currentFiber.alternate;
         }
         const listeners = currentFiber.memoizedProps.listeners;
-        
+        context.currentFiber = currentFiber;
+
         for (let i = 0; i < listeners.length; i += 2) {
           const richEvent = listeners[i];
           const listener = listeners[i + 1];
-          const {impl, name, props} = richEvent;
-
-          let state = currentFiber.stateNode.get(impl);
-          if (state === undefined) {
-            state = impl.createInitialState(props);
-            currentFiber.stateNode.set(impl, state);
-          }
+          const { impl, type, config } = richEvent;
           const event = {
             listener,
             topLevelType,
             nativeEvent,
             targetFiber: targetInst,
             targetElement: nativeEventTarget,
+            type,
           };
           impl.processRichEvents(
-            name,
             event,
-            props,
-            state,
+            config,
             context,
-          ); 
+          );
         }
       }
       currentFiber = currentFiber.return;
