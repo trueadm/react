@@ -792,7 +792,6 @@ function completeWork(
       break;
     }
     case RichEvents: {
-      popHostContext(workInProgress);
       const oldProps = current !== null ? current.memoizedProps : null;
       const rootContainerInstance = getRootHostContainer();
       const oldListeners = oldProps !== null ? oldProps.listeners : null;

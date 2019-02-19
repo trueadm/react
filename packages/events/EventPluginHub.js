@@ -151,7 +151,6 @@ export function getListener(inst: Fiber, registrationName: string) {
   return listener;
 }
 
-
 /**
  * Allows registered plugins an opportunity to extract events from top-level
  * native browser events.

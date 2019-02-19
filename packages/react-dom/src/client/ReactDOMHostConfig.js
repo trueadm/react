@@ -64,12 +64,8 @@ export type PublicInstance = Element | Text;
 type HostContextDev = {
   namespace: string,
   ancestorInfo: mixed,
-  inRichEvents: boolean,
 };
-type HostContextProd = {
-  namespace: string,
-  inRichEvents: boolean,
-};
+type HostContextProd = string;
 export type HostContext = HostContextDev | HostContextProd;
 export type UpdatePayload = Array<mixed>;
 export type ChildSet = void; // Unused
@@ -142,9 +138,9 @@ export function getRootHostContext(
   if (__DEV__) {
     const validatedTag = type.toLowerCase();
     const ancestorInfo = updatedAncestorInfo(null, validatedTag);
-    return {namespace, ancestorInfo, inRichEvents: false};
+    return {namespace, ancestorInfo};
   }
-  return { namespace, inRichEvents: false };
+  return namespace;
 }
 
 export function getChildHostContext(
@@ -152,7 +148,6 @@ export function getChildHostContext(
   type: string,
   rootContainerInstance: Container,
 ): HostContext {
-  const inRichEvents = parentHostContext.inRichEvents;
   if (__DEV__) {
     const parentHostContextDev = ((parentHostContext: any): HostContextDev);
     const namespace = getChildNamespace(parentHostContextDev.namespace, type);
@@ -160,27 +155,10 @@ export function getChildHostContext(
       parentHostContextDev.ancestorInfo,
       type,
     );
-    return {namespace, ancestorInfo, inRichEvents};
+    return {namespace, ancestorInfo};
   }
   const parentNamespace = ((parentHostContext: any): HostContextProd);
-  return {
-    namespace: getChildNamespace(parentNamespace, type),
-    inRichEvents,
-  };
-}
-
-export function getChildRichEventsHostContext(parentHostContext: HostContext) {
-  if (__DEV__) {
-    return {
-      ancestorInfo: parentHostContext.ancestorInfo,
-      namespace: parentHostContext.namespace,
-      inRichEvents: true,
-    };
-  }
-  return {
-    namespace: parentHostContext.namespace,
-    inRichEvents: true,
-  };
+  return getChildNamespace(parentNamespace, type);
 }
 
 export function getPublicInstance(instance: Instance): * {
@@ -279,9 +257,6 @@ export function finalizeInitialChildren(
   hostContext: HostContext,
 ): boolean {
   setInitialProperties(domElement, type, props, rootContainerInstance);
-  if (hostContext.inRichEvents) {
-    trapClickOnNonInteractiveElement(domElement);
-  }
   return shouldAutoFocusHostComponent(type, props);
 }
 

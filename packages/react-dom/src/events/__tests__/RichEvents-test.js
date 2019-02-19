@@ -55,7 +55,10 @@ describe('SyntheticEvent', () => {
       return (
         <React.unstable_RichEvents listeners={[onPress(), handleOnPress1]}>
           <React.unstable_RichEvents listeners={[onPress(), handleOnPress2]}>
-            <button ref={buttonRef} onClick={handleOnClick} onKeyPress={handleKeyPress}>
+            <button
+              ref={buttonRef}
+              onClick={handleOnClick}
+              onKeyPress={handleKeyPress}>
               Press me!
             </button>
           </React.unstable_RichEvents>
@@ -99,10 +102,14 @@ describe('SyntheticEvent', () => {
 
     function Component() {
       return (
-        <React.unstable_RichEvents listeners={[onPressIn(), handleOnPressIn, onPressOut(), handleOnPressOut]}>
-          <div ref={divRef}>
-            Press me!
-          </div>
+        <React.unstable_RichEvents
+          listeners={[
+            onPressIn(),
+            handleOnPressIn,
+            onPressOut(),
+            handleOnPressOut,
+          ]}>
+          <div ref={divRef}>Press me!</div>
         </React.unstable_RichEvents>
       );
     }

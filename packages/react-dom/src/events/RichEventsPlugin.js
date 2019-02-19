@@ -6,7 +6,7 @@
  * @flow
  */
 
-import { RichEvents } from 'shared/ReactWorkTags';
+import {RichEvents} from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
 
@@ -28,50 +28,39 @@ function RichEventsContext(nativeEvent, eventType) {
   this.richEventFiber = null;
 }
 
-RichEventsContext.prototype.createRichEvent = function (
+RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
   name,
-  listener,
-  capture,
-  targetElement,
-  targetFiber,
+  eventListener,
   nativeEvent,
+  eventTarget,
+  eventTargetFiber,
+  isCapturePhase,
 ) {
-  return {
-    name,
-    listener,
-    capture,
-    targetElement,
-    targetFiber,
+  const syntheticEvent = SyntheticEvent.getPooled(
+    null,
+    eventTargetFiber,
     nativeEvent,
-  };
-};
+    eventTarget,
+  );
+  syntheticEvent.type = name;
+  syntheticEvent._dispatchInstances = [eventTargetFiber];
+  syntheticEvent._dispatchListeners = [eventListener];
 
-RichEventsContext.prototype.accumulateTwoPhaseDispatches = function (richEvent) {
-  if (Array.isArray(richEvent)) {
-    // TODO
+  if (isCapturePhase) {
+    this.capturePhaseEvents.push(syntheticEvent);
   } else {
-    if (richEvent.capture) {
-      this.capturePhaseEvents.unshift(richEvent);
-    } else {
-      this.bubblePhaseEvents.push(richEvent);
-    }
+    this.bubblePhaseEvents.push(syntheticEvent);
   }
 };
 
-RichEventsContext.prototype.extractEvents = function () {
+RichEventsContext.prototype.extractEvents = function() {
   let events;
-  const richEvents = [...this.capturePhaseEvents, ...this.bubblePhaseEvents];
-  for (let i = 0; i < richEvents.length; i++) {
-    const richEvent = richEvents[i];
-    const syntheticEvent = SyntheticEvent.getPooled(
-      null,
-      richEvent.targetFiber,
-      this.nativeEvent,
-      richEvent.targetElement,
-    );
-    syntheticEvent.type = richEvent.name;
-    syntheticEvent._dispatchInstances = [richEvent.targetFiber];
-    syntheticEvent._dispatchListeners = [richEvent.listener];
+  for (let i = this.capturePhaseEvents.length; i-- > 0; ) {
+    const syntheticEvent = this.capturePhaseEvents[i];
+    events = accumulateInto(events, syntheticEvent);
+  }
+  for (let i = 0, length = this.bubblePhaseEvents.length; i < length; i++) {
+    const syntheticEvent = this.bubblePhaseEvents[i];
     events = accumulateInto(events, syntheticEvent);
   }
   return events;
@@ -80,7 +69,7 @@ RichEventsContext.prototype.extractEvents = function () {
 RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
 
 const RichEventsPlugin = {
-  extractEvents: function (
+  extractEvents: function(
     topLevelType,
     targetInst,
     nativeEvent,
@@ -100,7 +89,7 @@ const RichEventsPlugin = {
         for (let i = 0; i < listeners.length; i += 2) {
           const richEvent = listeners[i];
           const eventListener = listeners[i + 1];
-          const { impl, type, config } = richEvent;
+          const {impl, type, config} = richEvent;
 
           context.richEventType = type;
           context.eventListener = eventListener;
@@ -112,11 +101,7 @@ const RichEventsPlugin = {
             state = impl.createInitialState(config);
             currentFiber.stateNode.set(impl, state);
           }
-          impl.processRichEvents(
-            context,
-            config,
-            state,
-          );
+          impl.processRichEvents(context, config, state);
         }
       }
       currentFiber = currentFiber.return;

@@ -86,7 +86,7 @@ import {
   shouldSetTextContent,
   shouldDeprioritizeSubtree,
 } from './ReactFiberHostConfig';
-import {pushHostContext, pushHostContainer, pushRichEventsHostContext} from './ReactFiberHostContext';
+import {pushHostContext, pushHostContainer} from './ReactFiberHostContext';
 import {
   pushProvider,
   propagateContextChange,
@@ -910,7 +910,6 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
 }
 
 function updateHostRichEvents(current, workInProgress, renderExpirationTime) {
-  pushRichEventsHostContext(workInProgress);
   const nextProps = workInProgress.pendingProps;
   let nextChildren = nextProps.children;
 

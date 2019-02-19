@@ -18,7 +18,13 @@ const listenTo = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
+  listenTo.push(
+    'onTouchStart',
+    'onTouchEnd',
+    'onTouchCancel',
+    'onMouseDown',
+    'onMouseUp',
+  );
 }
 
 const PressImpl = {
@@ -28,12 +34,15 @@ const PressImpl = {
       isPressed: false,
     };
   },
-  processRichEvents(
-    context,
-    config,
-    state,
-  ): void {
-    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
+  processRichEvents(context, config, state): void {
+    const {
+      eventTarget,
+      eventTargetFiber,
+      eventType,
+      eventListener,
+      nativeEvent,
+      richEventType,
+    } = context;
 
     if (eventType === 'click' || eventType === 'keypress') {
       if (richEventType === 'onPress') {
@@ -56,14 +65,14 @@ const PressImpl = {
             }
           };
         }
-        const event = context.createRichEvent(
+        context.dispatchTwoPhaseEvent(
           'press',
           richEventListener,
-          false,
+          nativeEvent,
           eventTarget,
           eventTargetFiber,
+          false,
         );
-        context.accumulateTwoPhaseDispatches(event);
       }
     } else if (
       eventType === 'pointerdown' ||
@@ -71,14 +80,14 @@ const PressImpl = {
       eventType === 'mousedown'
     ) {
       if (richEventType === 'onPressIn') {
-        const event = context.createRichEvent(
+        context.dispatchTwoPhaseEvent(
           'pressin',
           eventListener,
-          false,
+          nativeEvent,
           eventTarget,
           eventTargetFiber,
+          false,
         );
-        context.accumulateTwoPhaseDispatches(event);
       } else if (richEventType === 'onPressChange') {
         if (!state.isPressed) {
           eventListener(true);
@@ -93,14 +102,14 @@ const PressImpl = {
       eventType === 'mouseup'
     ) {
       if (richEventType === 'onPressOut') {
-        const event = context.createRichEvent(
+        context.dispatchTwoPhaseEvent(
           'pressup',
           eventListener,
-          false,
+          nativeEvent,
           eventTarget,
           eventTargetFiber,
+          false,
         );
-        context.accumulateTwoPhaseDispatches(event);
       } else if (richEventType === 'onPressChange') {
         if (state.isPressed) {
           eventListener(false);

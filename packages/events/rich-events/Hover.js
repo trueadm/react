@@ -7,30 +7,31 @@
  * @flow
  */
 
-const listenTo = [
-  'onPointerOver',
-  'onPointerOut',
-  'onPointerCancel',
-];
+const listenTo = ['onPointerOver', 'onPointerOut', 'onPointerCancel'];
 
 // In the case we don't have PointerEvents (Safari), we listen to mouse events
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push('onMouseOver', 'onMouseOut');
+  listenTo.push('onMouseOver', 'onMouseOut', 'onTouchStart', 'onTouchEnd');
 }
 
 const HoverImpl = {
   listenTo,
   createInitialState(config) {
     return {
+      touchStarted: false,
+      touchEnded: false,
       isHovered: false,
     };
   },
-  processRichEvents(
-    context,
-    config,
-    state,
-  ): void {
-    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
+  processRichEvents(context, config, state): void {
+    const {
+      eventTarget,
+      eventTargetFiber,
+      eventType,
+      eventListener,
+      nativeEvent,
+      richEventType,
+    } = context;
     const related = nativeEvent.relatedTarget;
     const richEventFiber = context.richEventFiber;
     let relatedInsideRichEvent = false;
@@ -38,39 +39,54 @@ const HoverImpl = {
     if (related != null) {
       let relatedFiber = context.getClosestInstanceFromNode(related);
       while (relatedFiber !== null) {
-        if (relatedFiber === richEventFiber || relatedFiber === richEventFiber.alternate) {
+        if (
+          relatedFiber === richEventFiber ||
+          relatedFiber === richEventFiber.alternate
+        ) {
           return;
         }
         relatedFiber = relatedFiber.return;
       }
     }
 
-    if (eventType === 'pointerover' || eventType === 'mouseover') {
+    if (eventType === 'touchstart') {
+      state.touchStarted = true;
+    } else if (eventType === 'touchend') {
+      state.touchEnded = true;
+    } else if (eventType === 'pointerover' || eventType === 'mouseover') {
+      // We check for touches to ensure hovering doesn't occur on touch devices
+      if (state.touchStarted && state.touchEnded) {
+        return;
+      }
       if (richEventType === 'onHoverIn') {
-        const event = context.createRichEvent(
+        context.dispatchTwoPhaseEvent(
           'hoverin',
           eventListener,
-          false,
+          nativeEvent,
           eventTarget,
           eventTargetFiber,
+          false,
         );
-        context.accumulateTwoPhaseDispatches(event);
       } else if (richEventType === 'onHoverChange') {
         if (!state.isHovered) {
           eventListener(true);
         }
         state.isHovered = true;
       }
-    } else if (eventType === 'pointerout' || eventType === 'mouseout' || eventType === 'pointercancel') {
+    } else if (
+      eventType === 'pointerout' ||
+      eventType === 'mouseout' ||
+      eventType === 'pointercancel'
+    ) {
       if (richEventType === 'onHoverOut') {
-        const event = context.createRichEvent(
+        context.dispatchTwoPhaseEvent(
           'hoverout',
           eventListener,
-          false,
+          nativeEvent,
           eventTarget,
           eventTargetFiber,
+          false,
         );
-        context.accumulateTwoPhaseDispatches(event);
       } else if (richEventType === 'onHoverChange') {
         if (state.isHovered) {
           eventListener(false);
