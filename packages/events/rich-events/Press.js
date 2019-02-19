@@ -132,6 +132,8 @@ const PressImpl = {
         let traverseFiber = eventTargetFiber;
         let triggerPress = false;
 
+        // We traverse through parents as the parent might
+        // have been a portal or it might have been nested
         while (traverseFiber !== null) {
           if (traverseFiber === eventTargetFiber) {
             triggerPress = true;
