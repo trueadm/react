@@ -253,7 +253,7 @@ if (__DEV__) {
   };
 }
 
-function ensureListeningTo(rootContainerElement, registrationName) {
+export function ensureListeningTo(rootContainerElement, registrationName) {
   const isDocumentOrFragment =
     rootContainerElement.nodeType === DOCUMENT_NODE ||
     rootContainerElement.nodeType === DOCUMENT_FRAGMENT_NODE;
@@ -1254,16 +1254,3 @@ export function restoreControlledState(
   }
 }
 
-export function updateRichEventHandle(
-  impl,
-  config,
-  listener,
-  rootContainerInstance,
-  richEventsMap,
-) {
-  const {childEventTypes} = impl;
-  for (let i = 0; i < childEventTypes.length; i++) {
-    const childEventType = childEventTypes[i];
-    ensureListeningTo(rootContainerInstance, childEventType);
-  }
-}

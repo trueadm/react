@@ -12,7 +12,7 @@ const childEventTypes = [
   'onPointerDown',
   'onPointerCancel',
 ];
-const rootEventTypes =[
+const rootEventTypes = [
   'onPointerUp',
 ];
 
@@ -76,7 +76,7 @@ const PressImplementation = {
         const keyPressEventListener = e => {
           if (!e.isDefaultPrevented() && !e.nativeEvent.defaultPrevented) {
             e.preventDefault();
-            eventListener(e);
+            props.onPress(e);
           }
         };
         context.dispatchTwoPhaseEvent(
@@ -87,6 +87,7 @@ const PressImplementation = {
           eventTargetFiber,
           false,
         );
+        break;
       }
       case 'pointerdown':
       case 'touchstart':
@@ -120,6 +121,7 @@ const PressImplementation = {
         state.pressTargetFiber = eventTargetFiber;
         state.isPressed = true;
         context.addRootListeners(rootEventTypes);
+        break;
       }
       case 'mouseup':
       case 'pointerup':
@@ -133,8 +135,8 @@ const PressImplementation = {
               'pressout',
               props.onPressOut,
               nativeEvent,
-              state.pressTarget,
-              state.pressTargetFiber,
+              eventTarget,
+              eventTargetFiber,
               false,
             );
           }
@@ -147,17 +149,16 @@ const PressImplementation = {
                 'presschange',
                 pressChangeEventListener,
                 nativeEvent,
-                state.pressTarget,
-                state.pressTargetFiber,
+                eventTarget,
+                eventTargetFiber,
                 false,
               );
             }
           }
           if (state.pressTargetFiber !== null && props.onPress) {
-            const target = e.target;
-            let traverseFiber = context.getClosestInstanceFromNode(target);
+            let traverseFiber = eventTargetFiber;
             let triggerPress = false;
-        
+
             while (traverseFiber !== null) {
               if (traverseFiber === state.pressTargetFiber) {
                 triggerPress = true;
@@ -169,8 +170,8 @@ const PressImplementation = {
                 'press',
                 props.onPress,
                 nativeEvent,
-                state.pressTarget,
-                state.pressTargetFiber,
+                eventTarget,
+                eventTargetFiber,
                 false,
               );
             }

@@ -11,12 +11,14 @@ import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
+import {listenTo} from "./ReactBrowserEventEmitter";
 
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
 export const currentRichEventFibers = new Set();
+export const rootEventRichEventFibers = new Map();
 
-function RichEventsContext(nativeEvent, eventType) {
+function RichEventsContext(nativeEvent, eventType, impl) {
   this.bubblePhaseEvents = [];
   this.capturePhaseEvents = [];
   this.eventListener = null;
@@ -67,13 +69,48 @@ RichEventsContext.prototype.extractEvents = function() {
 
 RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
 
-RichEventsContext.prototype.addRootListeners = function() {
-
+RichEventsContext.prototype.addRootListeners = function(rootEventTypes) {
+  for (let i = 0; i < rootEventTypes.length; i++) {
+    const rootEventType = rootEventTypes[i];
+    let richEventFibers = rootEventRichEventFibers.get(rootEventType);
+    if (richEventFibers === undefined) {
+      richEventFibers = new Set();
+      rootEventRichEventFibers.set(rootEventType, richEventFibers);
+    }
+    listenTo(rootEventType, this.eventTarget.ownerDocument)
+    richEventFibers.add(this.fiber);
+  }
 };
 
-RichEventsContext.prototype.removeRootListeners = function() {
-
+RichEventsContext.prototype.removeRootListeners = function(rootEventTypes) {
+  for (let i = 0; i < rootEventTypes.length; i++) {
+    const rootEventType = rootEventTypes[i];
+    let richEventFibers = rootEventRichEventFibers.get(rootEventType);
+    if (richEventFibers !== undefined) {
+      richEventFibers.delete(this.fiber);
+    }
+  }
 };
+
+function triggerListeners(fiber, context, nativeEventTarget, targetInst) {
+  const listeners = fiber.memoizedProps.listeners;
+  context.fiber = fiber;
+
+  for (let i = 0; i < listeners.length; ++i) {
+    const richEvent = listeners[i];
+    const {impl, props} = richEvent;
+
+    context.eventTarget = nativeEventTarget;
+    context.eventTargetFiber = targetInst;
+
+    let state = fiber.stateNode.get(impl);
+    if (state === undefined) {
+      state = impl.createInitialState(props);
+      fiber.stateNode.set(impl, state);
+    }
+    impl.onChildEvent(context, props, state);
+  }
+}
 
 const RichEventsPlugin = {
   extractEvents: function(
@@ -90,25 +127,18 @@ const RichEventsPlugin = {
         if (!currentRichEventFibers.has(currentFiber)) {
           currentFiber = currentFiber.alternate;
         }
-        const listeners = currentFiber.memoizedProps.listeners;
-        context.richEventFiber = currentFiber;
-
-        for (let i = 0; i < listeners.length; ++i) {
-          const richEvent = listeners[i];
-          const {impl, props} = richEvent;
-
-          context.fiber = targetInst;
-          context.eventTarget = nativeEventTarget;
-
-          let state = currentFiber.stateNode.get(impl);
-          if (state === undefined) {
-            state = impl.createInitialState(props);
-            currentFiber.stateNode.set(impl, state);
-          }
-          impl.onChildEvent(context, props, state);
-        }
+        triggerListeners(currentFiber, context, nativeEventTarget, targetInst);
       }
       currentFiber = currentFiber.return;
+    }
+    if (rootEventRichEventFibers.has(topLevelType)) {
+      const richEventFibers = rootEventRichEventFibers.get(topLevelType);
+      const richEventFibersArr = Array.from(richEventFibers);
+
+      for (let i = 0; i < richEventFibersArr.length; i++) {
+        const richEventFiber = richEventFibersArr[i];
+        triggerListeners(richEventFiber, context, nativeEventTarget, targetInst);
+      }
     }
     return context.extractEvents();
   },

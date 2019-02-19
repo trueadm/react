@@ -22,7 +22,7 @@ import {
   warnForDeletedHydratableText,
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
-  updateRichEventHandle,
+  ensureListeningTo,
 } from './ReactDOMComponent';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
@@ -224,21 +224,18 @@ export function handleRichEvents(
   richEventsMap: Map<any>,
 ) {
   currentRichEventFibers.add(richEventFiber);
-  for (let i = 0, length = newListeners.length; i < length; i += 2) {
+  for (let i = 0, length = newListeners.length; i < length; ++i) {
     const impl = newListeners[i].impl;
     const config = newListeners[i].config;
-    const listener = newListeners[i + 1];
 
     if (oldListeners !== null) {
       currentRichEventFibers.delete(richEventFiber.alternate);
     }
-    updateRichEventHandle(
-      impl,
-      config,
-      listener,
-      rootContainerInstance,
-      richEventsMap,
-    );
+    const {childEventTypes} = impl;
+    for (let s = 0; s < childEventTypes.length; s++) {
+      const childEventType = childEventTypes[s];
+      ensureListeningTo(rootContainerInstance, childEventType);
+    }
   }
 }
 
