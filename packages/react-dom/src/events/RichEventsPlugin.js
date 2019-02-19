@@ -16,11 +16,16 @@ import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 // of a pair of fibers who are each other's alternate.
 export const currentRichEventFibers = new Set();
 
-function RichEventsContext(nativeEvent) {
-  this.capturePhaseEvents = [];
+function RichEventsContext(nativeEvent, eventType) {
   this.bubblePhaseEvents = [];
+  this.capturePhaseEvents = [];
+  this.eventListener = null;
+  this.eventTarget = null;
+  this.eventTargetFiber = null;
+  this.eventType = eventType;
   this.nativeEvent = nativeEvent;
-  this.currentFiber = null;
+  this.richEventType = null;
+  this.richEventFiber = null;
 }
 
 RichEventsContext.prototype.createRichEvent = function (
@@ -81,32 +86,36 @@ const RichEventsPlugin = {
     nativeEvent,
     nativeEventTarget,
   ) {
-    const context = new RichEventsContext(nativeEvent);
+    const context = new RichEventsContext(nativeEvent, topLevelType);
     let currentFiber = targetInst;
+
     while (currentFiber !== null) {
       if (currentFiber.tag === RichEvents) {
         if (!currentRichEventFibers.has(currentFiber)) {
           currentFiber = currentFiber.alternate;
         }
         const listeners = currentFiber.memoizedProps.listeners;
-        context.currentFiber = currentFiber;
+        context.richEventFiber = currentFiber;
 
         for (let i = 0; i < listeners.length; i += 2) {
           const richEvent = listeners[i];
-          const listener = listeners[i + 1];
+          const eventListener = listeners[i + 1];
           const { impl, type, config } = richEvent;
-          const event = {
-            listener,
-            topLevelType,
-            nativeEvent,
-            targetFiber: targetInst,
-            targetElement: nativeEventTarget,
-            type,
-          };
+
+          context.richEventType = type;
+          context.eventListener = eventListener;
+          context.eventTargetFiber = targetInst;
+          context.eventTarget = nativeEventTarget;
+
+          let state = currentFiber.stateNode.get(impl);
+          if (state === undefined) {
+            state = impl.createInitialState(config);
+            currentFiber.stateNode.set(impl, state);
+          }
           impl.processRichEvents(
-            event,
-            config,
             context,
+            config,
+            state,
           );
         }
       }

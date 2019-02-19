@@ -21,52 +21,61 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 const HoverImpl = {
   listenTo,
   createInitialState(config) {
-    return {};
+    return {
+      isHovered: false,
+    };
   },
   processRichEvents(
-    { type, listener, nativeEvent, targetElement, targetFiber, topLevelType },
-    config,
     context,
+    config,
+    state,
   ): void {
+    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
     const related = nativeEvent.relatedTarget;
-    const richEventsFiber = context.currentFiber;
+    const richEventFiber = context.richEventFiber;
     let relatedInsideRichEvent = false;
 
     if (related != null) {
       let relatedFiber = context.getClosestInstanceFromNode(related);
       while (relatedFiber !== null) {
-        if (relatedFiber === richEventsFiber || relatedFiber === richEventsFiber.alternate) {
+        if (relatedFiber === richEventFiber || relatedFiber === richEventFiber.alternate) {
           return;
         }
         relatedFiber = relatedFiber.return;
       }
     }
 
-    if (topLevelType === 'pointerover' || topLevelType === 'mouseover') {
-      if (type === 'onHoverIn') {
+    if (eventType === 'pointerover' || eventType === 'mouseover') {
+      if (richEventType === 'onHoverIn') {
         const event = context.createRichEvent(
           'hoverin',
-          listener,
+          eventListener,
           false,
-          targetElement,
-          targetFiber,
+          eventTarget,
+          eventTargetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (type === 'onHoverChange') {
-        listener(true);
+      } else if (richEventType === 'onHoverChange') {
+        if (!state.isHovered) {
+          eventListener(true);
+        }
+        state.isHovered = true;
       }
-    } else if (topLevelType === 'pointerout' || topLevelType === 'mouseout' || topLevelType === 'pointercancel') {
-      if (type === 'onHoverOut') {
+    } else if (eventType === 'pointerout' || eventType === 'mouseout' || eventType === 'pointercancel') {
+      if (richEventType === 'onHoverOut') {
         const event = context.createRichEvent(
           'hoverout',
-          listener,
+          eventListener,
           false,
-          targetElement,
-          targetFiber,
+          eventTarget,
+          eventTargetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (type === 'onHoverChange') {
-        listener(false);
+      } else if (richEventType === 'onHoverChange') {
+        if (state.isHovered) {
+          eventListener(false);
+        }
+        state.isHovered = false;
       }
     }
   },

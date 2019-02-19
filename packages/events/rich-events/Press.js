@@ -24,18 +24,22 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 const PressImpl = {
   listenTo,
   createInitialState(config) {
-    return {};
+    return {
+      isPressed: false,
+    };
   },
   processRichEvents(
-    {type, listener, nativeEvent, targetElement, targetFiber, topLevelType},
-    config,
     context,
+    config,
+    state,
   ): void {
-    if (topLevelType === 'click' || topLevelType === 'keypress') {
-      if (type === 'onPress') {
-        let richEventListener = listener;
+    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
 
-        if (topLevelType === 'keypress') {
+    if (eventType === 'click' || eventType === 'keypress') {
+      if (richEventType === 'onPress') {
+        let richEventListener = eventListener;
+
+        if (eventType === 'keypress') {
           const isValidKeyPress =
             nativeEvent.which === 13 ||
             nativeEvent.which === 32 ||
@@ -48,7 +52,7 @@ const PressImpl = {
           richEventListener = e => {
             if (!e.isDefaultPrevented() && !e.nativeEvent.defaultPrevented) {
               e.preventDefault();
-              listener(e);
+              eventListener(e);
             }
           };
         }
@@ -56,46 +60,52 @@ const PressImpl = {
           'press',
           richEventListener,
           false,
-          targetElement,
-          targetFiber,
+          eventTarget,
+          eventTargetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
       }
     } else if (
-      topLevelType === 'pointerdown' ||
-      topLevelType === 'touchstart' ||
-      topLevelType === 'mousedown'
+      eventType === 'pointerdown' ||
+      eventType === 'touchstart' ||
+      eventType === 'mousedown'
     ) {
-      if (type === 'onPressIn') {
+      if (richEventType === 'onPressIn') {
         const event = context.createRichEvent(
           'pressin',
-          listener,
+          eventListener,
           false,
-          targetElement,
-          targetFiber,
+          eventTarget,
+          eventTargetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (type === 'onPressChange') {
-        listener(true);
+      } else if (richEventType === 'onPressChange') {
+        if (!state.isPressed) {
+          eventListener(true);
+        }
+        state.isPressed = true;
       }
     } else if (
-      topLevelType === 'pointerup' ||
-      topLevelType === 'pointercancel' ||
-      topLevelType === 'touchend' ||
-      topLevelType === 'touchcancel' ||
-      topLevelType === 'mouseup'
+      eventType === 'pointerup' ||
+      eventType === 'pointercancel' ||
+      eventType === 'touchend' ||
+      eventType === 'touchcancel' ||
+      eventType === 'mouseup'
     ) {
-      if (type === 'onPressOut') {
+      if (richEventType === 'onPressOut') {
         const event = context.createRichEvent(
           'pressup',
-          listener,
+          eventListener,
           false,
-          targetElement,
-          targetFiber,
+          eventTarget,
+          eventTargetFiber,
         );
         context.accumulateTwoPhaseDispatches(event);
-      } else if (type === 'onPressChange') {
-        listener(false);
+      } else if (richEventType === 'onPressChange') {
+        if (state.isPressed) {
+          eventListener(false);
+        }
+        state.isPressed = false;
       }
     }
   },
