@@ -18,16 +18,10 @@ const listenTo = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  listenTo.push(
-    'onTouchStart',
-    'onTouchEnd',
-    'onTouchCancel',
-    'onMouseDown',
-    'onMouseUp',
-  );
+  listenTo.push('onTouchStart', 'onTouchEnd', 'onTouchCancel', 'onMouseDown', 'onMouseUp');
 }
 
-const emptyFunction = () => {};
+const emptyFunction = () => { };
 
 const PressImpl = {
   listenTo,
@@ -38,15 +32,12 @@ const PressImpl = {
       isPressed: false,
     };
   },
-  processRichEvents(context, config, state): void {
-    const {
-      eventTarget,
-      eventTargetFiber,
-      eventType,
-      eventListener,
-      nativeEvent,
-      richEventType,
-    } = context;
+  processRichEvents(
+    context,
+    config,
+    state,
+  ): void {
+    const { eventTarget, eventTargetFiber, eventType, eventListener, nativeEvent, richEventType } = context;
 
     if (eventType === 'click' || eventType === 'keypress') {
       if (state.ignoreClick) {
@@ -128,12 +119,10 @@ const PressImpl = {
         }
         state.isPressed = false;
       }
-      if (state.ignoreClick) {
+      if (state.ignoreClick && state.touchFiber !== null) {
         let traverseFiber = eventTargetFiber;
         let triggerPress = false;
 
-        // We traverse through parents as the parent might
-        // have been a portal or it might have been nested
         while (traverseFiber !== null) {
           if (traverseFiber === eventTargetFiber) {
             triggerPress = true;
