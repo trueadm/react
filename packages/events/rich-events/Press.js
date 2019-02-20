@@ -9,7 +9,7 @@
 
 const childEventTypes = [
   'onClick',
-  'onKeyPress',
+  'onKeyDown',
   'onPointerDown',
   'onPointerOver',
   'onPointerOut',
@@ -197,7 +197,7 @@ const PressImplementation = {
     const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
 
     switch (eventType) {
-      case 'keypress': {
+      case 'keydown': {
         if (!props.onPress) {
           return;
         }
@@ -209,14 +209,19 @@ const PressImplementation = {
         if (!isValidKeyPress) {
           return;
         }
+        let keyPressEventListener = props.onPress;
 
-        // Wrap listener with prevent default behaviour
-        const keyPressEventListener = e => {
-          if (!e.isDefaultPrevented() && !e.nativeEvent.defaultPrevented) {
-            e.preventDefault();
-            props.onPress(e);
-          }
-        };
+        // Wrap listener with prevent default behaviour, unless
+        // we are dealing with an anchor
+        if (!isAnchorTagElement(eventTarget)) {
+          keyPressEventListener = e => {
+            if (!e.isDefaultPrevented() && !e.nativeEvent.defaultPrevented) {
+              e.preventDefault();
+              state.defaultPrevented = true;
+              props.onPress(e);
+            }
+          };
+        }
         dispatchPressEvent(context, keyPressEventListener);
         break;
       }
