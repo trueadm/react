@@ -11,7 +11,7 @@
 
 let React;
 let ReactDOM;
-let Press;
+let press;
 
 describe('SyntheticEvent', () => {
   let container;
@@ -19,7 +19,7 @@ describe('SyntheticEvent', () => {
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');
-    Press = require('react/events/press');
+    press = require('react/events/press');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -31,7 +31,6 @@ describe('SyntheticEvent', () => {
   });
 
   it('should support onPress', () => {
-    const {onPress} = Press;
     let buttonRef = React.createRef();
     let events = [];
 
@@ -43,8 +42,8 @@ describe('SyntheticEvent', () => {
       events.push('press 2');
     }
 
-    function handleOnClick() {
-      events.push('click');
+    function handleOnMouseDown() {
+      events.push('mousedown');
     }
 
     function handleKeyPress() {
@@ -53,11 +52,11 @@ describe('SyntheticEvent', () => {
 
     function Component() {
       return (
-        <React.unstable_RichEvents listeners={[onPress(), handleOnPress1]}>
-          <React.unstable_RichEvents listeners={[onPress(), handleOnPress2]}>
+        <React.unstable_RichEvents listeners={[press({onPress: handleOnPress1})]}>
+          <React.unstable_RichEvents listeners={[press({onPress: handleOnPress2})]}>
             <button
               ref={buttonRef}
-              onClick={handleOnClick}
+              onMouseDown={handleOnMouseDown}
               onKeyPress={handleKeyPress}>
               Press me!
             </button>
@@ -68,11 +67,15 @@ describe('SyntheticEvent', () => {
 
     ReactDOM.render(<Component />, container);
 
-    const clickEvent = document.createEvent('Event');
-    clickEvent.initEvent('click', true, true);
-    buttonRef.current.dispatchEvent(clickEvent);
+    const mouseDownEvent = document.createEvent('Event');
+    mouseDownEvent.initEvent('mousedown', true, true);
+    buttonRef.current.dispatchEvent(mouseDownEvent);
 
-    expect(events).toEqual(['click', 'press 2', 'press 1']);
+    const mouseUpEvent = document.createEvent('Event');
+    mouseUpEvent.initEvent('mouseup', true, true);
+    buttonRef.current.dispatchEvent(mouseUpEvent);
+
+    expect(events).toEqual(['mousedown', 'press 2', 'press 1']);
 
     events = [];
     const keyPressEvent = new KeyboardEvent('keypress', {
@@ -88,7 +91,6 @@ describe('SyntheticEvent', () => {
   });
 
   it('should support onPressIn and onPressOut', () => {
-    const {onPressIn, onPressOut} = Press;
     let divRef = React.createRef();
     let events = [];
 
@@ -103,12 +105,7 @@ describe('SyntheticEvent', () => {
     function Component() {
       return (
         <React.unstable_RichEvents
-          listeners={[
-            onPressIn(),
-            handleOnPressIn,
-            onPressOut(),
-            handleOnPressOut,
-          ]}>
+          listeners={[press({onPressIn: handleOnPressIn, onPressOut: handleOnPressOut})]}>
           <div ref={divRef}>Press me!</div>
         </React.unstable_RichEvents>
       );
