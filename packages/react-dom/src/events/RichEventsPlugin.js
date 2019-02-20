@@ -11,7 +11,7 @@ import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
-import {listenTo} from "./ReactBrowserEventEmitter";
+import {getListeningForDocument, listenToDependency} from './ReactBrowserEventEmitter';
 
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
@@ -70,6 +70,8 @@ RichEventsContext.prototype.extractEvents = function() {
 RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
 
 RichEventsContext.prototype.addRootListeners = function(rootEventTypes) {
+  const container = this.eventTarget.ownerDocument;
+  const isListening = getListeningForDocument(container);
   for (let i = 0; i < rootEventTypes.length; i++) {
     const rootEventType = rootEventTypes[i];
     let richEventFibers = rootEventRichEventFibers.get(rootEventType);
@@ -77,7 +79,7 @@ RichEventsContext.prototype.addRootListeners = function(rootEventTypes) {
       richEventFibers = new Set();
       rootEventRichEventFibers.set(rootEventType, richEventFibers);
     }
-    listenTo(rootEventType, this.eventTarget.ownerDocument)
+    listenToDependency(rootEventType, isListening, container);
     richEventFibers.add(this.fiber);
   }
 };
@@ -137,7 +139,12 @@ const RichEventsPlugin = {
 
       for (let i = 0; i < richEventFibersArr.length; i++) {
         const richEventFiber = richEventFibersArr[i];
-        triggerListeners(richEventFiber, context, nativeEventTarget, targetInst);
+        triggerListeners(
+          richEventFiber,
+          context,
+          nativeEventTarget,
+          targetInst,
+        );
       }
     }
     return context.extractEvents();

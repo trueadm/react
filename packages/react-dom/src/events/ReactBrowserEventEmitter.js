@@ -92,7 +92,7 @@ let reactTopListenersCounter = 0;
  */
 const topListenersIDKey = '_reactListenersID' + ('' + Math.random()).slice(2);
 
-function getListeningForDocument(mountAt: any) {
+export function getListeningForDocument(mountAt: any) {
   // In IE8, `mountAt` is a host object and doesn't have `hasOwnProperty`
   // directly.
   if (!Object.prototype.hasOwnProperty.call(mountAt, topListenersIDKey)) {
@@ -132,43 +132,47 @@ export function listenTo(
 
   for (let i = 0; i < dependencies.length; i++) {
     const dependency = dependencies[i];
-    if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) {
-      switch (dependency) {
-        case TOP_SCROLL:
-          trapCapturedEvent(TOP_SCROLL, mountAt);
-          break;
-        case TOP_FOCUS:
-        case TOP_BLUR:
-          trapCapturedEvent(TOP_FOCUS, mountAt);
-          trapCapturedEvent(TOP_BLUR, mountAt);
-          // We set the flag for a single dependency later in this function,
-          // but this ensures we mark both as attached rather than just one.
-          isListening[TOP_BLUR] = true;
-          isListening[TOP_FOCUS] = true;
-          break;
-        case TOP_CANCEL:
-        case TOP_CLOSE:
-          if (isEventSupported(getRawEventName(dependency))) {
-            trapCapturedEvent(dependency, mountAt);
-          }
-          break;
-        case TOP_INVALID:
-        case TOP_SUBMIT:
-        case TOP_RESET:
-          // We listen to them on the target DOM elements.
-          // Some of them bubble so we don't want them to fire twice.
-          break;
-        default:
-          // By default, listen on the top level to all non-media events.
-          // Media events don't bubble so adding the listener wouldn't do anything.
-          const isMediaEvent = mediaEventTypes.indexOf(dependency) !== -1;
-          if (!isMediaEvent) {
-            trapBubbledEvent(dependency, mountAt);
-          }
-          break;
-      }
-      isListening[dependency] = true;
+    listenToDependency(dependency, isListening, mountAt);
+  }
+}
+
+export function listenToDependency(dependency, isListening, mountAt) {
+  if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) {
+    switch (dependency) {
+      case TOP_SCROLL:
+        trapCapturedEvent(TOP_SCROLL, mountAt);
+        break;
+      case TOP_FOCUS:
+      case TOP_BLUR:
+        trapCapturedEvent(TOP_FOCUS, mountAt);
+        trapCapturedEvent(TOP_BLUR, mountAt);
+        // We set the flag for a single dependency later in this function,
+        // but this ensures we mark both as attached rather than just one.
+        isListening[TOP_BLUR] = true;
+        isListening[TOP_FOCUS] = true;
+        break;
+      case TOP_CANCEL:
+      case TOP_CLOSE:
+        if (isEventSupported(getRawEventName(dependency))) {
+          trapCapturedEvent(dependency, mountAt);
+        }
+        break;
+      case TOP_INVALID:
+      case TOP_SUBMIT:
+      case TOP_RESET:
+        // We listen to them on the target DOM elements.
+        // Some of them bubble so we don't want them to fire twice.
+        break;
+      default:
+        // By default, listen on the top level to all non-media events.
+        // Media events don't bubble so adding the listener wouldn't do anything.
+        const isMediaEvent = mediaEventTypes.indexOf(dependency) !== -1;
+        if (!isMediaEvent) {
+          trapBubbledEvent(dependency, mountAt);
+        }
+        break;
     }
+    isListening[dependency] = true;
   }
 }
 

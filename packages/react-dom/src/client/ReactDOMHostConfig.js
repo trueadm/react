@@ -22,7 +22,6 @@ import {
   warnForDeletedHydratableText,
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
-  ensureListeningTo,
 } from './ReactDOMComponent';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
@@ -41,6 +40,7 @@ import {
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
 import {currentRichEventFibers} from '../events/RichEventsPlugin';
+import {getListeningForDocument, listenToDependency} from '../events/ReactBrowserEventEmitter';
 
 import type {DOMContainer} from './ReactDOM';
 
@@ -226,15 +226,16 @@ export function handleRichEvents(
   currentRichEventFibers.add(richEventFiber);
   for (let i = 0, length = newListeners.length; i < length; ++i) {
     const impl = newListeners[i].impl;
-    const config = newListeners[i].config;
 
     if (oldListeners !== null) {
       currentRichEventFibers.delete(richEventFiber.alternate);
     }
     const {childEventTypes} = impl;
+    const container = rootContainerInstance.ownerDocument;
+    const isListening = getListeningForDocument(container);
     for (let s = 0; s < childEventTypes.length; s++) {
       const childEventType = childEventTypes[s];
-      ensureListeningTo(rootContainerInstance, childEventType);
+      listenToDependency(childEventType, isListening, container);
     }
   }
 }

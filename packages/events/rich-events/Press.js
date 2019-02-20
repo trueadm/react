@@ -8,27 +8,27 @@
  */
 
 const childEventTypes = [
-  'onClick',
-  'onKeyDown',
-  'onPointerDown',
-  'onPointerOver',
-  'onPointerOut',
-  'onPointerCancel',
+  'click',
+  'keydown',
+  'pointerdown',
+  'pointerover',
+  'pointerout',
+  'pointercancel',
 ];
-const rootEventTypes = ['onPointerUp'];
+const rootEventTypes = ['pointerup'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   childEventTypes.push(
-    'onTouchStart',
-    'onTouchEnd',
-    'onMouseDown',
-    'onMouseOver',
-    'onMouseOut',
-    'onTouchCancel',
+    'touchstart',
+    'touchend',
+    'mousedown',
+    'mouseover',
+    'mouseout',
+    'touchcancel',
   );
-  rootEventTypes.push('onMouseUp');
+  rootEventTypes.push('mouseup');
 }
 
 function dispatchPressEvent(context, listener) {
