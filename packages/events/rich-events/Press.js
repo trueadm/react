@@ -193,7 +193,7 @@ const PressImplementation = {
     };
     return state;
   },
-  onChildEvent(context, props, state): void {
+  handleEvent(context, props, state): void {
     const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
 
     switch (eventType) {

@@ -94,7 +94,7 @@ RichEventsContext.prototype.removeRootListeners = function(rootEventTypes) {
   }
 };
 
-function triggerListeners(fiber, context, nativeEventTarget, targetInst) {
+function handleEvents(fiber, context, nativeEventTarget, targetInst) {
   const listeners = fiber.memoizedProps.listeners;
   context.fiber = fiber;
 
@@ -110,7 +110,7 @@ function triggerListeners(fiber, context, nativeEventTarget, targetInst) {
       state = impl.createInitialState(props);
       fiber.stateNode.set(impl, state);
     }
-    impl.onChildEvent(context, props, state);
+    impl.handleEvent(context, props, state);
   }
 }
 
@@ -129,7 +129,7 @@ const RichEventsPlugin = {
         if (!currentRichEventFibers.has(currentFiber)) {
           currentFiber = currentFiber.alternate;
         }
-        triggerListeners(currentFiber, context, nativeEventTarget, targetInst);
+        handleEvents(currentFiber, context, nativeEventTarget, targetInst);
       }
       currentFiber = currentFiber.return;
     }
@@ -139,7 +139,7 @@ const RichEventsPlugin = {
 
       for (let i = 0; i < richEventFibersArr.length; i++) {
         const richEventFiber = richEventFibersArr[i];
-        triggerListeners(
+        handleEvents(
           richEventFiber,
           context,
           nativeEventTarget,
