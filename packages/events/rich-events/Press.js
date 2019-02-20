@@ -7,38 +7,80 @@
  * @flow
  */
 
-const childEventTypes = [
-  'onKeyPress',
-  'onPointerDown',
-  'onPointerCancel',
-];
-const rootEventTypes = [
-  'onPointerUp',
-];
+const childEventTypes = ['onKeyPress', 'onPointerDown', 'onPointerCancel'];
+const rootEventTypes = ['onPointerUp'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('onTouchStart', 'onMouseDown', 'onTouchCancel');
-  rootEventTypes.push('onTouchEnd', 'onMouseUp');
+  childEventTypes.push('onTouchStart', 'onTouchEnd', 'onMouseDown', 'onTouchCancel');
+  rootEventTypes.push('onMouseUp');
 }
 
-function handlePressOut(state, context, e) {
-  if (!state.isPressed) {
-    return;
-  }
-  if (state.onPressChange !== null) {
-    state.onPressChange();
-  }
-  if (state.onPressOut !== null) {
-    state.onPressOut(e);
-  }
-  state.isPressed = false;
-  if (e.type === "pointercancel" || e.type === "touchcancel") {
-    state.pressStartFiber = null;
-    return;
-  }
+function dispatchPressEvent(context, listener) {
+  const {nativeEvent, eventTarget, eventTargetFiber} = context;
+  context.dispatchTwoPhaseEvent(
+    'press',
+    listener,
+    nativeEvent,
+    eventTarget,
+    eventTargetFiber,
+    false,
+  );
+}
 
+function dispatchPressInEvents(context, props) {
+  const {nativeEvent, eventTarget, eventTargetFiber} = context;
+  if (props.onPressIn) {
+    context.dispatchTwoPhaseEvent(
+      'pressin',
+      props.onPressIn,
+      nativeEvent,
+      eventTarget,
+      eventTargetFiber,
+      false,
+    );
+  }
+  if (props.onPressChange) {
+    const pressChangeEventListener = () => {
+      props.onPressChange(true);
+    };
+    context.dispatchTwoPhaseEvent(
+      'presschange',
+      pressChangeEventListener,
+      nativeEvent,
+      eventTarget,
+      eventTargetFiber,
+      false,
+    );
+  }
+}
+
+function dispatchPressOutEvents(context, props) {
+  const {nativeEvent, eventTarget, eventTargetFiber} = context;
+  if (props.onPressIn) {
+    context.dispatchTwoPhaseEvent(
+      'pressout',
+      props.onPressOut,
+      nativeEvent,
+      eventTarget,
+      eventTargetFiber,
+      false,
+    );
+  }
+  if (props.onPressChange) {
+    const pressChangeEventListener = () => {
+      props.onPressChange(false);
+    };
+    context.dispatchTwoPhaseEvent(
+      'presschange',
+      pressChangeEventListener,
+      nativeEvent,
+      eventTarget,
+      eventTargetFiber,
+      false,
+    );
+  }
 }
 
 const PressImplementation = {
@@ -51,12 +93,8 @@ const PressImplementation = {
     };
     return state;
   },
-  onChildEvent(
-    context,
-    props,
-    state,
-  ): void {
-    const { eventTarget, eventTargetFiber, eventType, nativeEvent } = context;
+  onChildEvent(context, props, state): void {
+    const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'keypress': {
@@ -79,83 +117,63 @@ const PressImplementation = {
             props.onPress(e);
           }
         };
-        context.dispatchTwoPhaseEvent(
-          'press',
-          keyPressEventListener,
-          nativeEvent,
-          eventTarget,
-          eventTargetFiber,
-          false,
-        );
+        dispatchPressEvent(context, keyPressEventListener);
+        break;
+      }
+      case 'touchstart':
+      // Touch events are for Safari, which lack pointer event support
+        if (!state.isPressed) {
+          dispatchPressInEvents(context, props);
+          state.isPressed = true;
+        }
+        break;
+      case 'touchcancel':
+      case 'touchend': {
+        // Touch events are for Safari, which lack pointer event support
+        if (state.isPressed) {
+          dispatchPressOutEvents(context, props);
+          state.isPressed = false;
+          if (eventType !== 'touchcancel' && props.onPress) {
+            // Find if the X/Y of the end touch is still that of the original target
+            const changedTouch = event.changedTouches[0];
+            const target = eventTarget.ownerDocument.elementFromPoint(changedTouch.clientX, changedTouch.clientY);
+            const targetFiber = context.getClosestInstanceFromNode(target);
+            let traverseFiber = targetFiber;
+            let triggerPress = false;
+
+            while (traverseFiber !== null) {
+              if (traverseFiber === eventTargetFiber) {
+                triggerPress = true;
+              }
+              traverseFiber = traverseFiber.return;
+            }
+            if (triggerPress) {
+              dispatchPressEvent(context, props.onPress);
+            }
+          }
+          // Prevent mouse events from firing
+          nativeEvent.preventDefault();
+        }
         break;
       }
       case 'pointerdown':
-      case 'touchstart':
       case 'mousedown': {
-        if (props.onPressIn) {
-          context.dispatchTwoPhaseEvent(
-            'pressin',
-            props.onPressIn,
-            nativeEvent,
-            eventTarget,
-            eventTargetFiber,
-            false,
-          );
+        if (!state.isPressed) {
+          dispatchPressInEvents(context, props);
+          state.pressTarget = eventTarget;
+          state.pressTargetFiber = eventTargetFiber;
+          state.isPressed = true;
+          context.addRootListeners(rootEventTypes);
         }
-        if (props.onPressChange) {
-          if (!state.isPressed) {
-            const pressChangeEventListener = () => {
-              props.onPressChange(true);
-            };
-            context.dispatchTwoPhaseEvent(
-              'presschange',
-              pressChangeEventListener,
-              nativeEvent,
-              eventTarget,
-              eventTargetFiber,
-              false,
-            );
-          }
-        }
-        state.pressTarget = eventTarget;
-        state.pressTargetFiber = eventTargetFiber;
-        state.isPressed = true;
-        context.addRootListeners(rootEventTypes);
         break;
       }
       case 'mouseup':
       case 'pointerup':
-      case 'touchend':
-      case 'touchcancel':
       case 'pointercancel': {
         if (state.isPressed) {
+          dispatchPressOutEvents(context, props, state);
           state.isPressed = false;
-          if (props.onPressOut) {
-            context.dispatchTwoPhaseEvent(
-              'pressout',
-              props.onPressOut,
-              nativeEvent,
-              eventTarget,
-              eventTargetFiber,
-              false,
-            );
-          }
-          if (props.onPressChange) {
-            if (!state.isPressed) {
-              const pressChangeEventListener = () => {
-                props.onPressChange(false);
-              };
-              context.dispatchTwoPhaseEvent(
-                'presschange',
-                pressChangeEventListener,
-                nativeEvent,
-                eventTarget,
-                eventTargetFiber,
-                false,
-              );
-            }
-          }
-          if (state.pressTargetFiber !== null && props.onPress) {
+          if (eventType !== 'pointercancel' && state.pressTargetFiber !== null && props.onPress) {
             let traverseFiber = eventTargetFiber;
             let triggerPress = false;
 
@@ -166,18 +184,9 @@ const PressImplementation = {
               traverseFiber = traverseFiber.return;
             }
             if (triggerPress) {
-              context.dispatchTwoPhaseEvent(
-                'press',
-                props.onPress,
-                nativeEvent,
-                eventTarget,
-                eventTargetFiber,
-                false,
-              );
+              dispatchPressEvent(context, props.onPress);
             }
           }
-          state.pressTarget = null;
-          state.pressStartFiber = null;
           context.removeRootListeners(rootEventTypes);
         }
       }
