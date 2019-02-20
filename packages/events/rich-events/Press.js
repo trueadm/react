@@ -8,6 +8,7 @@
  */
 
 const childEventTypes = [
+  'onClick',
   'onKeyPress',
   'onPointerDown',
   'onPointerOver',
@@ -126,6 +127,10 @@ function dispatchHoverInEvents(context, props) {
   }
 }
 
+function isAnchorTagElement(eventTarget) {
+  return eventTarget.nodeName === 'A';
+}
+
 function dispatchHoverOutEvents(context, props) {
   const {nativeEvent, eventTarget, eventTargetFiber} = context;
   if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
@@ -179,6 +184,8 @@ const PressImplementation = {
   childEventTypes,
   createInitialState(props) {
     const state = {
+      defaultPrevented: false,
+      isAnchorTouched: false,
       isHovered: false,
       isPressed: false,
       pressTarget: null,
@@ -216,6 +223,11 @@ const PressImplementation = {
       case 'touchstart':
         // Touch events are for Safari, which lack pointer event support
         if (!state.isPressed) {
+          // We bail out of polyfilling anchor tags
+          if (isAnchorTagElement(eventTarget)) {
+            state.isAnchorTouched = true;
+            return;
+          }
           dispatchPressInEvents(context, props);
           state.isPressed = true;
         }
@@ -223,12 +235,15 @@ const PressImplementation = {
       case 'touchcancel':
       case 'touchend': {
         // Touch events are for Safari, which lack pointer event support
+        if (state.isAnchorTouched) {
+          return;
+        }
         if (state.isPressed) {
           dispatchPressOutEvents(context, props);
           state.isPressed = false;
           if (eventType !== 'touchcancel' && props.onPress) {
             // Find if the X/Y of the end touch is still that of the original target
-            const changedTouch = event.changedTouches[0];
+            const changedTouch = nativeEvent.changedTouches[0];
             const target = eventTarget.ownerDocument.elementFromPoint(
               changedTouch.clientX,
               changedTouch.clientY,
@@ -279,26 +294,37 @@ const PressImplementation = {
               traverseFiber = traverseFiber.return;
             }
             if (triggerPress) {
-              dispatchPressEvent(context, props.onPress);
+              const pressEventListener = e => {
+                props.onPress(e);
+                if (e.nativeEvent.defaultPrevented) {
+                  state.defaultPrevented = true;
+                }
+              };
+              dispatchPressEvent(context, pressEventListener);
             }
           }
           context.removeRootListeners(rootEventTypes);
         }
+        state.isAnchorTouched = false;
         break;
       }
       case 'pointerover':
       case 'mouseover': {
-        if (!state.isHovered) {
+        if (!state.isHovered && !state.isAnchorTouched) {
           dispatchHoverInEvents(context, props);
           state.isHovered = true;
+
         }
         break;
       }
       case 'pointerout':
       case 'mouseout': {
-        if (state.isHovered) {
+        if (state.isHovered && !state.isAnchorTouched) {
           dispatchHoverOutEvents(context, props, state);
           state.isHovered = false;
+          if (isAnchorTagElement(eventTarget)) {
+            nativeEvent.preventDefault();
+          }
         }
         break;
       }
@@ -312,6 +338,12 @@ const PressImplementation = {
           state.isHovered = false;
         }
         break;
+      }
+      case 'click': {
+        if (state.defaultPrevented) {
+          nativeEvent.preventDefault();
+          state.defaultPrevented = false;
+        }
       }
     }
   },
