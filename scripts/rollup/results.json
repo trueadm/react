@@ -60,8 +60,8 @@
       "filename": "react-dom.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 785012,
-      "gzip": 178584
+      "size": 784999,
+      "gzip": 178580
     },
     {
       "filename": "react-dom.production.min.js",
@@ -1033,8 +1033,8 @@
       "filename": "react-dom-unstable-fire.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 785365,
-      "gzip": 178729
+      "size": 785352,
+      "gzip": 178726
     }
   ]
 }
