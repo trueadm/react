@@ -9,6 +9,7 @@
 import {RichEvents} from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
+import {executeDispatch} from 'events/EventPluginUtils';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import {getListeningForDocument, listenToDependency} from './ReactBrowserEventEmitter';
@@ -52,6 +53,23 @@ RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
   } else {
     this.bubblePhaseEvents.push(syntheticEvent);
   }
+};
+
+RichEventsContext.prototype.dispatchImmediateEvent = function(
+  name,
+  eventListener,
+  nativeEvent,
+  eventTarget,
+  eventTargetFiber,
+) {
+  const syntheticEvent = SyntheticEvent.getPooled(
+    null,
+    eventTargetFiber,
+    nativeEvent,
+    eventTarget,
+  );
+  syntheticEvent.type = name;
+  executeDispatch(syntheticEvent, eventListener, eventTargetFiber);
 };
 
 RichEventsContext.prototype.extractEvents = function() {
