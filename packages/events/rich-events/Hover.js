@@ -26,7 +26,7 @@ function dispatchHoverInEvents(context, props) {
   }
   if (props.onHoverIn) {
     context.dispatchTwoPhaseEvent(
-      'hoverin',
+      'focusin',
       props.onHoverIn,
       nativeEvent,
       eventTarget,
@@ -131,7 +131,7 @@ const HoverImplementation = {
       case 'pointerout':
       case 'mouseout': {
         if (state.isHovered && !state.isAnchorTouched) {
-          dispatchHoverOutEvents(context, props, state);
+          dispatchHoverOutEvents(context, props);
           state.isHovered = false;
           if (isAnchorTagElement(eventTarget)) {
             nativeEvent.preventDefault();
@@ -141,7 +141,7 @@ const HoverImplementation = {
       }
       case 'pointercancel': {
         if (state.isHovered) {
-          dispatchHoverOutEvents(context, props, state);
+          dispatchHoverOutEvents(context, props);
           state.isHovered = false;
         }
         break;
