@@ -114,9 +114,6 @@ const SwipeImplementation = {
       case 'mouseup':
       case 'pointerup': {
         if (state.isSwiping) {
-          if (props.onSwipeEnd) {
-            dispatchSwipeEvent(context, 'swipeend', props.onSwipeEnd, state);
-          }
           const direction = state.direction;
           const lastDirection = state.lastDirection;
           if (direction !== lastDirection) {
@@ -135,6 +132,9 @@ const SwipeImplementation = {
                 state,
               );
             }
+          }
+          if (props.onSwipeEnd) {
+            dispatchSwipeEvent(context, 'swipeend', props.onSwipeEnd, state);
           }
           state.lastDirection = direction;
           state.isSwiping = false;
