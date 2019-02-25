@@ -60,8 +60,8 @@
       "filename": "react-dom.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 784999,
-      "gzip": 178580
+      "size": 785330,
+      "gzip": 178617
     },
     {
       "filename": "react-dom.production.min.js",
@@ -137,8 +137,8 @@
       "filename": "react-dom-unstable-native-dependencies.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 61722,
-      "gzip": 16156
+      "size": 61933,
+      "gzip": 16197
     },
     {
       "filename": "react-dom-unstable-native-dependencies.production.min.js",
@@ -1033,8 +1033,8 @@
       "filename": "react-dom-unstable-fire.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 785352,
-      "gzip": 178726
+      "size": 785683,
+      "gzip": 178759
     }
   ]
 }

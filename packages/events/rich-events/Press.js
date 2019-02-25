@@ -17,10 +17,10 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   rootEventTypes.push('mouseup');
 }
 
-function dispatchPressEvent(context, listener) {
+function dispatchPressEvent(context, name, listener) {
   const {nativeEvent, eventTarget, eventTargetFiber} = context;
   context.dispatchTwoPhaseEvent(
-    'press',
+    name,
     listener,
     nativeEvent,
     eventTarget,
@@ -28,6 +28,8 @@ function dispatchPressEvent(context, listener) {
     false,
   );
 }
+
+function dispatchLongPressEvent(context, listener) {}
 
 function dispatchPressInEvents(context, props, state) {
   const {nativeEvent, eventTarget, eventTargetFiber} = context;
@@ -54,42 +56,23 @@ function dispatchPressInEvents(context, props, state) {
       false,
     );
   }
-  if (props.onLongPress) {
-    const longPressDelay = props.longPressDelay || 2000;
+  if (!state.isLongPressed && (props.onLongPress || props.onLongPressChange)) {
+    const longPressDelay = props.longPressDelay || 1000;
     state.longPressTimeout = setTimeout(() => {
-      state.isPressed = false;
-      state.isAnchorTouched = false;
-      state.pressTarget = null;
-      state.pressTargetFiber = null;
+      state.isLongPressed = true;
       state.longPressTimeout = null;
-      if (props.onPressOut) {
-        context.dispatchImmediateEvent(
-          'pressout',
-          props.onPressOut,
-          nativeEvent,
-          eventTarget,
-          eventTargetFiber,
-        );
-      }
-      if (props.onPressChange) {
-        const pressChangeEventListener = () => {
-          props.onPressChange(false);
+      if (props.onLongPressChange) {
+        const longPressChangeEventListener = () => {
+          props.onLongPressChange(true);
         };
         context.dispatchImmediateEvent(
-          'presschange',
-          pressChangeEventListener,
+          'longpresschange',
+          longPressChangeEventListener,
           nativeEvent,
           eventTarget,
           eventTargetFiber,
         );
       }
-      context.dispatchImmediateEvent(
-        'longpress',
-        props.onLongPress,
-        nativeEvent,
-        eventTarget,
-        eventTargetFiber,
-      );
     }, longPressDelay);
   }
 }
@@ -123,6 +106,19 @@ function dispatchPressOutEvents(context, props, state) {
       false,
     );
   }
+  if (props.onLongPressChange && state.isLongPressed) {
+    const longPressChangeEventListener = () => {
+      props.onLongPressChange(false);
+    };
+    context.dispatchTwoPhaseEvent(
+      'longpresschange',
+      longPressChangeEventListener,
+      nativeEvent,
+      eventTarget,
+      eventTargetFiber,
+      false,
+    );
+  }
 }
 function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
@@ -134,6 +130,7 @@ const PressImplementation = {
     const state = {
       defaultPrevented: false,
       isAnchorTouched: false,
+      isLongPressed: false,
       isPressed: false,
       longPressTimeout: null,
       pressTarget: null,
@@ -170,7 +167,7 @@ const PressImplementation = {
             }
           };
         }
-        dispatchPressEvent(context, keyPressEventListener);
+        dispatchPressEvent(context, 'press', keyPressEventListener);
         break;
       }
       case 'touchstart':
@@ -193,8 +190,7 @@ const PressImplementation = {
         }
         if (state.isPressed) {
           dispatchPressOutEvents(context, props, state);
-          state.isPressed = false;
-          if (eventType !== 'touchcancel' && props.onPress) {
+          if (eventType !== 'touchcancel' && (props.onPress || props.onLongPress)) {
             // Find if the X/Y of the end touch is still that of the original target
             const changedTouch = nativeEvent.changedTouches[0];
             const target = eventTarget.ownerDocument.elementFromPoint(
@@ -212,9 +208,15 @@ const PressImplementation = {
               traverseFiber = traverseFiber.return;
             }
             if (triggerPress) {
-              dispatchPressEvent(context, props.onPress);
+              if (state.isLongPressed && props.onLongPress) {
+                dispatchPressEvent(context, 'longpress', props.onLongPress);
+              } else if (props.onPress) {
+                dispatchPressEvent(context, 'press', props.onPress);
+              }
             }
           }
+          state.isPressed = false;
+          state.isLongPressed = false;
           // Prevent mouse events from firing
           nativeEvent.preventDefault();
         }
@@ -235,8 +237,7 @@ const PressImplementation = {
       case 'pointerup': {
         if (state.isPressed) {
           dispatchPressOutEvents(context, props, state);
-          state.isPressed = false;
-          if (state.pressTargetFiber !== null && props.onPress) {
+          if (state.pressTargetFiber !== null && (props.onPress || props.onLongPress)) {
             let traverseFiber = eventTargetFiber;
             let triggerPress = false;
 
@@ -247,15 +248,27 @@ const PressImplementation = {
               traverseFiber = traverseFiber.return;
             }
             if (triggerPress) {
-              const pressEventListener = e => {
-                props.onPress(e);
-                if (e.nativeEvent.defaultPrevented) {
-                  state.defaultPrevented = true;
-                }
-              };
-              dispatchPressEvent(context, pressEventListener);
+              if (state.isLongPressed && props.onLongPress) {
+                const longPressEventListener = e => {
+                  props.onLongPress(e);
+                  if (e.nativeEvent.defaultPrevented) {
+                    state.defaultPrevented = true;
+                  }
+                };
+                dispatchPressEvent(context, 'longpress', longPressEventListener);
+              } else if (props.onPress) {
+                const pressEventListener = e => {
+                  props.onPress(e);
+                  if (e.nativeEvent.defaultPrevented) {
+                    state.defaultPrevented = true;
+                  }
+                };
+                dispatchPressEvent(context, 'press', pressEventListener);
+              }
             }
           }
+          state.isPressed = false;
+          state.isLongPressed = false;
           context.removeRootListeners(rootEventTypes);
         }
         state.isAnchorTouched = false;
@@ -265,6 +278,7 @@ const PressImplementation = {
         if (state.isPressed) {
           dispatchPressOutEvents(context, props, state);
           state.isPressed = false;
+          state.isLongPressed = false;
         }
         break;
       }
