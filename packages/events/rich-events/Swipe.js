@@ -35,6 +35,7 @@ const SwipeImplementation = {
     const state = {
       direction: 0,
       isSwiping: false,
+      lastDirection: 0,
       startX: 0,
       startY: 0,
       swipeTarget: null,
@@ -116,16 +117,26 @@ const SwipeImplementation = {
           if (props.onSwipeEnd) {
             dispatchSwipeEvent(context, 'swipeend', props.onSwipeEnd, state);
           }
-          if (props.onSwipeLeft && state.direction === 3) {
-            dispatchSwipeEvent(context, 'swipeleft', props.onSwipeLeft, state);
-          } else if (props.onSwipeRight && state.direction === 1) {
-            dispatchSwipeEvent(
-              context,
-              'swiperight',
-              props.onSwipeRight,
-              state,
-            );
+          const direction = state.direction;
+          const lastDirection = state.lastDirection;
+          if (direction !== lastDirection) {
+            if (props.onSwipeLeft && direction === 3) {
+              dispatchSwipeEvent(
+                context,
+                'swipeleft',
+                props.onSwipeLeft,
+                state,
+              );
+            } else if (props.onSwipeRight && direction === 1) {
+              dispatchSwipeEvent(
+                context,
+                'swiperight',
+                props.onSwipeRight,
+                state,
+              );
+            }
           }
+          state.lastDirection = direction;
           state.isSwiping = false;
           state.swipeTarget = null;
           state.swipeTargetFiber = null;
