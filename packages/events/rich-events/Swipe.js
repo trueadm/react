@@ -33,6 +33,7 @@ const SwipeImplementation = {
   childEventTypes,
   createInitialState(props) {
     const state = {
+      direction: 0,
       isSwiping: false,
       startX: 0,
       startY: 0,
@@ -41,6 +42,15 @@ const SwipeImplementation = {
       x: 0,
       y: 0,
     };
+    window.addEventListener(
+      'touchmove',
+      e => {
+        if (state.isSwiping) {
+          e.preventDefault();
+        }
+      },
+      {passive: false},
+    );
     return state;
   },
   handleEvent(context, props, state): void {
@@ -55,8 +65,10 @@ const SwipeImplementation = {
             eventType === 'touchstart'
               ? nativeEvent.changedTouches[0]
               : nativeEvent;
-          state.startX = obj.screenX;
-          state.startY = obj.screenY;
+          const x = (state.startX = obj.screenX);
+          const y = (state.startY = obj.screenY);
+          state.x = x;
+          state.y = y;
           state.swipeTarget = eventTarget;
           state.swipeTargetFiber = eventTargetFiber;
           state.isSwiping = true;
@@ -72,8 +84,15 @@ const SwipeImplementation = {
             eventType === 'touchmove'
               ? nativeEvent.changedTouches[0]
               : nativeEvent;
-          const x = (state.x = obj.screenX);
-          const y = (state.y = obj.screenY);
+          const x = obj.screenX;
+          const y = obj.screenY;
+          if (x < state.x && props.onSwipeLeft) {
+            state.direction = 3;
+          } else if (x > state.x && props.onSwipeRight) {
+            state.direction = 1;
+          }
+          state.x = x;
+          state.y = y;
           if (props.onSwipeMove) {
             const eventData = {
               diffX: x - state.startX,
@@ -87,7 +106,6 @@ const SwipeImplementation = {
               eventData,
             );
           }
-          nativeEvent.preventDefault();
         }
         break;
       }
@@ -98,9 +116,9 @@ const SwipeImplementation = {
           if (props.onSwipeEnd) {
             dispatchSwipeEvent(context, 'swipeend', props.onSwipeEnd, state);
           }
-          if (props.onSwipeLeft && state.startX > state.x) {
+          if (props.onSwipeLeft && state.direction === 3) {
             dispatchSwipeEvent(context, 'swipeleft', props.onSwipeLeft, state);
-          } else if (props.onSwipeRight && state.startX < state.x) {
+          } else if (props.onSwipeRight && state.direction === 1) {
             dispatchSwipeEvent(
               context,
               'swiperight',
