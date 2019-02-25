@@ -29,8 +29,6 @@ function dispatchPressEvent(context, name, listener) {
   );
 }
 
-function dispatchLongPressEvent(context, listener) {}
-
 function dispatchPressInEvents(context, props, state) {
   const {nativeEvent, eventTarget, eventTargetFiber} = context;
   if (props.onPressIn) {

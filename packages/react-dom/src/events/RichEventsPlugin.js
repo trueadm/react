@@ -30,6 +30,12 @@ function RichEventsContext(nativeEvent, eventType, impl) {
   this.nativeEvent = nativeEvent;
 }
 
+function copyEventData(eventData, syntheticEvent) {
+  for (let propName in eventData) {
+    syntheticEvent[propName] = eventData[propName];
+  }
+}
+
 RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
   name,
   eventListener,
@@ -37,6 +43,7 @@ RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
   eventTarget,
   eventTargetFiber,
   isCapturePhase,
+  eventData,
 ) {
   const syntheticEvent = SyntheticEvent.getPooled(
     null,
@@ -44,6 +51,9 @@ RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
     nativeEvent,
     eventTarget,
   );
+  if (eventData) {
+    copyEventData(eventData, syntheticEvent);
+  }
   syntheticEvent.type = name;
   syntheticEvent._dispatchInstances = [eventTargetFiber];
   syntheticEvent._dispatchListeners = [eventListener];
@@ -61,6 +71,7 @@ RichEventsContext.prototype.dispatchImmediateEvent = function(
   nativeEvent,
   eventTarget,
   eventTargetFiber,
+  eventData,
 ) {
   const syntheticEvent = SyntheticEvent.getPooled(
     null,
@@ -68,6 +79,9 @@ RichEventsContext.prototype.dispatchImmediateEvent = function(
     nativeEvent,
     eventTarget,
   );
+  if (eventData) {
+    copyEventData(eventData, syntheticEvent);
+  }
   syntheticEvent.type = name;
   executeDispatch(syntheticEvent, eventListener, eventTargetFiber);
 };
