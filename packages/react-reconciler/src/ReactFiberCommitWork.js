@@ -43,6 +43,7 @@ import {
   IncompleteClassComponent,
   MemoComponent,
   SimpleMemoComponent,
+  RichEvents,
 } from 'shared/ReactWorkTags';
 import {
   invokeGuardedCallback,
@@ -299,6 +300,7 @@ function commitBeforeMutationLifeCycles(
     case HostText:
     case HostPortal:
     case IncompleteClassComponent:
+    case RichEvents:
       // Nothing to do for these component types
       return;
     default: {
@@ -583,8 +585,8 @@ function commitLifeCycles(
       return;
     }
     case SuspenseComponent:
-      break;
     case IncompleteClassComponent:
+    case RichEvents:
       break;
     default: {
       invariant(
@@ -1243,6 +1245,23 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         });
       }
 
+      return;
+    }
+    case RichEvents: {
+      const newProps = finishedWork.memoizedProps;
+      const stateNode = finishedWork.stateNode;
+      const newListeners = newProps !== null ? newProps.listeners : null;
+      if (newListeners != null) {
+        for (let i = 0, length = newListeners.length; i < length; ++i) {
+          const richEvent = newListeners[i];
+          const {impl, props} = richEvent;
+          if (impl.handleCommit) {
+            const state = stateNode.get(impl);
+            impl.handleCommit(finishedWork, props, state);
+            break;
+          }
+        }
+      }
       return;
     }
     case IncompleteClassComponent: {

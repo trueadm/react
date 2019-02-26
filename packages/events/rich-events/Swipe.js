@@ -8,13 +8,13 @@
  */
 
 const childEventTypes = ['pointerdown', 'pointercancel'];
-const rootEventTypes = ['pointerup', 'pointermove'];
+const tempRootEventTypes = ['pointerup', 'pointermove'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
-  rootEventTypes.push('mouseup', 'touchmove', 'mousemove');
+  tempRootEventTypes.push('mouseup', 'touchmove', 'mousemove');
 }
 
 function dispatchSwipeEvent(context, name, listener, state, eventData) {
@@ -31,7 +31,7 @@ function dispatchSwipeEvent(context, name, listener, state, eventData) {
 
 const SwipeImplementation = {
   childEventTypes,
-  createInitialState(props) {
+  createInitialState() {
     return {
       direction: 0,
       isSwiping: false,
@@ -63,7 +63,7 @@ const SwipeImplementation = {
           state.swipeTarget = eventTarget;
           state.swipeTargetFiber = eventTargetFiber;
           state.isSwiping = true;
-          context.addRootListeners(rootEventTypes, {passive: false});
+          context.addRootListeners(tempRootEventTypes, {passive: false});
         }
         break;
       }
@@ -131,7 +131,7 @@ const SwipeImplementation = {
           state.isSwiping = false;
           state.swipeTarget = null;
           state.swipeTargetFiber = null;
-          context.removeRootListeners(rootEventTypes);
+          context.removeRootListeners(tempRootEventTypes);
         }
         break;
       }

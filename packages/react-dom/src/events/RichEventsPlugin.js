@@ -138,10 +138,6 @@ function handleEvents(fiber, context, nativeEventTarget, targetInst) {
     context.eventTargetFiber = targetInst;
 
     let state = fiber.stateNode.get(impl);
-    if (state === undefined) {
-      state = impl.createInitialState(props);
-      fiber.stateNode.set(impl, state);
-    }
     impl.handleEvent(context, props, state);
   }
 }

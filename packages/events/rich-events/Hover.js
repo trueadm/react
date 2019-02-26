@@ -100,7 +100,7 @@ function isHoverWithinSameRichEventsFiber(context, nativeEvent) {
 
 const HoverImplementation = {
   childEventTypes,
-  createInitialState(props) {
+  createInitialState() {
     return {
       isAnchorTouched: false,
       isHovered: false,

@@ -90,7 +90,7 @@ function isFocusWithinSameRichEventsFiber(context, nativeEvent) {
 
 const HoverImplementation = {
   childEventTypes,
-  createInitialState(props) {
+  createInitialState() {
     return {
       isFocused: false,
     };

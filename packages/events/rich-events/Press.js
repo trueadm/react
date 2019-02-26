@@ -8,13 +8,16 @@
  */
 
 const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
-const rootEventTypes = ['pointerup', 'scroll'];
+const rootEventTypes = [''];
+const tempRootEventTypes = ['pointerup', 'scroll'];
+const HostComponent = 5;
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
-  rootEventTypes.push('mouseup');
+  childEventTypes.push('touchend', 'mousedown', 'touchcancel');
+  rootEventTypes.push('touchstart');
+  tempRootEventTypes.push('mouseup');
 }
 
 function dispatchPressEvent(context, name, state, listener) {
@@ -118,14 +121,40 @@ function dispatchPressOutEvents(context, props, state) {
     );
   }
 }
+
 function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
 }
 
+function getChildDomElementsFromFiber(fiber) {
+  const domElements = [];
+  let currentFiber = fiber.child;
+
+  while (currentFiber !== null) {
+    if (currentFiber.tag === HostComponent) {
+      domElements.push(currentFiber.stateNode);
+      currentFiber = currentFiber.return;
+      if (currentFiber === fiber) {
+        break;
+      }
+    } else if (currentFiber.child !== null) {
+      currentFiber = currentFiber.child;
+    }
+    if (currentFiber.sibling !== null) {
+      currentFiber = currentFiber.sibling;
+    } else {
+      break;
+    }
+  }
+  return domElements;
+}
+
 const PressImplementation = {
   childEventTypes,
-  createInitialState(props) {
+  rootEventTypes,
+  createInitialState() {
     return {
+      childElements: null,
       defaultPrevented: false,
       isAnchorTouched: false,
       isLongPressed: false,
@@ -134,6 +163,45 @@ const PressImplementation = {
       pressTarget: null,
       pressTargetFiber: null,
     };
+  },
+  handleCommit(fiber, props, state) {
+    const hitSlop = props.hitSlop;
+    if (hitSlop == null) {
+      return;
+    }
+    const lastChildElements = state.childElements;
+    const nextChildElements = getChildDomElementsFromFiber(fiber);
+    const lastChildElementsLength =
+      lastChildElements !== null ? lastChildElements.length : 0;
+
+    for (let i = 0; i < nextChildElements.length; i++) {
+      const nextChild = nextChildElements[i];
+      let nedsHitZoneElement =
+        lastChildElementsLength > i && lastChildElements[i] === nextChild
+          ? false
+          : true;
+
+      if (nedsHitZoneElement) {
+        const hitZoneElement = nextChild.ownerDocument.createElement('div');
+        nextChild.style.position = 'relative';
+        hitZoneElement.style.position = 'absolute';
+        if (hitSlop.top) {
+          hitZoneElement.style.top = `-${hitSlop.top}px`;
+        }
+        if (hitSlop.left) {
+          hitZoneElement.style.left = `-${hitSlop.left}px`;
+        }
+        if (hitSlop.right) {
+          hitZoneElement.style.right = `-${hitSlop.right}px`;
+        }
+        if (hitSlop.bottom) {
+          hitZoneElement.style.bottom = `-${hitSlop.bottom}px`;
+        }
+        nextChild.appendChild(hitZoneElement);
+      }
+    }
+
+    state.childElements = nextChildElements;
   },
   handleEvent(context, props, state): void {
     const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
@@ -168,17 +236,43 @@ const PressImplementation = {
         break;
       }
       case 'touchstart':
-        // Touch events are for Safari, which lack pointer event support
+        // Touch events are for Safari, which lack pointer event support.
+        // We also listen to touchstart on the root, rather than within
+        // the RichEvent children because touchstart won't work if the
+        // hitSlop extends passed a child's hit zone. So we instead track
+        // all touch starts and see if any manually occur within one of our
+        // children. This will be a hot function, so it needs to be optimal.
         if (!state.isPressed) {
-          // We bail out of polyfilling anchor tags
-          if (isAnchorTagElement(eventTarget)) {
-            state.isAnchorTouched = true;
-            return;
+          const changedTouch = nativeEvent.changedTouches[0];
+          const target = eventTarget.ownerDocument.elementFromPoint(
+            changedTouch.clientX,
+            changedTouch.clientY,
+          );
+          if (target !== null) {
+            const targetFiber = context.getClosestInstanceFromNode(target);
+            let currentFiber = targetFiber;
+            let withinRichEventHitZone = false;
+
+            while (currentFiber !== null) {
+              if (currentFiber === context.fiber) {
+                withinRichEventHitZone = true;
+              }
+              currentFiber = currentFiber.return;
+            }
+            if (!withinRichEventHitZone) {
+              return;
+            }
+            // We bail out of polyfilling anchor tags
+            if (isAnchorTagElement(target)) {
+              state.isAnchorTouched = true;
+              return;
+            }
+
+            state.pressTarget = target;
+            state.pressTargetFiber = targetFiber;
+            dispatchPressInEvents(context, props, state);
+            state.isPressed = true;
           }
-          state.pressTarget = eventTarget;
-          state.pressTargetFiber = eventTargetFiber;
-          dispatchPressInEvents(context, props, state);
-          state.isPressed = true;
         }
         break;
       case 'touchend': {
@@ -237,7 +331,7 @@ const PressImplementation = {
           state.pressTargetFiber = eventTargetFiber;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
-          context.addRootListeners(rootEventTypes);
+          context.addRootListeners(tempRootEventTypes);
         }
         break;
       }
@@ -285,7 +379,7 @@ const PressImplementation = {
           }
           state.isPressed = false;
           state.isLongPressed = false;
-          context.removeRootListeners(rootEventTypes);
+          context.removeRootListeners(tempRootEventTypes);
         }
         state.isAnchorTouched = false;
         break;

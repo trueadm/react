@@ -797,6 +797,20 @@ function completeWork(
       const oldListeners = oldProps !== null ? oldProps.listeners : null;
       const newListeners = newProps !== null ? newProps.listeners : null;
       if (newListeners != null) {
+        const stateNode = workInProgress.stateNode;
+        // Check for handleCommit functions and initialize state
+        for (let i = 0, length = newListeners.length; i < length; ++i) {
+          const richEvent = newListeners[i];
+          const {impl, props} = richEvent;
+          let state = stateNode.get(impl);
+          if (state === undefined) {
+            state = impl.createInitialState(props);
+            stateNode.set(impl, state);
+          }
+          if (impl.handleCommit) {
+            markUpdate(workInProgress);
+          }
+        }
         handleRichEvents(
           workInProgress,
           oldListeners,
