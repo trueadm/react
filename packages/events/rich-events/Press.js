@@ -8,16 +8,36 @@
  */
 
 const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
-const rootEventTypes = [''];
-const tempRootEventTypes = ['pointerup', 'scroll'];
+const rootEventTypes = ['pointerup', 'scroll'];
 const HostComponent = 5;
+const excludeElementsFromHitzoneElements = new Set([
+  'IFRAME',
+  'AREA',
+  'BASE',
+  'BR',
+  'COL',
+  'EMBED',
+  'HR',
+  'IMG',
+  'SELECT',
+  'INPUT',
+  'KEYGEN',
+  'LINK',
+  'META',
+  'PARAM',
+  'SOURCE',
+  'TRACK',
+  'WBR',
+  'MENUITEM',
+  'VIDEO',
+  'CANVAS',
+]);
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchend', 'mousedown', 'touchcancel');
-  rootEventTypes.push('touchstart');
-  tempRootEventTypes.push('mouseup');
+  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  rootEventTypes.push('mouseup');
 }
 
 function dispatchPressEvent(context, name, state, listener) {
@@ -176,15 +196,19 @@ const PressImplementation = {
 
     for (let i = 0; i < nextChildElements.length; i++) {
       const nextChild = nextChildElements[i];
+      if (excludeElementsFromHitzoneElements.has(nextChild.nodeName)) {
+        continue;
+      }
       let nedsHitZoneElement =
         lastChildElementsLength > i && lastChildElements[i] === nextChild
           ? false
           : true;
 
       if (nedsHitZoneElement) {
-        const hitZoneElement = nextChild.ownerDocument.createElement('div');
+        const hitZoneElement = nextChild.ownerDocument.createElement('foo');
         nextChild.style.position = 'relative';
         hitZoneElement.style.position = 'absolute';
+        hitZoneElement.style.display = 'block';
         if (hitSlop.top) {
           hitZoneElement.style.top = `-${hitSlop.top}px`;
         }
@@ -237,43 +261,31 @@ const PressImplementation = {
       }
       case 'touchstart':
         // Touch events are for Safari, which lack pointer event support.
-        // We also listen to touchstart on the root, rather than within
-        // the RichEvent children because touchstart won't work if the
-        // hitSlop extends passed a child's hit zone. So we instead track
-        // all touch starts and see if any manually occur within one of our
-        // children. This will be a hot function, so it needs to be optimal.
         if (!state.isPressed) {
-          const changedTouch = nativeEvent.changedTouches[0];
-          const target = eventTarget.ownerDocument.elementFromPoint(
-            changedTouch.clientX,
-            changedTouch.clientY,
-          );
-          if (target !== null) {
-            const targetFiber = context.getClosestInstanceFromNode(target);
-            let currentFiber = targetFiber;
-            let withinRichEventHitZone = false;
+          let currentFiber = eventTargetFiber;
+          let withinRichEventHitZone = false;
 
-            while (currentFiber !== null) {
-              if (currentFiber === context.fiber) {
-                withinRichEventHitZone = true;
-              }
-              currentFiber = currentFiber.return;
+          while (currentFiber !== null) {
+            if (currentFiber === context.fiber) {
+              withinRichEventHitZone = true;
+              break;
             }
-            if (!withinRichEventHitZone) {
-              return;
-            }
-            // We bail out of polyfilling anchor tags
-            if (isAnchorTagElement(target)) {
-              state.isAnchorTouched = true;
-              return;
-            }
-
-            state.pressTarget = target;
-            state.pressTargetFiber = targetFiber;
-            dispatchPressInEvents(context, props, state);
-            state.isPressed = true;
+            currentFiber = currentFiber.return;
           }
+          if (!withinRichEventHitZone) {
+            return;
+          }
+          // We bail out of polyfilling anchor tags
+          if (isAnchorTagElement(eventTarget)) {
+            state.isAnchorTouched = true;
+            return;
+          }
+          state.pressTarget = eventTarget;
+          state.pressTargetFiber = eventTargetFiber;
+          dispatchPressInEvents(context, props, state);
+          state.isPressed = true;
         }
+
         break;
       case 'touchend': {
         // Touch events are for Safari, which lack pointer event support
@@ -331,7 +343,7 @@ const PressImplementation = {
           state.pressTargetFiber = eventTargetFiber;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
-          context.addRootListeners(tempRootEventTypes);
+          context.addRootListeners(rootEventTypes);
         }
         break;
       }
@@ -379,7 +391,7 @@ const PressImplementation = {
           }
           state.isPressed = false;
           state.isLongPressed = false;
-          context.removeRootListeners(tempRootEventTypes);
+          context.removeRootListeners(rootEventTypes);
         }
         state.isAnchorTouched = false;
         break;

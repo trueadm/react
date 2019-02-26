@@ -39,7 +39,7 @@ import {
   DOCUMENT_FRAGMENT_NODE,
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
-import {currentRichEventFibers, rootEventRichEventFibers} from '../events/RichEventsPlugin';
+import {currentRichEventFibers} from '../events/RichEventsPlugin';
 import {getListeningForDocument, listenToDependency} from '../events/ReactBrowserEventEmitter';
 
 import type {DOMContainer} from './ReactDOM';
@@ -229,26 +229,12 @@ export function handleRichEvents(
   }
   for (let i = 0, length = newListeners.length; i < length; ++i) {
     const impl = newListeners[i].impl;
-    const {childEventTypes, rootEventTypes} = impl;
+    const {childEventTypes} = impl;
     const container = rootContainerInstance.ownerDocument;
     const isListening = getListeningForDocument(container);
-    if (childEventTypes != null) {
-      for (let s = 0; s < childEventTypes.length; s++) {
-        const childEventType = childEventTypes[s];
-        listenToDependency(childEventType, isListening, container);
-      }
-    }
-    if (rootEventTypes != null) {
-      for (let s = 0; s < rootEventTypes.length; s++) {
-        const rootEventType = rootEventTypes[s];
-        let richEventFibers = rootEventRichEventFibers.get(rootEventType);
-        if (richEventFibers === undefined) {
-          richEventFibers = new Set();
-          rootEventRichEventFibers.set(rootEventType, richEventFibers);
-        }
-        listenToDependency(rootEventType, isListening, container);
-        richEventFibers.add(richEventFiber);
-      }
+    for (let s = 0; s < childEventTypes.length; s++) {
+      const childEventType = childEventTypes[s];
+      listenToDependency(childEventType, isListening, container);
     }
   }
 }
