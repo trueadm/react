@@ -136,16 +136,16 @@ export function listenTo(
   }
 }
 
-export function listenToDependency(dependency, isListening, mountAt) {
+export function listenToDependency(dependency, isListening, mountAt, options) {
   if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) {
     switch (dependency) {
       case TOP_SCROLL:
-        trapCapturedEvent(TOP_SCROLL, mountAt);
+        trapCapturedEvent(TOP_SCROLL, mountAt, options);
         break;
       case TOP_FOCUS:
       case TOP_BLUR:
         trapCapturedEvent(TOP_FOCUS, mountAt);
-        trapCapturedEvent(TOP_BLUR, mountAt);
+        trapCapturedEvent(TOP_BLUR, mountAt, options);
         // We set the flag for a single dependency later in this function,
         // but this ensures we mark both as attached rather than just one.
         isListening[TOP_BLUR] = true;
@@ -154,7 +154,7 @@ export function listenToDependency(dependency, isListening, mountAt) {
       case TOP_CANCEL:
       case TOP_CLOSE:
         if (isEventSupported(getRawEventName(dependency))) {
-          trapCapturedEvent(dependency, mountAt);
+          trapCapturedEvent(dependency, mountAt, options);
         }
         break;
       case TOP_INVALID:
@@ -168,7 +168,7 @@ export function listenToDependency(dependency, isListening, mountAt) {
         // Media events don't bubble so adding the listener wouldn't do anything.
         const isMediaEvent = mediaEventTypes.indexOf(dependency) !== -1;
         if (!isMediaEvent) {
-          trapBubbledEvent(dependency, mountAt);
+          trapBubbledEvent(dependency, mountAt, options);
         }
         break;
     }

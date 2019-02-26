@@ -91,10 +91,9 @@ function isFocusWithinSameRichEventsFiber(context, nativeEvent) {
 const HoverImplementation = {
   childEventTypes,
   createInitialState(props) {
-    const state = {
+    return {
       isFocused: false,
     };
-    return state;
   },
   handleEvent(context, props, state): void {
     const {eventType} = context;

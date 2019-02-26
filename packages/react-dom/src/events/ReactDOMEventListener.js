@@ -16,7 +16,11 @@ import {runExtractedEventsInBatch} from 'events/EventPluginHub';
 import {isFiberMounted} from 'react-reconciler/reflection';
 import {HostRoot} from 'shared/ReactWorkTags';
 
-import {addEventBubbleListener, addEventCaptureListener} from './EventListener';
+import {
+  addEventBubbleListener,
+  addEventCaptureListener,
+  addEventListenerWithOptions,
+} from './EventListener';
 import getEventTarget from './getEventTarget';
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import SimpleEventPlugin from './SimpleEventPlugin';
@@ -137,6 +141,7 @@ export function isEnabled() {
 export function trapBubbledEvent(
   topLevelType: DOMTopLevelEventType,
   element: Document | Element,
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ) {
   if (!element) {
     return null;
@@ -144,13 +149,16 @@ export function trapBubbledEvent(
   const dispatch = isInteractiveTopLevelEventType(topLevelType)
     ? dispatchInteractiveEvent
     : dispatchEvent;
+  // Check if interactive and wrap in interactiveUpdates
+  const listener = dispatch.bind(null, topLevelType);
+  const rawEventName = getRawEventName(topLevelType);
 
-  addEventBubbleListener(
-    element,
-    getRawEventName(topLevelType),
-    // Check if interactive and wrap in interactiveUpdates
-    dispatch.bind(null, topLevelType),
-  );
+  if (options) {
+    options.capture = false;
+    addEventListenerWithOptions(element, rawEventName, listener, options);
+  } else {
+    addEventBubbleListener(element, rawEventName, listener);
+  }
 }
 
 /**
@@ -165,6 +173,7 @@ export function trapBubbledEvent(
 export function trapCapturedEvent(
   topLevelType: DOMTopLevelEventType,
   element: Document | Element,
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ) {
   if (!element) {
     return null;
@@ -172,13 +181,16 @@ export function trapCapturedEvent(
   const dispatch = isInteractiveTopLevelEventType(topLevelType)
     ? dispatchInteractiveEvent
     : dispatchEvent;
+  // Check if interactive and wrap in interactiveUpdates
+  const listener = dispatch.bind(null, topLevelType);
+  const rawEventName = getRawEventName(topLevelType);
 
-  addEventCaptureListener(
-    element,
-    getRawEventName(topLevelType),
-    // Check if interactive and wrap in interactiveUpdates
-    dispatch.bind(null, topLevelType),
-  );
+  if (options) {
+    options.capture = true;
+    addEventListenerWithOptions(element, rawEventName, listener, options);
+  } else {
+    addEventCaptureListener(element, rawEventName, listener);
+  }
 }
 
 function dispatchInteractiveEvent(topLevelType, nativeEvent) {

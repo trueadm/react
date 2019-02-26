@@ -32,7 +32,7 @@ function dispatchSwipeEvent(context, name, listener, state, eventData) {
 const SwipeImplementation = {
   childEventTypes,
   createInitialState(props) {
-    const state = {
+    return {
       direction: 0,
       isSwiping: false,
       lastDirection: 0,
@@ -43,16 +43,6 @@ const SwipeImplementation = {
       x: 0,
       y: 0,
     };
-    window.addEventListener(
-      'touchmove',
-      e => {
-        if (state.isSwiping) {
-          e.preventDefault();
-        }
-      },
-      {passive: false},
-    );
-    return state;
   },
   handleEvent(context, props, state): void {
     const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
@@ -73,7 +63,7 @@ const SwipeImplementation = {
           state.swipeTarget = eventTarget;
           state.swipeTargetFiber = eventTargetFiber;
           state.isSwiping = true;
-          context.addRootListeners(rootEventTypes);
+          context.addRootListeners(rootEventTypes, {passive: false});
         }
         break;
       }
@@ -106,6 +96,7 @@ const SwipeImplementation = {
               state,
               eventData,
             );
+            nativeEvent.preventDefault();
           }
         }
         break;

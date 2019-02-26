@@ -101,7 +101,7 @@ RichEventsContext.prototype.extractEvents = function() {
 
 RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
 
-RichEventsContext.prototype.addRootListeners = function(rootEventTypes) {
+RichEventsContext.prototype.addRootListeners = function(rootEventTypes, options) {
   const container = this.eventTarget.ownerDocument;
   const isListening = getListeningForDocument(container);
   for (let i = 0; i < rootEventTypes.length; i++) {
@@ -111,7 +111,7 @@ RichEventsContext.prototype.addRootListeners = function(rootEventTypes) {
       richEventFibers = new Set();
       rootEventRichEventFibers.set(rootEventType, richEventFibers);
     }
-    listenToDependency(rootEventType, isListening, container);
+    listenToDependency(rootEventType, isListening, container, options);
     richEventFibers.add(this.fiber);
   }
 };
