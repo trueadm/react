@@ -41,7 +41,7 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 }
 
 function dispatchPressEvent(context, name, state, listener) {
-  const { nativeEvent } = context;
+  const {nativeEvent} = context;
   context.dispatchTwoPhaseEvent(
     name,
     listener,
@@ -53,7 +53,7 @@ function dispatchPressEvent(context, name, state, listener) {
 }
 
 function dispatchPressInEvents(context, props, state) {
-  const { nativeEvent } = context;
+  const {nativeEvent} = context;
   if (props.onPressIn) {
     context.dispatchTwoPhaseEvent(
       'pressin',
@@ -99,7 +99,7 @@ function dispatchPressInEvents(context, props, state) {
 }
 
 function dispatchPressOutEvents(context, props, state) {
-  const { nativeEvent } = context;
+  const {nativeEvent} = context;
   if (state.longPressTimeout !== null) {
     clearTimeout(state.longPressTimeout);
     state.longPressTimeout = null;
@@ -199,8 +199,9 @@ const PressImplementation = {
       if (excludeElementsFromHitSlop.has(nextChild.nodeName)) {
         continue;
       }
-      let nedsHitSlopElement =
-        !(lastChildElementsLength > i && lastChildElements[i] === nextChild);
+      let nedsHitSlopElement = !(
+        lastChildElementsLength > i && lastChildElements[i] === nextChild
+      );
 
       if (nedsHitSlopElement) {
         const hitSlopElement = nextChild.ownerDocument.createElement('foo');
@@ -226,7 +227,7 @@ const PressImplementation = {
     state.childElements = nextChildElements;
   },
   handleEvent(context, props, state): void {
-    const { eventTarget, eventTargetFiber, eventType, nativeEvent } = context;
+    const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'keydown': {
@@ -260,19 +261,6 @@ const PressImplementation = {
       case 'touchstart':
         // Touch events are for Safari, which lack pointer event support.
         if (!state.isPressed) {
-          let currentFiber = eventTargetFiber;
-          let withinRichEventHitZone = false;
-
-          while (currentFiber !== null) {
-            if (currentFiber === context.fiber) {
-              withinRichEventHitZone = true;
-              break;
-            }
-            currentFiber = currentFiber.return;
-          }
-          if (!withinRichEventHitZone) {
-            return;
-          }
           // We bail out of polyfilling anchor tags
           if (isAnchorTagElement(eventTarget)) {
             state.isAnchorTouched = true;
@@ -282,6 +270,7 @@ const PressImplementation = {
           state.pressTargetFiber = eventTargetFiber;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
+          context.addRootListeners(rootEventTypes);
         }
 
         break;
@@ -331,6 +320,7 @@ const PressImplementation = {
           state.isLongPressed = false;
           // Prevent mouse events from firing
           nativeEvent.preventDefault();
+          context.removeRootListeners(rootEventTypes);
         }
         break;
       }
