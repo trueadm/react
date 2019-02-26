@@ -10,7 +10,7 @@
 const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
 const rootEventTypes = ['pointerup', 'scroll'];
 const HostComponent = 5;
-const excludeElementsFromHitzoneElements = new Set([
+const excludeElementsFromHitSlop = new Set([
   'IFRAME',
   'AREA',
   'BASE',
@@ -41,7 +41,7 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 }
 
 function dispatchPressEvent(context, name, state, listener) {
-  const {nativeEvent} = context;
+  const { nativeEvent } = context;
   context.dispatchTwoPhaseEvent(
     name,
     listener,
@@ -53,7 +53,7 @@ function dispatchPressEvent(context, name, state, listener) {
 }
 
 function dispatchPressInEvents(context, props, state) {
-  const {nativeEvent} = context;
+  const { nativeEvent } = context;
   if (props.onPressIn) {
     context.dispatchTwoPhaseEvent(
       'pressin',
@@ -99,7 +99,7 @@ function dispatchPressInEvents(context, props, state) {
 }
 
 function dispatchPressOutEvents(context, props, state) {
-  const {nativeEvent} = context;
+  const { nativeEvent } = context;
   if (state.longPressTimeout !== null) {
     clearTimeout(state.longPressTimeout);
     state.longPressTimeout = null;
@@ -196,39 +196,37 @@ const PressImplementation = {
 
     for (let i = 0; i < nextChildElements.length; i++) {
       const nextChild = nextChildElements[i];
-      if (excludeElementsFromHitzoneElements.has(nextChild.nodeName)) {
+      if (excludeElementsFromHitSlop.has(nextChild.nodeName)) {
         continue;
       }
-      let nedsHitZoneElement =
-        lastChildElementsLength > i && lastChildElements[i] === nextChild
-          ? false
-          : true;
+      let nedsHitSlopElement =
+        !(lastChildElementsLength > i && lastChildElements[i] === nextChild);
 
-      if (nedsHitZoneElement) {
-        const hitZoneElement = nextChild.ownerDocument.createElement('foo');
+      if (nedsHitSlopElement) {
+        const hitSlopElement = nextChild.ownerDocument.createElement('foo');
         nextChild.style.position = 'relative';
-        hitZoneElement.style.position = 'absolute';
-        hitZoneElement.style.display = 'block';
+        hitSlopElement.style.position = 'absolute';
+        hitSlopElement.style.display = 'block';
         if (hitSlop.top) {
-          hitZoneElement.style.top = `-${hitSlop.top}px`;
+          hitSlopElement.style.top = `-${hitSlop.top}px`;
         }
         if (hitSlop.left) {
-          hitZoneElement.style.left = `-${hitSlop.left}px`;
+          hitSlopElement.style.left = `-${hitSlop.left}px`;
         }
         if (hitSlop.right) {
-          hitZoneElement.style.right = `-${hitSlop.right}px`;
+          hitSlopElement.style.right = `-${hitSlop.right}px`;
         }
         if (hitSlop.bottom) {
-          hitZoneElement.style.bottom = `-${hitSlop.bottom}px`;
+          hitSlopElement.style.bottom = `-${hitSlop.bottom}px`;
         }
-        nextChild.appendChild(hitZoneElement);
+        nextChild.appendChild(hitSlopElement);
       }
     }
 
     state.childElements = nextChildElements;
   },
   handleEvent(context, props, state): void {
-    const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
+    const { eventTarget, eventTargetFiber, eventType, nativeEvent } = context;
 
     switch (eventType) {
       case 'keydown': {

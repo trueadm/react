@@ -15,10 +15,6 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   childEventTypes.push('touchstart', 'mouseover', 'mouseout');
 }
 
-function isAnchorTagElement(eventTarget) {
-  return eventTarget.nodeName === 'A';
-}
-
 function dispatchHoverInEvents(context, props) {
   const {nativeEvent, eventTarget, eventTargetFiber} = context;
   if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
@@ -26,7 +22,7 @@ function dispatchHoverInEvents(context, props) {
   }
   if (props.onHoverIn) {
     context.dispatchTwoPhaseEvent(
-      'focusin',
+      'hoverin',
       props.onHoverIn,
       nativeEvent,
       eventTarget,
@@ -100,28 +96,25 @@ function isHoverWithinSameRichEventsFiber(context, nativeEvent) {
 
 const HoverImplementation = {
   childEventTypes,
-  createInitialState() {
+  createInitialState(props) {
     return {
-      isAnchorTouched: false,
       isHovered: false,
+      isTouching: false,
     };
   },
   handleEvent(context, props, state): void {
-    const {eventTarget, eventType, nativeEvent} = context;
+    const {eventType} = context;
 
     switch (eventType) {
       case 'touchstart':
-        // Touch events are for Safari, which lack pointer event support
-        if (!state.isHovered) {
-          // We bail out of polyfilling anchor tags
-          if (isAnchorTagElement(eventTarget)) {
-            state.isAnchorTouched = true;
-          }
+        // Touch devices don't have hover support
+        if (!state.isTouching) {
+          state.isTouching = true;
         }
         break;
       case 'pointerover':
       case 'mouseover': {
-        if (!state.isHovered && !state.isAnchorTouched) {
+        if (!state.isHovered && !state.isTouching) {
           dispatchHoverInEvents(context, props);
           state.isHovered = true;
         }
@@ -129,17 +122,14 @@ const HoverImplementation = {
       }
       case 'pointerout':
       case 'mouseout': {
-        if (state.isHovered && !state.isAnchorTouched) {
+        if (state.isHovered && !state.isTouching) {
           dispatchHoverOutEvents(context, props);
           state.isHovered = false;
-          if (isAnchorTagElement(eventTarget)) {
-            nativeEvent.preventDefault();
-          }
         }
         break;
       }
       case 'pointercancel': {
-        if (state.isHovered) {
+        if (state.isHovered && !state.isTouching) {
           dispatchHoverOutEvents(context, props);
           state.isHovered = false;
         }

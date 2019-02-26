@@ -17,7 +17,7 @@ function dispatchFocusInEvents(context, props) {
   if (props.onFocus) {
     context.dispatchTwoPhaseEvent(
       'focus',
-      props.onHoverIn,
+      props.onFocus,
       nativeEvent,
       eventTarget,
       eventTargetFiber,
@@ -47,7 +47,7 @@ function dispatchFocusOutEvents(context, props) {
   if (props.onBlur) {
     context.dispatchTwoPhaseEvent(
       'blur',
-      props.onHoverOut,
+      props.onBlur,
       nativeEvent,
       eventTarget,
       eventTargetFiber,
@@ -88,9 +88,9 @@ function isFocusWithinSameRichEventsFiber(context, nativeEvent) {
   return false;
 }
 
-const HoverImplementation = {
+const FocusImplementation = {
   childEventTypes,
-  createInitialState() {
+  createInitialState(props) {
     return {
       isFocused: false,
     };
@@ -117,9 +117,9 @@ const HoverImplementation = {
   },
 };
 
-export default function hoverEvents(props) {
+export default function focusEvents(props) {
   return {
-    impl: HoverImplementation,
+    impl: FocusImplementation,
     props,
   };
 }
