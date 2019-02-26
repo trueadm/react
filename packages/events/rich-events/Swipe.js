@@ -105,6 +105,9 @@ const SwipeImplementation = {
       case 'mouseup':
       case 'pointerup': {
         if (state.isSwiping) {
+          if (state.x === state.startX && state.y === state.startY) {
+            return;
+          }
           const direction = state.direction;
           const lastDirection = state.lastDirection;
           if (direction !== lastDirection) {
