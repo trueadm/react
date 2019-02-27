@@ -14,6 +14,7 @@ import type {
   Container,
   ChildSet,
   UpdatePayload,
+  handleRichEventsHitSlop,
 } from './ReactFiberHostConfig';
 import type {Fiber} from './ReactFiber';
 import type {FiberRoot} from './ReactFiberRoot';
@@ -1249,18 +1250,9 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
     }
     case RichEvents: {
       const newProps = finishedWork.memoizedProps;
-      const stateNode = finishedWork.stateNode;
-      const newListeners = newProps !== null ? newProps.listeners : null;
-      if (newListeners != null) {
-        for (let i = 0, length = newListeners.length; i < length; ++i) {
-          const richEvent = newListeners[i];
-          const {impl, props} = richEvent;
-          if (impl.handleCommit) {
-            const state = stateNode.get(impl);
-            impl.handleCommit(finishedWork, props, state);
-            break;
-          }
-        }
+      const hitSlop = newProps.hitSlop;
+      if (hitSlop != null) {
+        handleRichEventsHitSlop(finishedWork, hitSlop);
       }
       return;
     }

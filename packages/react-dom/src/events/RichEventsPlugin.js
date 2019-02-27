@@ -128,6 +128,7 @@ RichEventsContext.prototype.removeRootListeners = function(rootEventTypes) {
 
 function handleEvents(fiber, context, nativeEventTarget, targetInst) {
   const listeners = fiber.memoizedProps.listeners;
+  const richEventState = fiber.stateNode.richEventState;
   context.fiber = fiber;
 
   for (let i = 0; i < listeners.length; ++i) {
@@ -137,7 +138,11 @@ function handleEvents(fiber, context, nativeEventTarget, targetInst) {
     context.eventTarget = nativeEventTarget;
     context.eventTargetFiber = targetInst;
 
-    let state = fiber.stateNode.get(impl);
+    let state = richEventState.get(impl);
+    if (state === undefined) {
+      state = impl.createInitialState(props);
+      richEventState.set(impl, state);
+    }
     impl.handleEvent(context, props, state);
   }
 }

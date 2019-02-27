@@ -9,29 +9,6 @@
 
 const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
 const rootEventTypes = ['pointerup', 'scroll'];
-const HostComponent = 5;
-const excludeElementsFromHitSlop = new Set([
-  'IFRAME',
-  'AREA',
-  'BASE',
-  'BR',
-  'COL',
-  'EMBED',
-  'HR',
-  'IMG',
-  'SELECT',
-  'INPUT',
-  'KEYGEN',
-  'LINK',
-  'META',
-  'PARAM',
-  'SOURCE',
-  'TRACK',
-  'WBR',
-  'MENUITEM',
-  'VIDEO',
-  'CANVAS',
-]);
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
@@ -146,35 +123,11 @@ function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
 }
 
-function getChildDomElementsFromFiber(fiber) {
-  const domElements = [];
-  let currentFiber = fiber.child;
-
-  while (currentFiber !== null) {
-    if (currentFiber.tag === HostComponent) {
-      domElements.push(currentFiber.stateNode);
-      currentFiber = currentFiber.return;
-      if (currentFiber === fiber) {
-        break;
-      }
-    } else if (currentFiber.child !== null) {
-      currentFiber = currentFiber.child;
-    }
-    if (currentFiber.sibling !== null) {
-      currentFiber = currentFiber.sibling;
-    } else {
-      break;
-    }
-  }
-  return domElements;
-}
-
 const PressImplementation = {
   childEventTypes,
   rootEventTypes,
   createInitialState() {
     return {
-      childElements: null,
       defaultPrevented: false,
       isAnchorTouched: false,
       isLongPressed: false,
@@ -183,50 +136,6 @@ const PressImplementation = {
       pressTarget: null,
       pressTargetFiber: null,
     };
-  },
-  handleCommit(fiber, props, state) {
-    const hitSlop = props.hitSlop;
-    if (hitSlop == null) {
-      return;
-    }
-    const lastChildElements = state.childElements;
-    const nextChildElements = getChildDomElementsFromFiber(fiber);
-    const lastChildElementsLength =
-      lastChildElements !== null ? lastChildElements.length : 0;
-
-    for (let i = 0; i < nextChildElements.length; i++) {
-      const nextChild = nextChildElements[i];
-      if (excludeElementsFromHitSlop.has(nextChild.nodeName)) {
-        continue;
-      }
-      let nedsHitSlopElement = !(
-        lastChildElementsLength > i && lastChildElements[i] === nextChild
-      );
-
-      if (nedsHitSlopElement) {
-        const hitSlopElement = nextChild.ownerDocument.createElement(
-          'hit-slop',
-        );
-        nextChild.style.position = 'relative';
-        hitSlopElement.style.position = 'absolute';
-        hitSlopElement.style.display = 'block';
-        if (hitSlop.top) {
-          hitSlopElement.style.top = `-${hitSlop.top}px`;
-        }
-        if (hitSlop.left) {
-          hitSlopElement.style.left = `-${hitSlop.left}px`;
-        }
-        if (hitSlop.right) {
-          hitSlopElement.style.right = `-${hitSlop.right}px`;
-        }
-        if (hitSlop.bottom) {
-          hitSlopElement.style.bottom = `-${hitSlop.bottom}px`;
-        }
-        nextChild.appendChild(hitSlopElement);
-      }
-    }
-
-    state.childElements = nextChildElements;
   },
   handleEvent(context, props, state): void {
     const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;

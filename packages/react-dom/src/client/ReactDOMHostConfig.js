@@ -42,6 +42,7 @@ import dangerousStyleValue from '../shared/dangerousStyleValue';
 import {currentRichEventFibers} from '../events/RichEventsPlugin';
 import {getListeningForDocument, listenToDependency} from '../events/ReactBrowserEventEmitter';
 
+import {HostComponent} from 'shared/ReactWorkTags';
 import type {DOMContainer} from './ReactDOM';
 
 export type Type = string;
@@ -93,6 +94,33 @@ const SUSPENSE_START_DATA = '$';
 const SUSPENSE_END_DATA = '/$';
 
 const STYLE = 'style';
+
+const excludeElementsFromHitSlop = new Set([
+  'IFRAME',
+  'AREA',
+  'BASE',
+  'BR',
+  'COL',
+  'EMBED',
+  'HR',
+  'IMG',
+  'SELECT',
+  'INPUT',
+  'TEXTAREA',
+  'KEYGEN',
+  'LINK',
+  'META',
+  'PARAM',
+  'SOURCE',
+  'TRACK',
+  'WBR',
+  'MENUITEM',
+  'VIDEO',
+  'AUDIO',
+  'SCRIPT',
+  'STYLE',
+  'CANVAS',
+]);
 
 let eventsEnabled: ?boolean = null;
 let selectionInformation: ?mixed = null;
@@ -222,7 +250,7 @@ export function handleRichEvents(
   newListeners: Array<any>,
   rootContainerInstance: Container,
   richEventsMap: Map<any>,
-) {
+): void {
   currentRichEventFibers.add(richEventFiber);
   if (oldListeners !== null) {
     currentRichEventFibers.delete(richEventFiber.alternate);
@@ -236,6 +264,75 @@ export function handleRichEvents(
       const childEventType = childEventTypes[s];
       listenToDependency(childEventType, isListening, container);
     }
+  }
+}
+
+function getChildDomElementsFromFiber(fiber) {
+  const domElements = [];
+  let currentFiber = fiber.child;
+
+  while (currentFiber !== null) {
+    if (currentFiber.tag === HostComponent) {
+      domElements.push(currentFiber.stateNode);
+      currentFiber = currentFiber.return;
+      if (currentFiber === fiber) {
+        break;
+      }
+    } else if (currentFiber.child !== null) {
+      currentFiber = currentFiber.child;
+    }
+    if (currentFiber.sibling !== null) {
+      currentFiber = currentFiber.sibling;
+    } else {
+      break;
+    }
+  }
+  return domElements;
+}
+
+export function handleRichEventsHitSlop(
+  richEventFiber: Fiber,
+  hitSlop: Object,
+): void {
+  const stateNode = richEventFiber.stateNode;
+  let hitSlopElements = stateNode.hitSlopElements;
+
+  if (hitSlopElements === null) {
+    hitSlopElements = stateNode.hitSlopElements = new Map();
+  }
+  const childElements = getChildDomElementsFromFiber(richEventFiber);
+
+  for (let i = 0; i < childElements.length; i++) {
+    const childElement = childElements[i];
+
+    if (hitSlopElements.has(childElement)) {
+      continue;
+    }
+    if (excludeElementsFromHitSlop.has(childElement.nodeName)) {
+      continue;
+    }
+    const hitSlopElement = childElement.ownerDocument.createElement(
+      'hit-slop',
+    );
+    // TODO: making it relative might break things, maybe we should
+    // check first?
+    childElement.style.position = 'relative';
+    hitSlopElement.style.position = 'absolute';
+    hitSlopElement.style.display = 'block';
+    if (hitSlop.top) {
+      hitSlopElement.style.top = `-${hitSlop.top}px`;
+    }
+    if (hitSlop.left) {
+      hitSlopElement.style.left = `-${hitSlop.left}px`;
+    }
+    if (hitSlop.right) {
+      hitSlopElement.style.right = `-${hitSlop.right}px`;
+    }
+    if (hitSlop.bottom) {
+      hitSlopElement.style.bottom = `-${hitSlop.bottom}px`;
+    }
+    childElement.appendChild(hitSlopElement);
+    hitSlopElements.set(childElement, hitSlopElement);
   }
 }
 
