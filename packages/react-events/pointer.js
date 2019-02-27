@@ -9,8 +9,8 @@
 
 'use strict';
 
-const PressEvents = require('events/rich-events/Press');
+const PointerEvents = require('events/rich-events/Pointer');
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest
-module.exports = PressEvents.default || PressEvents;
+module.exports = PointerEvents.default || PointerEvents;

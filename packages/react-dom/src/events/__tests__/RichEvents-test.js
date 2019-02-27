@@ -11,7 +11,7 @@
 
 let React;
 let ReactDOM;
-let pressEvents;
+let pointerEvents;
 
 describe('SyntheticEvent', () => {
   let container;
@@ -19,7 +19,7 @@ describe('SyntheticEvent', () => {
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');
-    pressEvents = require('react-events/press');
+    pointerEvents = require('react-events/pointer');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -52,8 +52,10 @@ describe('SyntheticEvent', () => {
 
     function Component() {
       return (
-        <React.unstable_RichEvents listeners={[pressEvents({onPress: handleOnPress1})]}>
-          <React.unstable_RichEvents listeners={[pressEvents({onPress: handleOnPress2})]}>
+        <React.unstable_RichEvents
+          listeners={[pointerEvents({onPress: handleOnPress1})]}>
+          <React.unstable_RichEvents
+            listeners={[pointerEvents({onPress: handleOnPress2})]}>
             <button
               ref={buttonRef}
               onMouseDown={handleOnMouseDown}
@@ -105,7 +107,12 @@ describe('SyntheticEvent', () => {
     function Component() {
       return (
         <React.unstable_RichEvents
-          listeners={[pressEvents({onPressIn: handleOnPressIn, onPressOut: handleOnPressOut})]}>
+          listeners={[
+            pointerEvents({
+              onPressIn: handleOnPressIn,
+              onPressOut: handleOnPressOut,
+            }),
+          ]}>
           <div ref={divRef}>Press me!</div>
         </React.unstable_RichEvents>
       );

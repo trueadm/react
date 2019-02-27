@@ -7,7 +7,14 @@
  * @flow
  */
 
-const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
+const childEventTypes = [
+  'click',
+  'keydown',
+  'pointerdown',
+  'pointercancel',
+  'pointerover',
+  'pointerout',
+];
 const rootEventTypes = ['pointerup', 'scroll'];
 const HostComponent = 5;
 const excludeElementsFromHitSlop = new Set([
@@ -36,7 +43,14 @@ const excludeElementsFromHitSlop = new Set([
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  childEventTypes.push(
+    'touchstart',
+    'touchend',
+    'mousedown',
+    'mouseover',
+    'mouseout',
+    'touchcancel',
+  );
   rootEventTypes.push('mouseup');
 }
 
@@ -142,6 +156,85 @@ function dispatchPressOutEvents(context, props, state) {
   }
 }
 
+function dispatchHoverInEvents(context, props, state) {
+  const {nativeEvent} = context;
+  if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
+    return;
+  }
+  if (props.onHoverIn) {
+    context.dispatchTwoPhaseEvent(
+      'hoverin',
+      props.onHoverIn,
+      nativeEvent,
+      state.pressTarget,
+      state.pressTargetFiber,
+      false,
+    );
+  }
+  if (props.onHoverChange) {
+    const hoverChangeEventListener = () => {
+      props.onHoverChange(true);
+    };
+    context.dispatchTwoPhaseEvent(
+      'hoverchange',
+      hoverChangeEventListener,
+      nativeEvent,
+      state.pressTarget,
+      state.pressTargetFiber,
+      false,
+    );
+  }
+}
+
+function dispatchHoverOutEvents(context, props, state) {
+  const {nativeEvent} = context;
+  if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
+    return;
+  }
+  if (props.onHoverOut) {
+    context.dispatchTwoPhaseEvent(
+      'hoverout',
+      props.onHoverOut,
+      nativeEvent,
+      state.pressTarget,
+      state.pressTargetFiber,
+      false,
+    );
+  }
+  if (props.onHoverChange) {
+    const hoverChangeEventListener = () => {
+      props.onHoverChange(false);
+    };
+    context.dispatchTwoPhaseEvent(
+      'hoverchange',
+      hoverChangeEventListener,
+      nativeEvent,
+      state.pressTarget,
+      state.pressTargetFiber,
+      false,
+    );
+  }
+}
+
+function isHoverWithinSameRichEventsFiber(context, nativeEvent) {
+  const related = nativeEvent.relatedTarget;
+  const richEventFiber = context.fiber;
+
+  if (related != null) {
+    let relatedFiber = context.getClosestInstanceFromNode(related);
+    while (relatedFiber !== null) {
+      if (
+        relatedFiber === richEventFiber ||
+        relatedFiber === richEventFiber.alternate
+      ) {
+        return true;
+      }
+      relatedFiber = relatedFiber.return;
+    }
+  }
+  return false;
+}
+
 function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
 }
@@ -169,7 +262,7 @@ function getChildDomElementsFromFiber(fiber) {
   return domElements;
 }
 
-const PressImplementation = {
+const PointerImplementation = {
   childEventTypes,
   rootEventTypes,
   createInitialState() {
@@ -178,7 +271,9 @@ const PressImplementation = {
       defaultPrevented: false,
       isAnchorTouched: false,
       isLongPressed: false,
+      isHovered: false,
       isPressed: false,
+      isTouched: false,
       longPressTimeout: null,
       pressTarget: null,
       pressTargetFiber: null,
@@ -204,10 +299,14 @@ const PressImplementation = {
       );
 
       if (nedsHitSlopElement) {
-        const hitSlopElement = nextChild.ownerDocument.createElement('foo');
+        const hitSlopElement = nextChild.ownerDocument.createElement(
+          'hit-slop',
+        );
         nextChild.style.position = 'relative';
+        nextChild.style.zIndex = '0';
         hitSlopElement.style.position = 'absolute';
         hitSlopElement.style.display = 'block';
+        hitSlopElement.style.zIndex = '-1';
         if (hitSlop.top) {
           hitSlopElement.style.top = `-${hitSlop.top}px`;
         }
@@ -261,6 +360,7 @@ const PressImplementation = {
       case 'touchstart':
         // Touch events are for Safari, which lack pointer event support.
         if (!state.isPressed) {
+          state.isTouched = true;
           // We bail out of polyfilling anchor tags
           if (isAnchorTagElement(eventTarget)) {
             state.isAnchorTouched = true;
@@ -392,6 +492,28 @@ const PressImplementation = {
           state.isPressed = false;
           state.isLongPressed = false;
         }
+        if (state.isHovered && !state.isTouched) {
+          dispatchHoverOutEvents(context, props, state);
+          state.isHovered = false;
+        }
+        break;
+      }
+      case 'pointerover':
+      case 'mouseover': {
+        if (!state.isHovered && !state.isTouched) {
+          state.pressTarget = eventTarget;
+          state.pressTargetFiber = eventTargetFiber;
+          dispatchHoverInEvents(context, props, state);
+          state.isHovered = true;
+        }
+        break;
+      }
+      case 'pointerout':
+      case 'mouseout': {
+        if (state.isHovered && !state.isTouched) {
+          dispatchHoverOutEvents(context, props, state);
+          state.isHovered = false;
+        }
         break;
       }
       case 'click': {
@@ -404,9 +526,9 @@ const PressImplementation = {
   },
 };
 
-export default function pressEvents(props) {
+export default function pointerEvents(props) {
   return {
-    impl: PressImplementation,
+    impl: PointerImplementation,
     props,
   };
 }

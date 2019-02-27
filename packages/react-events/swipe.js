@@ -9,8 +9,8 @@
 
 'use strict';
 
-const HoverEvents = require('events/rich-events/Hover');
+const SwipeEvents = require('events/rich-events/Swipe');
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest
-module.exports = HoverEvents.default || HoverEvents;
+module.exports = SwipeEvents.default || SwipeEvents;
