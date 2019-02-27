@@ -204,7 +204,9 @@ const PressImplementation = {
       );
 
       if (nedsHitSlopElement) {
-        const hitSlopElement = nextChild.ownerDocument.createElement('foo');
+        const hitSlopElement = nextChild.ownerDocument.createElement(
+          'hit-slop',
+        );
         nextChild.style.position = 'relative';
         hitSlopElement.style.position = 'absolute';
         hitSlopElement.style.display = 'block';

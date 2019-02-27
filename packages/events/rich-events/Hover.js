@@ -7,7 +7,12 @@
  * @flow
  */
 
-const childEventTypes = ['pointerover', 'pointerout', 'pointercancel'];
+const childEventTypes = [
+  'pointerover',
+  'pointermove',
+  'pointerout',
+  'pointercancel',
+];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
@@ -94,16 +99,36 @@ function isHoverWithinSameRichEventsFiber(context, nativeEvent) {
   return false;
 }
 
+function targetIsHitSlop(eventTarget, nativeEvent, state) {
+  const x = nativeEvent.clientX;
+  const y = nativeEvent.clientY;
+  const target = eventTarget.ownerDocument.elementFromPoint(x, y);
+  if (target.nodeName === 'HIT-SLOP') {
+    const {
+      left,
+      top,
+      right,
+      bottom,
+    } = target.parentNode.getBoundingClientRect();
+    if (x > left && y > top && x < right && y < bottom) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 const HoverImplementation = {
   childEventTypes,
   createInitialState(props) {
     return {
       isHovered: false,
+      isInHitSlop: false,
       isTouching: false,
     };
   },
   handleEvent(context, props, state): void {
-    const {eventType} = context;
+    const {eventType, eventTarget, nativeEvent} = context;
 
     switch (eventType) {
       case 'touchstart':
@@ -115,6 +140,10 @@ const HoverImplementation = {
       case 'pointerover':
       case 'mouseover': {
         if (!state.isHovered && !state.isTouching) {
+          if (targetIsHitSlop(eventTarget, nativeEvent, state)) {
+            state.isInHitSlop = true;
+            return;
+          }
           dispatchHoverInEvents(context, props);
           state.isHovered = true;
         }
@@ -125,6 +154,26 @@ const HoverImplementation = {
         if (state.isHovered && !state.isTouching) {
           dispatchHoverOutEvents(context, props);
           state.isHovered = false;
+        }
+        state.isInHitSlop = false;
+        break;
+      }
+      case 'pointermove': {
+        if (!state.isTouching) {
+          if (state.isInHitSlop) {
+            if (!targetIsHitSlop(eventTarget, nativeEvent)) {
+              dispatchHoverInEvents(context, props);
+              state.isHovered = true;
+              state.isInHitSlop = false;
+            }
+          } else if (
+            state.isHovered &&
+            targetIsHitSlop(eventTarget, nativeEvent)
+          ) {
+            dispatchHoverOutEvents(context, props);
+            state.isHovered = false;
+            state.isInHitSlop = true;
+          }
         }
         break;
       }
