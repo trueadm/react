@@ -124,7 +124,7 @@ const HoverImplementation = {
     return {
       isHovered: false,
       isInHitSlop: false,
-      isTouching: false,
+      isTouched: false,
     };
   },
   handleEvent(context, props, state): void {
@@ -133,13 +133,17 @@ const HoverImplementation = {
     switch (eventType) {
       case 'touchstart':
         // Touch devices don't have hover support
-        if (!state.isTouching) {
-          state.isTouching = true;
+        if (!state.isTouched) {
+          state.isTouched = true;
         }
         break;
       case 'pointerover':
       case 'mouseover': {
-        if (!state.isHovered && !state.isTouching) {
+        if (!state.isHovered && !state.isTouched) {
+          if (nativeEvent.pointerType === 'touch') {
+            state.isTouched = true;
+            return;
+          }
           if (targetIsHitSlop(eventTarget, nativeEvent, state)) {
             state.isInHitSlop = true;
             return;
@@ -151,15 +155,16 @@ const HoverImplementation = {
       }
       case 'pointerout':
       case 'mouseout': {
-        if (state.isHovered && !state.isTouching) {
+        if (state.isHovered && !state.isTouched) {
           dispatchHoverOutEvents(context, props);
           state.isHovered = false;
         }
         state.isInHitSlop = false;
+        state.isTouched = false;
         break;
       }
       case 'pointermove': {
-        if (!state.isTouching) {
+        if (!state.isTouched) {
           if (state.isInHitSlop) {
             if (!targetIsHitSlop(eventTarget, nativeEvent)) {
               dispatchHoverInEvents(context, props);
@@ -178,9 +183,10 @@ const HoverImplementation = {
         break;
       }
       case 'pointercancel': {
-        if (state.isHovered && !state.isTouching) {
+        if (state.isHovered && !state.isTouched) {
           dispatchHoverOutEvents(context, props);
           state.isHovered = false;
+          state.isTouched = false;
         }
         break;
       }
