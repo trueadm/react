@@ -40,7 +40,10 @@ import {
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
 import {currentRichEventFibers} from '../events/RichEventsPlugin';
-import {getListeningForDocument, listenToDependency} from '../events/ReactBrowserEventEmitter';
+import {
+  getListeningForDocument,
+  listenToDependency,
+} from '../events/ReactBrowserEventEmitter';
 
 import {HostComponent} from 'shared/ReactWorkTags';
 import type {DOMContainer} from './ReactDOM';
@@ -311,9 +314,7 @@ export function handleRichEventsHitSlop(
     if (excludeElementsFromHitSlop.has(childElement.nodeName)) {
       continue;
     }
-    const hitSlopElement = childElement.ownerDocument.createElement(
-      'hit-slop',
-    );
+    const hitSlopElement = childElement.ownerDocument.createElement('hit-slop');
     // TODO: making it relative might break things, maybe we should
     // check first?
     childElement.style.position = 'relative';
