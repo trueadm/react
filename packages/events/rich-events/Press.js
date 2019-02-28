@@ -137,7 +137,6 @@ const PressImplementation = {
   },
   handleEvent(context, props, state): void {
     const {eventTarget, eventType, nativeEvent} = context;
-    console.log(eventType);
 
     switch (eventType) {
       case 'keydown': {
