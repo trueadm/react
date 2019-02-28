@@ -13,13 +13,15 @@ const childEventTypes = [
   'pointerdown',
   'pointercancel',
   'contextmenu',
+  'pointerup',
+  'scroll',
 ];
 const rootEventTypes = ['pointerup', 'scroll'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel', 'mouseup');
   rootEventTypes.push('mouseup');
 }
 
@@ -124,7 +126,6 @@ function isAnchorTagElement(eventTarget) {
 
 const PressImplementation = {
   childEventTypes,
-  rootEventTypes,
   createInitialState() {
     return {
       defaultPrevented: false,

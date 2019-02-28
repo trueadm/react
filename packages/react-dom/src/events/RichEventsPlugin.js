@@ -178,7 +178,7 @@ RichEventsContext.prototype.isTargetWithinElement = function(
   return false;
 };
 
-function handleEvents(fiber, context, nativeEventTarget, targetInst) {
+function handleEvents(topLevelType, fiber, context, nativeEventTarget, targetInst) {
   const listeners = fiber.memoizedProps.listeners;
   const richEventState = fiber.stateNode.richEventState;
   context._fiber = fiber;
@@ -187,6 +187,9 @@ function handleEvents(fiber, context, nativeEventTarget, targetInst) {
     const richEvent = listeners[i];
     const {impl, props} = richEvent;
 
+    if (impl.childEventTypes.indexOf(topLevelType) === -1) {
+      continue;
+    }
     context.eventTarget = nativeEventTarget;
 
     let state = richEventState.get(impl);
@@ -213,7 +216,7 @@ const RichEventsPlugin = {
         if (!currentRichEventFibers.has(currentFiber)) {
           currentFiber = currentFiber.alternate;
         }
-        handleEvents(currentFiber, context, nativeEventTarget, targetInst);
+        handleEvents(topLevelType, currentFiber, context, nativeEventTarget, targetInst);
       }
       currentFiber = currentFiber.return;
     }
@@ -223,7 +226,7 @@ const RichEventsPlugin = {
 
       for (let i = 0; i < richEventFibersArr.length; i++) {
         const richEventFiber = richEventFibersArr[i];
-        handleEvents(richEventFiber, context, nativeEventTarget, targetInst);
+        handleEvents(topLevelType, richEventFiber, context, nativeEventTarget, targetInst);
       }
     }
     return context.extractEvents();

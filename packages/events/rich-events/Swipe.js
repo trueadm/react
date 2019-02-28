@@ -7,13 +7,13 @@
  * @flow
  */
 
-const childEventTypes = ['pointerdown', 'pointercancel'];
+const childEventTypes = ['pointerdown', 'pointercancel', 'pointerup', 'pointermove'];
 const rootEventTypes = ['pointerup', 'pointermove'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel', 'mouseup', 'touchmove', 'mousemove');
   rootEventTypes.push('mouseup', 'touchmove', 'mousemove');
 }
 

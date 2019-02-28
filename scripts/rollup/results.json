@@ -60,8 +60,8 @@
       "filename": "react-dom.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 790184,
-      "gzip": 179717
+      "size": 790309,
+      "gzip": 179733
     },
     {
       "filename": "react-dom.production.min.js",
@@ -179,8 +179,8 @@
       "filename": "react-dom-server.browser.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 125836,
-      "gzip": 33643
+      "size": 125956,
+      "gzip": 33676
     },
     {
       "filename": "react-dom-server.browser.production.min.js",
@@ -207,8 +207,8 @@
       "filename": "react-dom-server.node.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 127943,
-      "gzip": 34197
+      "size": 128063,
+      "gzip": 34229
     },
     {
       "filename": "react-dom-server.node.production.min.js",
@@ -515,15 +515,15 @@
       "filename": "ReactDOM-dev.js",
       "bundleType": "FB_WWW_DEV",
       "packageName": "react-dom",
-      "size": 814076,
-      "gzip": 181057
+      "size": 814333,
+      "gzip": 181095
     },
     {
       "filename": "ReactDOM-prod.js",
       "bundleType": "FB_WWW_PROD",
       "packageName": "react-dom",
-      "size": 341339,
-      "gzip": 62503
+      "size": 341406,
+      "gzip": 62510
     },
     {
       "filename": "ReactTestUtils-dev.js",
@@ -767,8 +767,8 @@
       "filename": "ReactDOM-profiling.js",
       "bundleType": "FB_WWW_PROFILING",
       "packageName": "react-dom",
-      "size": 348067,
-      "gzip": 64069
+      "size": 348134,
+      "gzip": 64077
     },
     {
       "filename": "ReactNativeRenderer-profiling.js",
@@ -1033,29 +1033,29 @@
       "filename": "react-dom-unstable-fire.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-dom",
-      "size": 790537,
-      "gzip": 179856
+      "size": 790662,
+      "gzip": 179871
     },
     {
       "filename": "ReactFire-dev.js",
       "bundleType": "FB_WWW_DEV",
       "packageName": "react-dom",
-      "size": 813267,
-      "gzip": 180956
+      "size": 813524,
+      "gzip": 180994
     },
     {
       "filename": "ReactFire-prod.js",
       "bundleType": "FB_WWW_PROD",
       "packageName": "react-dom",
-      "size": 329491,
-      "gzip": 60116
+      "size": 329558,
+      "gzip": 60127
     },
     {
       "filename": "ReactFire-profiling.js",
       "bundleType": "FB_WWW_PROFILING",
       "packageName": "react-dom",
-      "size": 336256,
-      "gzip": 61695
+      "size": 336323,
+      "gzip": 61707
     }
   ]
 }
