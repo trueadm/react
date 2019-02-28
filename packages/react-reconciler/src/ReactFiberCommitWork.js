@@ -14,8 +14,8 @@ import type {
   Container,
   ChildSet,
   UpdatePayload,
-  handleRichEventsHitSlop,
 } from './ReactFiberHostConfig';
+import {handleRichEventsHitSlop} from './ReactFiberHostConfig';
 import type {Fiber} from './ReactFiber';
 import type {FiberRoot} from './ReactFiberRoot';
 import type {ExpirationTime} from './ReactFiberExpirationTime';

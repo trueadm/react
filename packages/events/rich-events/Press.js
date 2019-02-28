@@ -7,7 +7,13 @@
  * @flow
  */
 
-const childEventTypes = ['click', 'keydown', 'pointerdown', 'pointercancel'];
+const childEventTypes = [
+  'click',
+  'keydown',
+  'pointerdown',
+  'pointercancel',
+  'contextmenu',
+];
 const rootEventTypes = ['pointerup', 'scroll'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
@@ -131,6 +137,7 @@ const PressImplementation = {
   },
   handleEvent(context, props, state): void {
     const {eventTarget, eventType, nativeEvent} = context;
+    console.log(eventType);
 
     switch (eventType) {
       case 'keydown': {
@@ -217,6 +224,16 @@ const PressImplementation = {
       case 'pointerdown':
       case 'mousedown': {
         if (!state.isPressed) {
+          if (nativeEvent.pointerType === 'mouse') {
+            // Ignore if we are pressing on hit slop area with mouse
+            if (context.isPositionWithinHitSlop(nativeEvent.x, nativeEvent.y)) {
+              return;
+            }
+            // Ignore right-clicks
+            if (nativeEvent.button === 2) {
+              return;
+            }
+          }
           state.pressTarget = eventTarget;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
@@ -266,11 +283,13 @@ const PressImplementation = {
       }
       case 'scroll':
       case 'touchcancel':
+      case 'contextmenu':
       case 'pointercancel': {
         if (state.isPressed) {
           dispatchPressOutEvents(context, props, state);
           state.isPressed = false;
           state.isLongPressed = false;
+          context.removeRootListeners(rootEventTypes);
         }
         break;
       }
