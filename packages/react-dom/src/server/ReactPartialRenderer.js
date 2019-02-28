@@ -36,6 +36,7 @@ import {
   REACT_CONTEXT_TYPE,
   REACT_LAZY_TYPE,
   REACT_MEMO_TYPE,
+  REACT_RICH_EVENTS_TYPE,
 } from 'shared/ReactSymbols';
 
 import {
@@ -936,6 +937,7 @@ class ReactDOMServerRenderer {
         case REACT_STRICT_MODE_TYPE:
         case REACT_CONCURRENT_MODE_TYPE:
         case REACT_PROFILER_TYPE:
+        case REACT_RICH_EVENTS_TYPE:
         case REACT_FRAGMENT_TYPE: {
           const nextChildren = toArray(
             ((nextChild: any): ReactElement).props.children,
