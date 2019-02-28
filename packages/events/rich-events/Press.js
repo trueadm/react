@@ -24,7 +24,6 @@ function dispatchPressEvent(context, name, state, listener) {
     listener,
     nativeEvent,
     state.pressTarget,
-    state.pressTargetFiber,
     false,
   );
 }
@@ -37,7 +36,6 @@ function dispatchPressInEvents(context, props, state) {
       props.onPressIn,
       nativeEvent,
       state.pressTarget,
-      state.pressTargetFiber,
       false,
     );
   }
@@ -50,7 +48,6 @@ function dispatchPressInEvents(context, props, state) {
       pressChangeEventListener,
       nativeEvent,
       state.pressTarget,
-      state.pressTargetFiber,
       false,
     );
   }
@@ -68,7 +65,6 @@ function dispatchPressInEvents(context, props, state) {
           longPressChangeEventListener,
           nativeEvent,
           state.pressTarget,
-          state.pressTargetFiber,
         );
       }
     }, longPressDelay);
@@ -87,7 +83,6 @@ function dispatchPressOutEvents(context, props, state) {
       props.onPressOut,
       nativeEvent,
       state.pressTarget,
-      state.pressTargetFiber,
       false,
     );
   }
@@ -100,7 +95,6 @@ function dispatchPressOutEvents(context, props, state) {
       pressChangeEventListener,
       nativeEvent,
       state.pressTarget,
-      state.pressTargetFiber,
       false,
     );
   }
@@ -113,7 +107,6 @@ function dispatchPressOutEvents(context, props, state) {
       longPressChangeEventListener,
       nativeEvent,
       state.pressTarget,
-      state.pressTargetFiber,
       false,
     );
   }
@@ -134,11 +127,10 @@ const PressImplementation = {
       isPressed: false,
       longPressTimeout: null,
       pressTarget: null,
-      pressTargetFiber: null,
     };
   },
   handleEvent(context, props, state): void {
-    const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
+    const {eventTarget, eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'keydown': {
@@ -178,7 +170,6 @@ const PressImplementation = {
             return;
           }
           state.pressTarget = eventTarget;
-          state.pressTargetFiber = eventTargetFiber;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
           context.addRootListeners(rootEventTypes);
@@ -202,28 +193,16 @@ const PressImplementation = {
               changedTouch.clientX,
               changedTouch.clientY,
             );
-            if (target !== null) {
-              const targetFiber = context.getClosestInstanceFromNode(target);
-              let traverseFiber = targetFiber;
-              let triggerPress = false;
-
-              while (traverseFiber !== null) {
-                if (traverseFiber === eventTargetFiber) {
-                  triggerPress = true;
-                }
-                traverseFiber = traverseFiber.return;
-              }
-              if (triggerPress) {
-                if (state.isLongPressed && props.onLongPress) {
-                  dispatchPressEvent(
-                    context,
-                    'longpress',
-                    state,
-                    props.onLongPress,
-                  );
-                } else if (props.onPress) {
-                  dispatchPressEvent(context, 'press', state, props.onPress);
-                }
+            if (target !== null && context.isTargetWithinRichEvent(target)) {
+              if (state.isLongPressed && props.onLongPress) {
+                dispatchPressEvent(
+                  context,
+                  'longpress',
+                  state,
+                  props.onLongPress,
+                );
+              } else if (props.onPress) {
+                dispatchPressEvent(context, 'press', state, props.onPress);
               }
             }
           }
@@ -239,7 +218,6 @@ const PressImplementation = {
       case 'mousedown': {
         if (!state.isPressed) {
           state.pressTarget = eventTarget;
-          state.pressTargetFiber = eventTargetFiber;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
           context.addRootListeners(rootEventTypes);
@@ -251,19 +229,10 @@ const PressImplementation = {
         if (state.isPressed) {
           dispatchPressOutEvents(context, props, state);
           if (
-            state.pressTargetFiber !== null &&
+            state.pressTarget !== null &&
             (props.onPress || props.onLongPress)
           ) {
-            let traverseFiber = eventTargetFiber;
-            let triggerPress = false;
-
-            while (traverseFiber !== null) {
-              if (traverseFiber === state.pressTargetFiber) {
-                triggerPress = true;
-              }
-              traverseFiber = traverseFiber.return;
-            }
-            if (triggerPress) {
+            if (context.isTargetWithinElement(eventTarget, state.pressTarget)) {
               if (state.isLongPressed && props.onLongPress) {
                 const longPressEventListener = e => {
                   props.onLongPress(e);

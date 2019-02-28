@@ -16,7 +16,7 @@ export function addEventBubbleListener(
   element: Element,
   eventType: string,
   listener: Function,
-  options?: { capture?: boolean, once?: boolean, passive?: boolean },
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ): void {
   EventListenerWWW.listen(element, eventType, listener);
 }
@@ -25,7 +25,7 @@ export function addEventCaptureListener(
   element: Element,
   eventType: string,
   listener: Function,
-  options?: { capture?: boolean, once?: boolean, passive?: boolean },
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ): void {
   EventListenerWWW.capture(element, eventType, listener);
 }
@@ -34,7 +34,7 @@ export function addEventListenerWithOptions(
   element: Element,
   eventType: string,
   listener: Function,
-  options?: { capture?: boolean, once?: boolean, passive?: boolean },
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ): void {
   EventListenerWWW.listenWithOptions(element, eventType, listener, options);
 }

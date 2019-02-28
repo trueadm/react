@@ -23,7 +23,6 @@ function dispatchSwipeEvent(context, name, listener, state, eventData) {
     listener,
     context.nativeEvent,
     state.swipeTarget,
-    state.swipeTargetFiber,
     false,
     eventData,
   );
@@ -39,13 +38,12 @@ const SwipeImplementation = {
       startX: 0,
       startY: 0,
       swipeTarget: null,
-      swipeTargetFiber: null,
       x: 0,
       y: 0,
     };
   },
   handleEvent(context, props, state): void {
-    const {eventTarget, eventTargetFiber, eventType, nativeEvent} = context;
+    const {eventTarget, eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'touchstart':
@@ -61,7 +59,6 @@ const SwipeImplementation = {
           state.x = x;
           state.y = y;
           state.swipeTarget = eventTarget;
-          state.swipeTargetFiber = eventTargetFiber;
           state.isSwiping = true;
           context.addRootListeners(rootEventTypes, {passive: false});
         }
@@ -133,7 +130,6 @@ const SwipeImplementation = {
           state.lastDirection = direction;
           state.isSwiping = false;
           state.swipeTarget = null;
-          state.swipeTargetFiber = null;
           context.removeRootListeners(rootEventTypes);
         }
         break;

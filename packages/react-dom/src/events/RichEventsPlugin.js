@@ -12,7 +12,10 @@ import SyntheticEvent from 'events/SyntheticEvent';
 import {executeDispatch} from 'events/EventPluginUtils';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
-import {getListeningForDocument, listenToDependency} from './ReactBrowserEventEmitter';
+import {
+  getListeningForDocument,
+  listenToDependency,
+} from './ReactBrowserEventEmitter';
 
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
@@ -24,9 +27,8 @@ function RichEventsContext(nativeEvent, eventType, impl) {
   this.capturePhaseEvents = [];
   this.eventListener = null;
   this.eventTarget = null;
-  this.eventTargetFiber = null;
   this.eventType = eventType;
-  this.fiber = null;
+  this._fiber = null;
   this.nativeEvent = nativeEvent;
 }
 
@@ -41,10 +43,10 @@ RichEventsContext.prototype.dispatchTwoPhaseEvent = function(
   eventListener,
   nativeEvent,
   eventTarget,
-  eventTargetFiber,
   isCapturePhase,
   eventData,
 ) {
+  const eventTargetFiber = getClosestInstanceFromNode(eventTarget);
   const syntheticEvent = SyntheticEvent.getPooled(
     null,
     eventTargetFiber,
@@ -70,9 +72,9 @@ RichEventsContext.prototype.dispatchImmediateEvent = function(
   eventListener,
   nativeEvent,
   eventTarget,
-  eventTargetFiber,
   eventData,
 ) {
+  const eventTargetFiber = getClosestInstanceFromNode(eventTarget);
   const syntheticEvent = SyntheticEvent.getPooled(
     null,
     eventTargetFiber,
@@ -99,9 +101,10 @@ RichEventsContext.prototype.extractEvents = function() {
   return events;
 };
 
-RichEventsContext.prototype.getClosestInstanceFromNode = getClosestInstanceFromNode;
-
-RichEventsContext.prototype.addRootListeners = function(rootEventTypes, options) {
+RichEventsContext.prototype.addRootListeners = function(
+  rootEventTypes,
+  options,
+) {
   const container = this.eventTarget.ownerDocument;
   const isListening = getListeningForDocument(container);
   for (let i = 0; i < rootEventTypes.length; i++) {
@@ -112,7 +115,7 @@ RichEventsContext.prototype.addRootListeners = function(rootEventTypes, options)
       rootEventRichEventFibers.set(rootEventType, richEventFibers);
     }
     listenToDependency(rootEventType, isListening, container, options);
-    richEventFibers.add(this.fiber);
+    richEventFibers.add(this._fiber);
   }
 };
 
@@ -121,22 +124,70 @@ RichEventsContext.prototype.removeRootListeners = function(rootEventTypes) {
     const rootEventType = rootEventTypes[i];
     let richEventFibers = rootEventRichEventFibers.get(rootEventType);
     if (richEventFibers !== undefined) {
-      richEventFibers.delete(this.fiber);
+      richEventFibers.delete(this._fiber);
     }
   }
+};
+
+RichEventsContext.prototype.isPositionWithinHitSlop = function(x, y) {
+  const target = this.eventTarget.ownerDocument.elementFromPoint(x, y);
+  if (target.nodeName === 'HIT-SLOP') {
+    const {
+      left,
+      top,
+      right,
+      bottom,
+    } = target.parentNode.getBoundingClientRect();
+    if (x > left && y > top && x < right && y < bottom) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+};
+
+RichEventsContext.prototype.isTargetWithinRichEvent = function(target) {
+  const richEventFiber = this._fiber;
+
+  if (target != null) {
+    let fiber = getClosestInstanceFromNode(target);
+    while (fiber !== null) {
+      if (fiber === richEventFiber || fiber === richEventFiber.alternate) {
+        return true;
+      }
+      fiber = fiber.return;
+    }
+  }
+  return false;
+};
+
+RichEventsContext.prototype.isTargetWithinElement = function(
+  childTarget,
+  parentTarget,
+) {
+  const childFiber = getClosestInstanceFromNode(childTarget);
+  const parentFiber = getClosestInstanceFromNode(parentTarget);
+
+  let currentFiber = childFiber;
+  while (currentFiber !== null) {
+    if (currentFiber === parentFiber) {
+      return true;
+    }
+    currentFiber = currentFiber.return;
+  }
+  return false;
 };
 
 function handleEvents(fiber, context, nativeEventTarget, targetInst) {
   const listeners = fiber.memoizedProps.listeners;
   const richEventState = fiber.stateNode.richEventState;
-  context.fiber = fiber;
+  context._fiber = fiber;
 
   for (let i = 0; i < listeners.length; ++i) {
     const richEvent = listeners[i];
     const {impl, props} = richEvent;
 
     context.eventTarget = nativeEventTarget;
-    context.eventTargetFiber = targetInst;
 
     let state = richEventState.get(impl);
     if (state === undefined) {
@@ -172,12 +223,7 @@ const RichEventsPlugin = {
 
       for (let i = 0; i < richEventFibersArr.length; i++) {
         const richEventFiber = richEventFibersArr[i];
-        handleEvents(
-          richEventFiber,
-          context,
-          nativeEventTarget,
-          targetInst,
-        );
+        handleEvents(richEventFiber, context, nativeEventTarget, targetInst);
       }
     }
     return context.extractEvents();

@@ -21,8 +21,8 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 }
 
 function dispatchHoverInEvents(context, props) {
-  const {nativeEvent, eventTarget, eventTargetFiber} = context;
-  if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
+  const {nativeEvent, eventTarget} = context;
+  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onHoverIn) {
@@ -31,7 +31,6 @@ function dispatchHoverInEvents(context, props) {
       props.onHoverIn,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
@@ -44,15 +43,14 @@ function dispatchHoverInEvents(context, props) {
       hoverChangeEventListener,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
 }
 
 function dispatchHoverOutEvents(context, props) {
-  const {nativeEvent, eventTarget, eventTargetFiber} = context;
-  if (isHoverWithinSameRichEventsFiber(context, nativeEvent)) {
+  const {nativeEvent, eventTarget} = context;
+  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onHoverOut) {
@@ -61,7 +59,6 @@ function dispatchHoverOutEvents(context, props) {
       props.onHoverOut,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
@@ -74,48 +71,9 @@ function dispatchHoverOutEvents(context, props) {
       hoverChangeEventListener,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
-}
-
-function isHoverWithinSameRichEventsFiber(context, nativeEvent) {
-  const related = nativeEvent.relatedTarget;
-  const richEventFiber = context.fiber;
-
-  if (related != null) {
-    let relatedFiber = context.getClosestInstanceFromNode(related);
-    while (relatedFiber !== null) {
-      if (
-        relatedFiber === richEventFiber ||
-        relatedFiber === richEventFiber.alternate
-      ) {
-        return true;
-      }
-      relatedFiber = relatedFiber.return;
-    }
-  }
-  return false;
-}
-
-function targetIsHitSlop(eventTarget, nativeEvent, state) {
-  const x = nativeEvent.clientX;
-  const y = nativeEvent.clientY;
-  const target = eventTarget.ownerDocument.elementFromPoint(x, y);
-  if (target.nodeName === 'HIT-SLOP') {
-    const {
-      left,
-      top,
-      right,
-      bottom,
-    } = target.parentNode.getBoundingClientRect();
-    if (x > left && y > top && x < right && y < bottom) {
-      return false;
-    }
-    return true;
-  }
-  return false;
 }
 
 const HoverImplementation = {
@@ -128,7 +86,7 @@ const HoverImplementation = {
     };
   },
   handleEvent(context, props, state): void {
-    const {eventType, eventTarget, nativeEvent} = context;
+    const {eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'touchstart':
@@ -144,7 +102,7 @@ const HoverImplementation = {
             state.isTouched = true;
             return;
           }
-          if (targetIsHitSlop(eventTarget, nativeEvent, state)) {
+          if (context.isPositionWithinHitSlop(nativeEvent.x, nativeEvent.y)) {
             state.isInHitSlop = true;
             return;
           }
@@ -166,14 +124,16 @@ const HoverImplementation = {
       case 'pointermove': {
         if (!state.isTouched) {
           if (state.isInHitSlop) {
-            if (!targetIsHitSlop(eventTarget, nativeEvent)) {
+            if (
+              !context.isPositionWithinHitSlop(nativeEvent.x, nativeEvent.y)
+            ) {
               dispatchHoverInEvents(context, props);
               state.isHovered = true;
               state.isInHitSlop = false;
             }
           } else if (
             state.isHovered &&
-            targetIsHitSlop(eventTarget, nativeEvent)
+            context.isPositionWithinHitSlop(nativeEvent.x, nativeEvent.y)
           ) {
             dispatchHoverOutEvents(context, props);
             state.isHovered = false;

@@ -27,7 +27,7 @@ export function addEventListenerWithOptions(
   element: Document | Element,
   eventType: string,
   listener: Function,
-  options?: { capture?: boolean, once?: boolean, passive?: boolean },
+  options?: {capture?: boolean, once?: boolean, passive?: boolean},
 ): void {
   element.addEventListener(eventType, listener, options);
 }

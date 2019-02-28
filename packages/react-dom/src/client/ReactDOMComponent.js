@@ -1253,4 +1253,3 @@ export function restoreControlledState(
       return;
   }
 }
-

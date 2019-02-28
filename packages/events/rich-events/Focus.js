@@ -10,8 +10,8 @@
 const childEventTypes = ['focus', 'blur'];
 
 function dispatchFocusInEvents(context, props) {
-  const {nativeEvent, eventTarget, eventTargetFiber} = context;
-  if (isFocusWithinSameRichEventsFiber(context, nativeEvent)) {
+  const {nativeEvent, eventTarget} = context;
+  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onFocus) {
@@ -20,7 +20,6 @@ function dispatchFocusInEvents(context, props) {
       props.onFocus,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
@@ -33,15 +32,14 @@ function dispatchFocusInEvents(context, props) {
       focusChangeEventListener,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
 }
 
 function dispatchFocusOutEvents(context, props) {
-  const {nativeEvent, eventTarget, eventTargetFiber} = context;
-  if (isFocusWithinSameRichEventsFiber(context, nativeEvent)) {
+  const {nativeEvent, eventTarget} = context;
+  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onBlur) {
@@ -50,7 +48,6 @@ function dispatchFocusOutEvents(context, props) {
       props.onBlur,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
@@ -63,29 +60,9 @@ function dispatchFocusOutEvents(context, props) {
       focusChangeEventListener,
       nativeEvent,
       eventTarget,
-      eventTargetFiber,
       false,
     );
   }
-}
-
-function isFocusWithinSameRichEventsFiber(context, nativeEvent) {
-  const related = nativeEvent.relatedTarget;
-  const richEventFiber = context.fiber;
-
-  if (related != null) {
-    let relatedFiber = context.getClosestInstanceFromNode(related);
-    while (relatedFiber !== null) {
-      if (
-        relatedFiber === richEventFiber ||
-        relatedFiber === richEventFiber.alternate
-      ) {
-        return true;
-      }
-      relatedFiber = relatedFiber.return;
-    }
-  }
-  return false;
 }
 
 const FocusImplementation = {
