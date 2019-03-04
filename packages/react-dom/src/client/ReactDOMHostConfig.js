@@ -23,6 +23,7 @@ import {
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
 } from './ReactDOMComponent';
+import type {ReactEventModule} from 'shared/ReactTypes';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
 import {validateDOMNesting, updatedAncestorInfo} from './validateDOMNesting';
@@ -39,7 +40,7 @@ import {
   DOCUMENT_FRAGMENT_NODE,
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
-import {currentRichEventFibers} from '../events/RichEventsPlugin';
+import {currentEventFibers} from '../events/UnstableEventPlugin';
 import {
   getListeningForDocument,
   listenToDependency,
@@ -247,26 +248,32 @@ export function createInstance(
   return domElement;
 }
 
-export function handleRichEvents(
-  richEventFiber: Fiber,
-  oldListeners: Array<any>,
-  newListeners: Array<any>,
+function listenToEventModule(
+  eventModule: ReactEventModule,
   rootContainerInstance: Container,
-  richEventsMap: Map<any>,
 ): void {
-  currentRichEventFibers.add(richEventFiber);
-  if (oldListeners !== null) {
-    currentRichEventFibers.delete(richEventFiber.alternate);
+  const {childEventTypes} = eventModule;
+  const container = rootContainerInstance.ownerDocument;
+  const isListening = getListeningForDocument(container);
+  for (let s = 0; s < childEventTypes.length; s++) {
+    const childEventType = childEventTypes[s];
+    listenToDependency(childEventType, isListening, container);
   }
-  for (let i = 0, length = newListeners.length; i < length; ++i) {
-    const impl = newListeners[i].impl;
-    const {childEventTypes} = impl;
-    const container = rootContainerInstance.ownerDocument;
-    const isListening = getListeningForDocument(container);
-    for (let s = 0; s < childEventTypes.length; s++) {
-      const childEventType = childEventTypes[s];
-      listenToDependency(childEventType, isListening, container);
+}
+
+export function handleEventModules(
+  eventFiber: Fiber,
+  modules: ReactEventModule | Array<ReactEventModule>,
+  rootContainerInstance: Container,
+): void {
+  currentEventFibers.add(eventFiber);
+  currentEventFibers.delete(eventFiber.alternate);
+  if (Array.isArray(modules)) {
+    for (let i = 0, length = modules.length; i < length; ++i) {
+      listenToEventModule(modules[i], rootContainerInstance);
     }
+  } else {
+    listenToEventModule(modules, rootContainerInstance);
   }
 }
 
@@ -293,17 +300,17 @@ function getChildDomElementsFromFiber(fiber) {
   return domElements;
 }
 
-export function handleRichEventsHitSlop(
-  richEventFiber: Fiber,
+export function handleEventHitSlop(
+  eventFiber: Fiber,
   hitSlop: Object,
 ): void {
-  const stateNode = richEventFiber.stateNode;
+  const stateNode = eventFiber.stateNode;
   let hitSlopElements = stateNode.hitSlopElements;
 
   if (hitSlopElements === null) {
     hitSlopElements = stateNode.hitSlopElements = new Map();
   }
-  const childElements = getChildDomElementsFromFiber(richEventFiber);
+  const childElements = getChildDomElementsFromFiber(eventFiber);
 
   for (let i = 0; i < childElements.length; i++) {
     const childElement = childElements[i];

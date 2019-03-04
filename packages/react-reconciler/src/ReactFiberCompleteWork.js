@@ -39,7 +39,7 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   IncompleteClassComponent,
-  RichEvents,
+  Event,
 } from 'shared/ReactWorkTags';
 import {
   Placement,
@@ -66,7 +66,7 @@ import {
   createContainerChildSet,
   appendChildToContainerChildSet,
   finalizeContainerChildren,
-  handleRichEvents,
+  handleEventModules,
 } from './ReactFiberHostConfig';
 import {
   getRootHostContainer,
@@ -87,7 +87,6 @@ import {
   popHydrationState,
 } from './ReactFiberHydrationContext';
 import {enableSuspenseServerRenderer} from 'shared/ReactFeatureFlags';
-import warningWithoutStack from 'shared/warningWithoutStack';
 
 function markUpdate(workInProgress: Fiber) {
   // Tag the fiber with an update effect. This turns a Placement into
@@ -791,29 +790,13 @@ function completeWork(
       }
       break;
     }
-    case RichEvents: {
-      const oldProps = current !== null ? current.memoizedProps : null;
+    case Event: {
       const rootContainerInstance = getRootHostContainer();
-      const oldListeners = oldProps !== null ? oldProps.listeners : null;
-      const newListeners = newProps !== null ? newProps.listeners : null;
+      const modules = workInProgress.type.modules;
       if (newProps.hitSlop != null) {
         markUpdate(workInProgress);
       }
-      if (newListeners != null) {
-        handleRichEvents(
-          workInProgress,
-          oldListeners,
-          newListeners,
-          rootContainerInstance,
-          workInProgress.stateNode,
-        );
-      } else if (__DEV__) {
-        warningWithoutStack(
-          false,
-          'A <RichEvents> element has been used but has no listeners prop specified.' +
-            'Ensure a listeners prop is specified as an array.',
-        );
-      }
+      handleEventModules(workInProgress, modules, rootContainerInstance);
       break;
     }
     default:

@@ -19,7 +19,7 @@ import DOMEventPluginOrder from '../events/DOMEventPluginOrder';
 import EnterLeaveEventPlugin from '../events/EnterLeaveEventPlugin';
 import SelectEventPlugin from '../events/SelectEventPlugin';
 import SimpleEventPlugin from '../events/SimpleEventPlugin';
-import RichEventsPlugin from '../events/RichEventsPlugin';
+import UnstableEventPlugin from '../events/UnstableEventPlugin';
 
 /**
  * Inject modules for resolving DOM hierarchy and plugin ordering.
@@ -37,7 +37,7 @@ setComponentTree(
  */
 EventPluginHubInjection.injectEventPluginsByName({
   SimpleEventPlugin: SimpleEventPlugin,
-  RichEventsPlugin: RichEventsPlugin,
+  UnstableEventPlugin: UnstableEventPlugin,
   EnterLeaveEventPlugin: EnterLeaveEventPlugin,
   ChangeEventPlugin: ChangeEventPlugin,
   SelectEventPlugin: SelectEventPlugin,

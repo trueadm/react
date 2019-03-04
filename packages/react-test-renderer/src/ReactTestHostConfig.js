@@ -274,3 +274,11 @@ export function unhideTextInstance(
 ): void {
   textInstance.isHidden = false;
 }
+
+export function handleEventModules() {
+  // TODO
+}
+
+export function handleEventHitSlop() {
+  // TODO
+}

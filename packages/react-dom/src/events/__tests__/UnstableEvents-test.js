@@ -11,7 +11,7 @@
 
 let React;
 let ReactDOM;
-let pointerEvents;
+let Press;
 
 describe('SyntheticEvent', () => {
   let container;
@@ -19,7 +19,7 @@ describe('SyntheticEvent', () => {
   beforeEach(() => {
     React = require('react');
     ReactDOM = require('react-dom');
-    pointerEvents = require('react-events/pointer');
+    Press = require('react-events/press');
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -50,20 +50,20 @@ describe('SyntheticEvent', () => {
       events.push('keydown');
     }
 
+    const TestPressEvents = React.unstable_createEvent([Press]);
+
     function Component() {
       return (
-        <React.unstable_RichEvents
-          listeners={[pointerEvents({onPress: handleOnPress1})]}>
-          <React.unstable_RichEvents
-            listeners={[pointerEvents({onPress: handleOnPress2})]}>
+        <TestPressEvents onPress={handleOnPress1}>
+          <TestPressEvents onPress={handleOnPress2}>
             <button
               ref={buttonRef}
               onMouseDown={handleOnMouseDown}
               onKeyDown={handleKeyDown}>
               Press me!
             </button>
-          </React.unstable_RichEvents>
-        </React.unstable_RichEvents>
+          </TestPressEvents>
+        </TestPressEvents>
       );
     }
 
@@ -89,7 +89,7 @@ describe('SyntheticEvent', () => {
     buttonRef.current.dispatchEvent(keyDownEvent);
 
     // press 2 should not occur as press 1 will preventDefault
-    expect(events).toEqual(['keydown', 'press 2']);
+    expect(events).toEqual(['press 2', 'keydown']);
   });
 
   it('should support onPressIn and onPressOut', () => {
@@ -104,17 +104,13 @@ describe('SyntheticEvent', () => {
       events.push('onPressOut');
     }
 
+    const TestPressEvents = React.unstable_createEvent([Press]);
+
     function Component() {
       return (
-        <React.unstable_RichEvents
-          listeners={[
-            pointerEvents({
-              onPressIn: handleOnPressIn,
-              onPressOut: handleOnPressOut,
-            }),
-          ]}>
+        <TestPressEvents onPressIn={handleOnPressIn} onPressOut={handleOnPressOut}>
           <div ref={divRef}>Press me!</div>
-        </React.unstable_RichEvents>
+        </TestPressEvents>
       );
     }
 

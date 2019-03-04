@@ -8,7 +8,7 @@
  */
 
 import type {ReactElement, Source} from 'shared/ReactElementType';
-import type {ReactFragment, ReactPortal, RefObject} from 'shared/ReactTypes';
+import type {ReactFragment, ReactPortal, RefObject, ReactEvent} from 'shared/ReactTypes';
 import type {WorkTag} from 'shared/ReactWorkTags';
 import type {TypeOfMode} from './ReactTypeOfMode';
 import type {SideEffectTag} from 'shared/ReactSideEffectTags';
@@ -37,7 +37,7 @@ import {
   FunctionComponent,
   MemoComponent,
   LazyComponent,
-  RichEvents,
+  Event,
 } from 'shared/ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
 
@@ -60,7 +60,7 @@ import {
   REACT_SUSPENSE_TYPE,
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
-  REACT_RICH_EVENTS_TYPE,
+  REACT_EVENT_TYPE,
 } from 'shared/ReactSymbols';
 
 let hasBadMapPolyfill;
@@ -454,13 +454,6 @@ export function createFiberFromTypeAndProps(
     fiberTag = HostComponent;
   } else {
     getTag: switch (type) {
-      case REACT_RICH_EVENTS_TYPE:
-        return createFiberFromRichEvents(
-          pendingProps,
-          mode,
-          expirationTime,
-          key,
-        );
       case REACT_FRAGMENT_TYPE:
         return createFiberFromFragment(
           pendingProps.children,
@@ -506,6 +499,14 @@ export function createFiberFromTypeAndProps(
               fiberTag = LazyComponent;
               resolvedType = null;
               break getTag;
+            case REACT_EVENT_TYPE:
+              return createFiberFromEvent(
+                type,
+                pendingProps,
+                mode,
+                expirationTime,
+                key,
+              );
           }
         }
         let info = '';
@@ -584,18 +585,19 @@ export function createFiberFromFragment(
   return fiber;
 }
 
-export function createFiberFromRichEvents(
+export function createFiberFromEvent(
+  event: ReactEvent,
   pendingProps: any,
   mode: TypeOfMode,
   expirationTime: ExpirationTime,
   key: null | string,
 ): Fiber {
-  const fiber = createFiber(RichEvents, pendingProps, key, mode);
-  fiber.elementType = REACT_RICH_EVENTS_TYPE;
-  fiber.type = REACT_PROFILER_TYPE;
+  const fiber = createFiber(Event, pendingProps, key, mode);
+  fiber.elementType = event;
+  fiber.type = event;
   fiber.stateNode = {
+    eventState: new Map(),
     hitSlopElements: null,
-    richEventState: new Map(),
   };
   fiber.expirationTime = expirationTime;
   return fiber;

@@ -28,7 +28,7 @@ function dispatchSwipeEvent(context, name, listener, state, eventData) {
   );
 }
 
-const SwipeImplementation = {
+const SwipeModule = {
   childEventTypes,
   createInitialState() {
     return {
@@ -138,9 +138,4 @@ const SwipeImplementation = {
   },
 };
 
-export default function swipeEvents(props) {
-  return {
-    impl: SwipeImplementation,
-    props,
-  };
-}
+export default SwipeModule;

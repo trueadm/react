@@ -36,7 +36,7 @@ import {
   REACT_CONTEXT_TYPE,
   REACT_LAZY_TYPE,
   REACT_MEMO_TYPE,
-  REACT_RICH_EVENTS_TYPE,
+  REACT_EVENT_TYPE,
 } from 'shared/ReactSymbols';
 
 import {
@@ -937,7 +937,6 @@ class ReactDOMServerRenderer {
         case REACT_STRICT_MODE_TYPE:
         case REACT_CONCURRENT_MODE_TYPE:
         case REACT_PROFILER_TYPE:
-        case REACT_RICH_EVENTS_TYPE:
         case REACT_FRAGMENT_TYPE: {
           const nextChildren = toArray(
             ((nextChild: any): ReactElement).props.children,
@@ -1123,6 +1122,24 @@ class ReactDOMServerRenderer {
             const nextChildren = toArray(nextProps.children(nextValue));
             const frame: Frame = {
               type: nextChild,
+              domNamespace: parentNamespace,
+              children: nextChildren,
+              childIndex: 0,
+              context: context,
+              footer: '',
+            };
+            if (__DEV__) {
+              ((frame: any): FrameDev).debugElementStack = [];
+            }
+            this.stack.push(frame);
+            return '';
+          }
+          case REACT_EVENT_TYPE: {
+            const nextChildren = toArray(
+              ((nextChild: any): ReactElement).props.children,
+            );
+            const frame: Frame = {
+              type: null,
               domNamespace: parentNamespace,
               children: nextChildren,
               childIndex: 0,

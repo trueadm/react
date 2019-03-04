@@ -51,3 +51,6 @@ export const disableInputAttributeSyncing = false;
 export const enableStableConcurrentModeAPIs = false;
 
 export const warnAboutShorthandPropertyCollision = false;
+
+// Experimental React Events support. Only used in www builds for now.
+export const enableEventAPI = true;

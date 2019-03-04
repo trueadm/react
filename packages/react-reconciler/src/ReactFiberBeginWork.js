@@ -35,7 +35,7 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   IncompleteClassComponent,
-  RichEvents,
+  Event,
 } from 'shared/ReactWorkTags';
 import {
   NoEffect,
@@ -909,7 +909,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   return workInProgress.child;
 }
 
-function updateHostRichEvents(current, workInProgress, renderExpirationTime) {
+function updateHostEvent(current, workInProgress, renderExpirationTime) {
   const nextProps = workInProgress.pendingProps;
   let nextChildren = nextProps.children;
 
@@ -920,13 +920,13 @@ function updateHostRichEvents(current, workInProgress, renderExpirationTime) {
     renderExpirationTime,
   );
   if (__DEV__) {
-    // Check if Rich event has any text nodes as direct nodes and warn
+    // Check event node has any text nodes as direct nodes and warn
     let child = workInProgress.child;
     while (child !== null) {
       if (child.tag === HostText) {
         warningWithoutStack(
           false,
-          '<RichEvents> cannot have text nodes as direct children',
+          '<React.Event> cannot have text nodes as direct children',
         );
       }
       child = child.sibling;
@@ -2197,8 +2197,8 @@ function beginWork(
       }
       break;
     }
-    case RichEvents:
-      return updateHostRichEvents(
+    case Event:
+      return updateHostEvent(
         current,
         workInProgress,
         renderExpirationTime,

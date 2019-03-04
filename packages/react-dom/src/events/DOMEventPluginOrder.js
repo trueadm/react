@@ -15,9 +15,9 @@
  * preventing default on events is convenient in `SimpleEventPlugin` handlers.
  */
 const DOMEventPluginOrder = [
+  'UnstableEventPlugin',
   'ResponderEventPlugin',
   'SimpleEventPlugin',
-  'RichEventsPlugin',
   'EnterLeaveEventPlugin',
   'ChangeEventPlugin',
   'SelectEventPlugin',

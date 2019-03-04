@@ -124,7 +124,7 @@ function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
 }
 
-const PressImplementation = {
+const PressModule = {
   childEventTypes,
   createInitialState() {
     return {
@@ -200,7 +200,7 @@ const PressImplementation = {
               changedTouch.clientX,
               changedTouch.clientY,
             );
-            if (target !== null && context.isTargetWithinRichEvent(target)) {
+            if (target !== null && context.isTargetWithinEvent(target)) {
               if (state.isLongPressed && props.onLongPress) {
                 dispatchPressEvent(
                   context,
@@ -303,9 +303,4 @@ const PressImplementation = {
   },
 };
 
-export default function pressEvents(props) {
-  return {
-    impl: PressImplementation,
-    props,
-  };
-}
+export default PressModule;

@@ -22,7 +22,7 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 
 function dispatchHoverInEvents(context, props) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onHoverIn) {
@@ -50,7 +50,7 @@ function dispatchHoverInEvents(context, props) {
 
 function dispatchHoverOutEvents(context, props) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onHoverOut) {
@@ -76,7 +76,7 @@ function dispatchHoverOutEvents(context, props) {
   }
 }
 
-const HoverImplementation = {
+const HoverModule = {
   childEventTypes,
   createInitialState(props) {
     return {
@@ -154,9 +154,4 @@ const HoverImplementation = {
   },
 };
 
-export default function hoverEvents(props) {
-  return {
-    impl: HoverImplementation,
-    props,
-  };
-}
+export default HoverModule;

@@ -8,7 +8,6 @@
 import ReactVersion from 'shared/ReactVersion';
 import {
   REACT_CONCURRENT_MODE_TYPE,
-  REACT_RICH_EVENTS_TYPE,
   REACT_FRAGMENT_TYPE,
   REACT_PROFILER_TYPE,
   REACT_STRICT_MODE_TYPE,
@@ -25,6 +24,7 @@ import {
   isValidElement,
 } from './ReactElement';
 import {createContext} from './ReactContext';
+import {createEvent} from './ReactEvent';
 import {lazy} from './ReactLazy';
 import forwardRef from './forwardRef';
 import memo from './memo';
@@ -46,7 +46,7 @@ import {
   cloneElementWithValidation,
 } from './ReactElementValidator';
 import ReactSharedInternals from './ReactSharedInternals';
-import {enableStableConcurrentModeAPIs} from 'shared/ReactFeatureFlags';
+import {enableStableConcurrentModeAPIs, enableEventAPI} from 'shared/ReactFeatureFlags';
 
 const React = {
   Children: {
@@ -91,8 +91,6 @@ const React = {
   unstable_ConcurrentMode: REACT_CONCURRENT_MODE_TYPE,
   unstable_Profiler: REACT_PROFILER_TYPE,
 
-  unstable_RichEvents: REACT_RICH_EVENTS_TYPE,
-
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: ReactSharedInternals,
 };
 
@@ -106,6 +104,10 @@ if (enableStableConcurrentModeAPIs) {
   React.Profiler = REACT_PROFILER_TYPE;
   React.unstable_ConcurrentMode = undefined;
   React.unstable_Profiler = undefined;
+}
+
+if (enableEventAPI) {
+  React.unstable_createEvent = createEvent;
 }
 
 export default React;

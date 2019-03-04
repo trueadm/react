@@ -11,7 +11,7 @@ const childEventTypes = ['focus', 'blur'];
 
 function dispatchFocusInEvents(context, props) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onFocus) {
@@ -39,7 +39,7 @@ function dispatchFocusInEvents(context, props) {
 
 function dispatchFocusOutEvents(context, props) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinRichEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
     return;
   }
   if (props.onBlur) {
@@ -65,7 +65,7 @@ function dispatchFocusOutEvents(context, props) {
   }
 }
 
-const FocusImplementation = {
+const FocusModule = {
   childEventTypes,
   createInitialState(props) {
     return {
@@ -94,9 +94,4 @@ const FocusImplementation = {
   },
 };
 
-export default function focusEvents(props) {
-  return {
-    impl: FocusImplementation,
-    props,
-  };
-}
+export default FocusModule;
