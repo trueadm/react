@@ -7,6 +7,7 @@
  * @flow
  */
 
+import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
 import type {ReactContext} from 'shared/ReactTypes';
 import invariant from 'shared/invariant';
 import warning from 'shared/warning';
@@ -130,4 +131,16 @@ export function useDebugValue(value: any, formatterFn: ?(value: any) => any) {
     const dispatcher = resolveDispatcher();
     return dispatcher.useDebugValue(value, formatterFn);
   }
+}
+
+export function useResponder<A, B>(
+  responder: A,
+  defaultProps?: B,
+): ReactEvents {
+  return {
+    $$typeof: REACT_EVENT_TYPE,
+    defaultProps: defaultProps || null,
+    responders: [responder],
+    responderMap: null,
+  };
 }

@@ -35,6 +35,7 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   IncompleteClassComponent,
+  Event,
 } from 'shared/ReactWorkTags';
 import {
   NoEffect,
@@ -913,6 +914,32 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
       renderExpirationTime,
     );
     resetHydrationState();
+  }
+  return workInProgress.child;
+}
+
+function updateHostEvent(current, workInProgress, renderExpirationTime) {
+  const nextProps = workInProgress.pendingProps;
+  let nextChildren = nextProps.children;
+
+  reconcileChildren(
+    current,
+    workInProgress,
+    nextChildren,
+    renderExpirationTime,
+  );
+  if (__DEV__) {
+    // Check event node has any text nodes as direct nodes and warn
+    let child = workInProgress.child;
+    while (child !== null) {
+      if (child.tag === HostText) {
+        warningWithoutStack(
+          false,
+          '<React.Event> cannot have text nodes as direct children',
+        );
+      }
+      child = child.sibling;
+    }
   }
   return workInProgress.child;
 }
@@ -2239,6 +2266,8 @@ function beginWork(
       }
       break;
     }
+    case Event:
+      return updateHostEvent(current, workInProgress, renderExpirationTime);
   }
   invariant(
     false,

@@ -24,6 +24,7 @@ import {
   isValidElement,
 } from './ReactElement';
 import {createContext} from './ReactContext';
+import {createEvent} from './ReactEvent';
 import {lazy} from './ReactLazy';
 import forwardRef from './forwardRef';
 import memo from './memo';
@@ -38,6 +39,7 @@ import {
   useReducer,
   useRef,
   useState,
+  useResponder,
 } from './ReactHooks';
 import {
   createElementWithValidation,
@@ -45,7 +47,10 @@ import {
   cloneElementWithValidation,
 } from './ReactElementValidator';
 import ReactSharedInternals from './ReactSharedInternals';
-import {enableStableConcurrentModeAPIs} from 'shared/ReactFeatureFlags';
+import {
+  enableStableConcurrentModeAPIs,
+  enableEventAPI,
+} from 'shared/ReactFeatureFlags';
 
 const React = {
   Children: {
@@ -103,6 +108,11 @@ if (enableStableConcurrentModeAPIs) {
   React.Profiler = REACT_PROFILER_TYPE;
   React.unstable_ConcurrentMode = undefined;
   React.unstable_Profiler = undefined;
+}
+
+if (enableEventAPI) {
+  React.unstable_createEvent = createEvent;
+  React.unstable_useResponder = useResponder;
 }
 
 export default React;

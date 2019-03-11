@@ -430,3 +430,11 @@ export function unhideInstance(instance, props) {
 export function unhideTextInstance(textInstance, text): void {
   // Noop
 }
+
+export function handleEventModules() {
+  // Noop
+}
+
+export function handleEventHitSlop() {
+  // Noop
+}
