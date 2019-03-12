@@ -431,7 +431,7 @@ export function unhideTextInstance(textInstance, text): void {
   // Noop
 }
 
-export function handleEventModules() {
+export function handleEventResponder() {
   // Noop
 }
 

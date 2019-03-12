@@ -261,7 +261,7 @@ export function unhideTextInstance(
   textInstance.isHidden = false;
 }
 
-export function handleEventModules() {
+export function handleEventResponder() {
   // TODO
 }
 

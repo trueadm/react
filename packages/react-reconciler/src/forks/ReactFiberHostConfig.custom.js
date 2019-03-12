@@ -59,7 +59,7 @@ export const isPrimaryRenderer = $$$hostConfig.isPrimaryRenderer;
 export const supportsMutation = $$$hostConfig.supportsMutation;
 export const supportsPersistence = $$$hostConfig.supportsPersistence;
 export const supportsHydration = $$$hostConfig.supportsHydration;
-export const handleEventModules = $$$hostConfig.handleEventModules;
+export const handleEventResponder = $$$hostConfig.handleEventResponder;
 export const handleEventHitSlop = $$$hostConfig.handleEventHitSlop;
 
 // -------------------
