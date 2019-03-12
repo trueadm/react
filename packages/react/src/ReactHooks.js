@@ -8,7 +8,7 @@
  */
 
 import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
-import type {ReactContext} from 'shared/ReactTypes';
+import type {ReactContext, ReactEvent} from 'shared/ReactTypes';
 import invariant from 'shared/invariant';
 import warning from 'shared/warning';
 
@@ -133,14 +133,13 @@ export function useDebugValue(value: any, formatterFn: ?(value: any) => any) {
   }
 }
 
-export function useResponder<A, B>(
-  responder: A,
-  defaultProps?: B,
-): ReactEvents {
-  return {
-    $$typeof: REACT_EVENT_TYPE,
-    defaultProps: defaultProps || null,
-    responders: [responder],
-    responderMap: null,
-  };
+export function useEvent<E, P>(eventComponent: E, props?: P): ReactEvent {
+  const dispatcher = resolveDispatcher();
+  invariant(
+    eventComponent != null && eventComponent.$$typeof === REACT_EVENT_TYPE,
+    'useEvent(): The first argument must be a React event component ' +
+      'imported from an React event module or via useEvent().',
+  );
+  const responder = eventComponent.responder;
+  return dispatcher.useEvent(props || null, responder);
 }

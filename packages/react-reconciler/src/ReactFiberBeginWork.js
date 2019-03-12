@@ -935,7 +935,7 @@ function updateHostEvent(current, workInProgress, renderExpirationTime) {
       if (child.tag === HostText) {
         warningWithoutStack(
           false,
-          '<React.Event> cannot have text nodes as direct children',
+          'React event components cannot have text nodes as direct children',
         );
       }
       child = child.sibling;

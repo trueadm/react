@@ -9,8 +9,8 @@
 
 'use strict';
 
-const Hover = require('events/event-modules/Hover');
+const Drag = require('events/event-modules/Drag');
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest
-module.exports = Hover.default || Hover;
+module.exports = Drag.default || Drag;

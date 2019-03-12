@@ -54,7 +54,11 @@ const EnterLeaveEventPlugin = {
     targetInst,
     nativeEvent,
     nativeEventTarget,
+    passive,
   ) {
+    if (passive !== null) {
+      return null;
+    }
     const isOverEvent =
       topLevelType === TOP_MOUSE_OVER || topLevelType === TOP_POINTER_OVER;
     const isOutEvent =

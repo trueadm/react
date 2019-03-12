@@ -25,7 +25,7 @@ import {
   warnForInsertedHydratedElement,
   warnForInsertedHydratedText,
 } from './ReactDOMComponent';
-import type {ReactEventModule} from 'shared/ReactTypes';
+import type {ReactEventResponder} from 'shared/ReactTypes';
 import {getSelectionInformation, restoreSelection} from './ReactInputSelection';
 import setTextContent from './setTextContent';
 import {validateDOMNesting, updatedAncestorInfo} from './validateDOMNesting';
@@ -44,7 +44,7 @@ import {
 import dangerousStyleValue from '../shared/dangerousStyleValue';
 import {currentEventFibers} from '../events/UnstableEventPlugin';
 import {
-  getListeningForDocument,
+  getListeningSetForElement,
   listenToDependency,
 } from '../events/ReactBrowserEventEmitter';
 
@@ -253,33 +253,19 @@ export function createInstance(
   return domElement;
 }
 
-function listenToEventModule(
-  eventModule: ReactEventModule,
-  rootContainerInstance: Container,
-): void {
-  const {childEventTypes} = eventModule;
-  const container = rootContainerInstance.ownerDocument;
-  const listeningObject = getListeningForDocument(container);
-  for (let s = 0; s < childEventTypes.length; s++) {
-    const childEventType = childEventTypes[s];
-    listenToDependency(childEventType, listeningObject, container, true);
-    listenToDependency(childEventType, listeningObject, container, false);
-  }
-}
-
-export function handleEventModules(
+export function handleEventResponder(
+  responder: ReactEventResponder,
   eventFiber: Fiber,
-  modules: ReactEventModule | Array<ReactEventModule>,
   rootContainerInstance: Container,
 ): void {
   currentEventFibers.add(eventFiber);
   currentEventFibers.delete(eventFiber.alternate);
-  if (Array.isArray(modules)) {
-    for (let i = 0, length = modules.length; i < length; ++i) {
-      listenToEventModule(modules[i], rootContainerInstance);
-    }
-  } else {
-    listenToEventModule(modules, rootContainerInstance);
+  const {targetEventTypes} = responder;
+  const container = rootContainerInstance.ownerDocument;
+  const listeningSet = getListeningSetForElement(container, false);
+  for (let s = 0; s < targetEventTypes.length; s++) {
+    const childEventType = targetEventTypes[s];
+    listenToDependency(childEventType, listeningSet, container, false);
   }
 }
 

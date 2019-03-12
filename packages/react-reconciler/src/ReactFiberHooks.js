@@ -7,8 +7,13 @@
  * @flow
  */
 
-import type {ReactContext} from 'shared/ReactTypes';
+import type {
+  ReactContext,
+  ReactEvent,
+  ReactEventResponder,
+} from 'shared/ReactTypes';
 import type {SideEffectTag} from 'shared/ReactSideEffectTags';
+import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
 import type {Fiber} from './ReactFiber';
 import type {ExpirationTime} from './ReactFiberExpirationTime';
 import type {HookEffectTag} from './ReactHookEffectTags';
@@ -76,6 +81,7 @@ export type Dispatcher = {
     deps: Array<mixed> | void | null,
   ): void,
   useDebugValue<T>(value: T, formatterFn: ?(value: T) => mixed): void,
+  useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent,
 };
 
 type Update<S, A> = {
@@ -103,7 +109,8 @@ export type HookType =
   | 'useCallback'
   | 'useMemo'
   | 'useImperativeHandle'
-  | 'useDebugValue';
+  | 'useDebugValue'
+  | 'useEvent';
 
 let didWarnAboutMismatchedHooksForComponent;
 if (__DEV__) {
@@ -1021,6 +1028,23 @@ function mountMemo<T>(
   return nextValue;
 }
 
+function mountEvent<P>(
+  props: null | P,
+  responder: ReactEventResponder,
+): ReactEvent {
+  const hook = mountWorkInProgressHook();
+  const eventComponent = {
+    $$typeof: REACT_EVENT_TYPE,
+    props,
+    responder,
+  };
+  if (__DEV__) {
+    Object.freeze(eventComponent);
+  }
+  hook.memoizedState = eventComponent;
+  return eventComponent;
+}
+
 function updateMemo<T>(
   nextCreate: () => T,
   deps: Array<mixed> | void | null,
@@ -1210,6 +1234,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   useRef: mountRef,
   useState: mountState,
   useDebugValue: mountDebugValue,
+  useEvent: mountEvent,
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {

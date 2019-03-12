@@ -7,7 +7,7 @@
  * @flow
  */
 
-const childEventTypes = [
+const targetEventTypes = [
   'click',
   'keydown',
   'pointerdown',
@@ -19,7 +19,7 @@ const rootEventTypes = ['pointerup', 'scroll'];
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  targetEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
   rootEventTypes.push('mouseup');
 }
 
@@ -115,8 +115,8 @@ function isAnchorTagElement(eventTarget) {
   return eventTarget.nodeName === 'A';
 }
 
-const PressModule = {
-  childEventTypes,
+const PressResponder = {
+  targetEventTypes,
   createInitialState() {
     return {
       defaultPrevented: false,
@@ -295,4 +295,14 @@ const PressModule = {
   },
 };
 
-export default PressModule;
+// The Symbol used to tag the ReactElement-like types. If there is no native Symbol
+// nor polyfill, then a plain number is used for performance.
+const hasSymbol = typeof Symbol === 'function' && Symbol.for;
+
+const REACT_EVENT_TYPE = hasSymbol ? Symbol.for('react.event') : 0xead5;
+
+export default {
+  $$typeof: REACT_EVENT_TYPE,
+  props: null,
+  responder: PressResponder,
+};

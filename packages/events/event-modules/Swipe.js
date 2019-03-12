@@ -7,13 +7,13 @@
  * @flow
  */
 
-const childEventTypes = ['pointerdown', 'pointercancel'];
+const targetEventTypes = ['pointerdown', 'pointercancel'];
 const rootEventTypes = ['pointerup', 'pointermove'];
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
+  targetEventTypes.push('touchstart', 'touchend', 'mousedown', 'touchcancel');
   rootEventTypes.push('mouseup', 'mousemove', 'touchmove');
 }
 
@@ -21,8 +21,8 @@ function dispatchSwipeEvent(context, name, listener, state, eventData) {
   context.dispatchBubbledEvent(name, listener, state.swipeTarget, eventData);
 }
 
-const SwipeModule = {
-  childEventTypes,
+const SwipeResponder = {
+  targetEventTypes,
   createInitialState() {
     return {
       direction: 0,
@@ -169,4 +169,14 @@ const SwipeModule = {
   },
 };
 
-export default SwipeModule;
+// The Symbol used to tag the ReactElement-like types. If there is no native Symbol
+// nor polyfill, then a plain number is used for performance.
+const hasSymbol = typeof Symbol === 'function' && Symbol.for;
+
+const REACT_EVENT_TYPE = hasSymbol ? Symbol.for('react.event') : 0xead5;
+
+export default {
+  $$typeof: REACT_EVENT_TYPE,
+  props: null,
+  responder: SwipeResponder,
+};

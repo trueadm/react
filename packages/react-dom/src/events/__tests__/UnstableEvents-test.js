@@ -30,102 +30,98 @@ describe('SyntheticEvent', () => {
     container = null;
   });
 
-  it('should support onPress', () => {
-    let buttonRef = React.createRef();
-    let events = [];
+  describe('Press module', () => {
+    it('should support onPress', () => {
+      let buttonRef = React.createRef();
+      let events = [];
 
-    function handleOnPress1() {
-      events.push('press 1');
-    }
+      function handleOnPress1() {
+        events.push('press 1');
+      }
 
-    function handleOnPress2() {
-      events.push('press 2');
-    }
+      function handleOnPress2() {
+        events.push('press 2');
+      }
 
-    function handleOnMouseDown() {
-      events.push('mousedown');
-    }
+      function handleOnMouseDown() {
+        events.push('mousedown');
+      }
 
-    function handleKeyDown() {
-      events.push('keydown');
-    }
+      function handleKeyDown() {
+        events.push('keydown');
+      }
 
-    const TestPressEvents = React.unstable_createEvent([Press]);
+      function Component() {
+        return (
+          <Press onPress={handleOnPress1}>
+            <Press onPress={handleOnPress2}>
+              <button
+                ref={buttonRef}
+                onMouseDown={handleOnMouseDown}
+                onKeyDown={handleKeyDown}>
+                Press me!
+              </button>
+            </Press>
+          </Press>
+        );
+      }
 
-    function Component() {
-      return (
-        <TestPressEvents onPress={handleOnPress1}>
-          <TestPressEvents onPress={handleOnPress2}>
-            <button
-              ref={buttonRef}
-              onMouseDown={handleOnMouseDown}
-              onKeyDown={handleKeyDown}>
-              Press me!
-            </button>
-          </TestPressEvents>
-        </TestPressEvents>
-      );
-    }
+      ReactDOM.render(<Component />, container);
 
-    ReactDOM.render(<Component />, container);
+      const mouseDownEvent = document.createEvent('Event');
+      mouseDownEvent.initEvent('mousedown', true, true);
+      buttonRef.current.dispatchEvent(mouseDownEvent);
 
-    const mouseDownEvent = document.createEvent('Event');
-    mouseDownEvent.initEvent('mousedown', true, true);
-    buttonRef.current.dispatchEvent(mouseDownEvent);
+      const mouseUpEvent = document.createEvent('Event');
+      mouseUpEvent.initEvent('mouseup', true, true);
+      buttonRef.current.dispatchEvent(mouseUpEvent);
 
-    const mouseUpEvent = document.createEvent('Event');
-    mouseUpEvent.initEvent('mouseup', true, true);
-    buttonRef.current.dispatchEvent(mouseUpEvent);
+      expect(events).toEqual(['mousedown', 'press 2', 'press 1']);
 
-    expect(events).toEqual(['mousedown', 'press 2', 'press 1']);
+      events = [];
+      const keyDownEvent = new KeyboardEvent('keydown', {
+        which: 13,
+        keyCode: 13,
+        bubbles: true,
+        cancelable: true,
+      });
+      buttonRef.current.dispatchEvent(keyDownEvent);
 
-    events = [];
-    const keyDownEvent = new KeyboardEvent('keydown', {
-      which: 13,
-      keyCode: 13,
-      bubbles: true,
-      cancelable: true,
+      // press 1 should not occur as press 2 will preventDefault
+      expect(events).toEqual(['keydown', 'press 2']);
     });
-    buttonRef.current.dispatchEvent(keyDownEvent);
 
-    // press 2 should not occur as press 1 will preventDefault
-    expect(events).toEqual(['press 2', 'keydown']);
-  });
+    it('should support onPressIn and onPressOut', () => {
+      let divRef = React.createRef();
+      let events = [];
 
-  it('should support onPressIn and onPressOut', () => {
-    let divRef = React.createRef();
-    let events = [];
+      function handleOnPressIn() {
+        events.push('onPressIn');
+      }
 
-    function handleOnPressIn() {
-      events.push('onPressIn');
-    }
+      function handleOnPressOut() {
+        events.push('onPressOut');
+      }
 
-    function handleOnPressOut() {
-      events.push('onPressOut');
-    }
+      function Component() {
+        return (
+          <Press onPressIn={handleOnPressIn} onPressOut={handleOnPressOut}>
+            <div ref={divRef}>Press me!</div>
+          </Press>
+        );
+      }
 
-    const TestPressEvents = React.unstable_createEvent([Press]);
+      ReactDOM.render(<Component />, container);
 
-    function Component() {
-      return (
-        <TestPressEvents
-          onPressIn={handleOnPressIn}
-          onPressOut={handleOnPressOut}>
-          <div ref={divRef}>Press me!</div>
-        </TestPressEvents>
-      );
-    }
+      const pointerEnterEvent = document.createEvent('Event');
+      pointerEnterEvent.initEvent('pointerdown', true, true);
+      divRef.current.dispatchEvent(pointerEnterEvent);
 
-    ReactDOM.render(<Component />, container);
+      const pointerLeaveEvent = document.createEvent('Event');
+      pointerLeaveEvent.initEvent('pointerup', true, true);
+      divRef.current.dispatchEvent(pointerLeaveEvent);
 
-    const pointerEnterEvent = document.createEvent('Event');
-    pointerEnterEvent.initEvent('pointerdown', true, true);
-    divRef.current.dispatchEvent(pointerEnterEvent);
-
-    const pointerLeaveEvent = document.createEvent('Event');
-    pointerLeaveEvent.initEvent('pointerup', true, true);
-    divRef.current.dispatchEvent(pointerLeaveEvent);
-
-    expect(events).toEqual(['onPressIn', 'onPressOut']);
+      expect(events).toEqual(['onPressIn', 'onPressOut']);
+    });
   });
 });

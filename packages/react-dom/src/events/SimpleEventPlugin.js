@@ -216,7 +216,11 @@ const SimpleEventPlugin: PluginModule<MouseEvent> & {
     targetInst: null | Fiber,
     nativeEvent: MouseEvent,
     nativeEventTarget: EventTarget,
+    passive: null | boolean,
   ): null | ReactSyntheticEvent {
+    if (passive !== null) {
+      return null;
+    }
     const dispatchConfig = topLevelEventsToDispatchConfig[topLevelType];
     if (!dispatchConfig) {
       return null;

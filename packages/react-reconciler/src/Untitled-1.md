@@ -1,4 +1,4 @@
-# React Flare + React Focal (draft v7)
+# React Flare + React Focal (draft v8)
 
 ## Introduction
 
@@ -6,7 +6,7 @@ This document contains early ideas on how we might extend React's event system t
 
 Rather than have user-land components that achieve the same thing, these events are instead built into React's core. Having the events baked in allows for React to better optimize the event behaviour in collaboration with other parts of the framework. React's current event system is higly coupled, but that allows it to handle many edge-cases with its synthetic events and dispatching/batching system. React's scheduler ensures discrete events are properly handled in the correct order in concurrent mode – having event systems live outside of React can complicate this. Furthermore, having events in the core allows for performance optimizations (event delegation and recycling of event objects) and event replay in partial hydration. There are other benefits too – centralizing events in React allows for less code-duplication in user-land implementations.
 
-Note: these new events would be behind a flag for FB internally. If they prove to provide useful for FB, there'd have to be a strategy in place on these features are rolled out to OSS without inflating the code size too much. In my opinion, that's a concern for the future work we'll do on the React Fire project. It is not something that we should be too concerned about with now.
+Note: these new events would be behind a flag for FB internally.
 
 ## Problem
 
@@ -31,8 +31,8 @@ function Button(props) {
 Unfortunately, this means that this component has limited usability that isn't consistent across devices and platforms. If a user is using their finger to press the button, it might not register as a `click`, there might be delay in the `click` being fired or the `click` might never fire at all. One solution might be to try and work around all the different event edge cases and build a complex monolithic component that handles those cases. The main issue what that approach is that React doesn't provide a low-level surface to do this properly. As React doesn't provide such a surface, it means components generally end up bailing out of using React's built-in event system entirely. Bailing out of React's event system has its own sets of problems though:
 
 - Discrete events will not properly flush the UI
-- Non-descrete vents will not properly batch together
-- Concurrent rendering will no way interop properly
+- Non-descrete events will not properly batch together
+- Concurrent rendering will not interop properly
 
 ## Solution
 
@@ -43,39 +43,33 @@ So rather than have a monolithic component that bails out of React's event syste
 This proposal adds a new React event API, that consists of three parts:
 
 - Event responder: a JS module that exposes an interface to specific React renderers
-- Event component: a component that exposes listeners to their respective event responders
-- Event hook: a hook that takes a responder and some props and returns an event component
+- Event component: a component that connects props to a single event responder
+- Event hook: a hook that takes a responder, optional default props and returns an event componet
 
-These parts expose new public APIs for consumption in components:
+The only new public API would be a hook:
 
-- `React.createEvent`
-- `React.useResponder`
+- `React.useEvent`
 
-## React.createEvent
-
-The first of these APIs is `React.createEvent`. This creates an "event component", which should then be consumed in the render of a React component. When creating an event component, you need to tell it what event responders to use for the different props it can take. Event responders are special modules that deal how events should be handled. Many event responders can be used together to create rich event interactions in a component.
+## Event Components
 
 This proposal offers a way of creating event surfaces that respond to low-level enents. These surfaces are called "event responders", which a self-contained modules that expose an interface that can be consumed by components. Event responders can be created in user-space, but it should be expected that a handful of core event interactions should be shipped by the React core team as event responders. The core event responders are:
 
-- Press (`"react-events/press"`)
-- Hover (`"react-events/hover"`)
-- Focus (`"react-events/focus"`)
-- Swipe (`"react-events/swipe"`)
-- Drag (`"react-events/drag"`)
+- Press (`react-events/press`)
+- Hover (`react-events/hover`)
+- Focus (`react-events/focus`)
+- Swipe (`react-events/swipe`)
+- Drag (`react-events/drag`)
+- Pan (`react-events/pan`)
 
-So in the case of the `Button` exampe above, rather than using `onClick`, a better approach would be to use the `Press` event responder and its `onPress` event prop. To make use of this event responder, an event component needs to be created to wire up `onPress` to the `Press` responder. To do this, the `createEvent` API (exposed from the React package) is required:
+Each of these modules export an event component (along with an event responder definition). Event components can then be consumed in the render of a React component.
 
-```js
-import PressResponder from 'react-events/press';
+So in the case of the `Button` exampe above, rather than using `onClick`, a better approach would be to use the `Press` event component and the `onPress` prop. To make use of this event responder, an event component needs props that relate to the interface of the given event responder.
 
-const ButtonPress = React.createEvent({
-  onPress: PressResponder,
-});
-```
+The `Press` event component can then be wrapped around what UI parts that need to be tracked for pressing interactivity:
 
-The `ButtonPress` event component can then be wrapped around what UI parts that need to be tracked for pressing interactivity:
+```jsx
+import Press from "react-events/press";
 
-```js
 function Button(props) {
   function handlePress(e) {
     if (props.onClick) {
@@ -84,85 +78,75 @@ function Button(props) {
   }
 
   return (
-    <ButtonPress onPress={handlePress}>
+    <Press onPress={handlePress}>
       <button>{props.children}</button>
-    </ButtonPress>
+    </Press>
   );
 }
 ```
 
-The `Button` component works similarly to the previous example, except now the `<button>` now works cross-platform – mouse, touch, stylus and other input devices now work in a consistent manner. Furthermore, event responders can be used together richer experiences:
+The `Button` component works similarly to the previous example, except now the `<button>` now works cross-platform – mouse, touch, stylus and other input devices now work in a consistent manner. Furthermore, event responders can be used together to create rich experiences:
 
 ```jsx
-import React, {createEvent, useState} from 'react';
-import PressResponder from "react-events/press";
-import HoverResponder from "react-events/hover";
-
-// This creates an event component, <ButtonEvents> in this case
-const ButtonEvents = createEvent({
-  onPress: PressResponder,
-  onPressChange: PressResponder,
-  onHover: HoverResponder,
-});
+import React, {useState} from 'react';
+import Press from "react-events/press";
+import Hover from "react-events/hover";
 
 function PressableButton(props) {
   const [pressed, updatePressed] = useState(false);
 
   return (
-    <ButtonEvents
-      onPress={props.onPress}
-      onHover={props.onHover}
-      onPressChange={updatePressed}
-    >
-      <button tabIndex={0} role="button">{({pressed}) => props.children}</button>
-    </ButtonEvents>
+    <Hover onHover={props.onHover}>
+      <Press
+        onPress={props.onPress}
+        onPressChange={updatePressed}
+      >
+        <button tabIndex={0} role="button">{({pressed}) => props.children}</button>
+      </Press>
+    </Hover>
   );
 }
 ```
 
-`<ButtonEvents>` is an event component that was created via `React.createEvent`. It's possible props are those defined when creating the object, with each prop referencing an implementation found inside an event responder. When the user triggers one of these events (for example, by clicking the `button`), the event component and its event responders are notified of an event taking place and take over the control of the event.
+`<Press>` and `<Hover>` are event components, imported from their respective modules. When the user triggers one of these events (for example, by clicking the `button`), the event components wrapping the element tell their event responders of an event taking place and take over the control of the event.
 
 Events used directly on event components, like shown in the example above, work very much like events do with the existing event system. When an event is fired and picked up on a child component, the event component is notified of the event in order of the tree. This means that events that bubble will always traverse the tree from the child node to its parent. This behaviour makes for predictable behaviour when event components are nested (there is a 1:1 mapping between event component and the event listeners), as shown:
 
 ```jsx
 // The onPress listener will fire with the order: fn3, fn2, fn1
 
-<ButtonEvents onPress={fn1}>
-  <ButtonEvents onPress={fn2}>
-    <ButtonEvents onPress={fn3}>
+<Press onPress={fn1}>
+  <Press onPress={fn2}>
+    <Press onPress={fn3}>
       <div>Press me</div>
-    </ButtonEvents>
-  </ButtonEvents>
-</ButtonEvents>
+    </Press>
+  </Press>
+</Press>
 ```
 
-If an event responder can take other props (for example `pressDelay`), then those should also be supplied in the `createEvent` call, like shown:
+The event responder can take other props (for example `pressDelay`):
 
 ```jsx
-const ButtonEvents = createEvent({
-  onPress: PressResponder,
-  // Here's my pressDelay prop!
-  pressDelay: PressResponder,
-});
 
 function PressableButton({children}) {
   return (
-    <ButtonEvents onPress={...} pressDelay={200}>
+    <Press onPress={...} pressDelay={200}>
       {children}
-    </ButtonEvents>
+    </Press>
   );
 }
 ```
 
-## React.useResponder
+## React.useEvent
 
-The second of the APIs in this proposal is the `React.useResponder` hook. This hook is somwhat similar to `createEvent` in that it returns an "event component", but there's a key difference – `useResponder` only connects the event component to a single event component. For example:
+This hook is somwhat similar to using event components directly from their modules, in that the hook form creates an "event component". For example:
 
 ```jsx
-import PressResponder from 'react-events/press';
+import {useEvent} from 'react';
+import Press from "react-events/press";
 
 function Button(props) {
-  const ButtonPress = useResponder(PressResponder);
+  const ButtonPress = useEvent(Press);
 
   function handlePress(e) {
     if (props.onClick) {
@@ -178,7 +162,7 @@ function Button(props) {
 }
 ```
 
-As you can see from the above, `createEvent` and `useResponder` both create event components, so there is overlap. There is a core difference though: `useResponder` accepts a second argument allowing for default props to be specified. This makes `useResponder` composable and re-usable in ways that offer applicability outside of being consumed in only primitive components. In product code, a `useFocus` hook can be created that provides a great way of finding if something is being focued:
+As you can see from the above, `useEvent` creates an event component, so there is overlap vs using the event component from the module directly. There is a core difference though: `useEvent` accepts a second argument allowing for hook props to be specified. This makes `useEvent` composable and re-usable in ways that offer applicability outside of being consumed in only primitive components. In product code, a `useFocus` hook can be created that provides a great way of finding if something is being focued:
 
 ```jsx
 import {useFocus} from 'react-events/focus';
@@ -198,137 +182,130 @@ function MyProductComponent() {
 Behind the scenes, this is how `useFocus` might be implemented using the second argument:
 
 ```jsx
-import React, {useResponder, useState} from 'react';
-import FocusResponder from "react-events/focus";
+import React, {useEvent, useState} from 'react';
+import Focus from "react-events/focus";
 
 export function useFocus() {
   const [isFocused, updateFocused] = useState(false);
-  const defaultProps = { onFocusChange: updateFocused };
-  const FocusEvent = useResponder(FocusResponder, defaultProps);
+  const hookProps = { onFocusChange: updateFocused };
+  const FocusEvent = useEvent(Focus, hookProps);
 
   return [FocusEvent, isFocused];
 }
 ```
 
-The default prop will be replaced if the `FocusEvent` is re-assigned the same prop inline:
+It is also possible to chain event handlers created via hooks and those inlined. So in this case, both events will fire, starting with inline event handlers first, then hooks second:
 
 ```jsx
-// fn2 will be used
-const defaultProps = { onFocusChange: fn1 };
-const FocusEvent = useResponder(FocusResponder, defaultProps);
+// these events will fire in the order: fn2, fn1
+const hookProps = { onFocusChange: fn1 };
+const FocusEvent = useEvent(Focus, hookProps);
 
 return <FocusEvent onFocusChange={fn2}>...</FocusEvent>
 ```
 
-## Touch Hit Slop
+## Touch Hit Target
 
-For either APIs: `createEvent` or `useResponder`, an optional `TouchHitSlop` property exists on the event component.
+An optional `TouchHitTarget` component exists on the `react-events` module.
 
 ```jsx
-import PressResponder from "react-events/press";
-
-// createEvent API
-const PressEvent = React.createEvent({
-  onPress: PressResponder,
-});
-const TouchHitSlop = PressEvent.TouchHitSlop;
-
-// useResponder API
-const PressEvent = React.useResponder(PressResponder);
-const TouchHitSlop = PressEvent.TouchHitSlop;
+import TouchHitTarget from "react-events";
 ```
 
-The `TouchHitSlop` property can be used as a component to expand the hit region for touch input, accepting the properties:
+The `TouchHitTarget` property can be used as a component to expand the hit region for touch input, accepting the properties:
 
 - `top`
 - `right`
 - `bottom`
 - `left`
 
-For example, this is how it could be used with the `PressabelButton` example to add a 15px large touch hit zone around the btton:
+For example, this is how it could be used with the `PressableButton` example - with an additional 15px touch hit zone around the button:
 
 ```jsx
-import React, {createEvent, useState} from 'react';
-import PressResponder from "react-events/press";
-import HoverResponder from "react-events/hover";
-
-// This creates an event component, <ButtonEvents> in this case
-const ButtonEvents = createEvent({
-  onPress: PressResponder,
-  onPressChange: PressResponder,
-  onHover: HoverResponder,
-});
+import React, {useState} from 'react';
+import Press from "react-events/press";
+import Hover from "react-events/hover";
+import {TouchHitTarget} from "react-events";
 
 function PressableButton(props) {
   const [pressed, updatePressed] = useState(false);
 
   return (
-    <ButtonEvents
-      onPress={props.onPress}
-      onHover={props.onHover}
-      onPressChange={updatePressed}
-    >
-      <ButtonEvents.TouchHitSlop top={15} right={15} bottom={15} left={15}>
-        <button tabIndex={0} role="button">{({pressed}) => props.children}</button>
-      </ButtonEvents.TouchHitSlop>
-    </ButtonEvents>
+    <Hover onHover={props.onHover}>
+      <Press
+        onPress={props.onPress}
+        onPressChange={updatePressed}
+      >
+        <TouchHitTarget top={15} right={15} bottom={15} left={15}>
+          <button tabIndex={0} role="button">{({pressed}) => props.children}</button>
+        </TouchHitTarget>
+      </Press>
+    </Hover>
   );
 }
 ```
 
-There are a few constaints to using `TouchHitSlop`:
+There are a few constaints to using `TouchHitTarget`:
 
 - can only have a single child
-- must always be directly within its original event component
-- must be the only child of the original event component
+- must always be directly within an event component
+- must be the only child of an event component
 
 ```jsx
-const TouchHitSlop = SomeEvent.TouchHitSlop;
 
 // Invalid
 <div>
-  <TouchHitSlop>
+  <TouchHitTarget>
     <div />
-  </TouchHitSlop>
+  </TouchHitTarget>
 </div>
 
 // Invalid
 <SomeEvent>
-  <div>
-    <TouchHitSlop>
+  <TouchHitTarget>
+    <TouchHitTarget>
       <div />
-    </TouchHitSlop>
+    <TouchHitTarget>
+  </TouchHitTarget>
+<SomeEvent>
+
+// Invalid
+<SomeEvent>
+  <div>
+    <TouchHitTarget>
+      <div />
+    </TouchHitTarget>
   </div>
 </SomeEvent>
 
 // Invalid
 <SomeEvent>
-  <TouchHitSlop>
+  <TouchHitTarget>
     <div />
     <div />
-  </TouchHitSlop>
+  </TouchHitTarget>
 </SomeEvent>
 
 // Invalid
 <SomeEvent>
-  <TouchHitSlop>
+  <TouchHitTarget>
     <div />
-  </TouchHitSlop>
-  <TouchHitSlop>
+  </TouchHitTarget>
+  <TouchHitTarget>
     <div />
-  </TouchHitSlop>
+  </TouchHitTarget>
 </SomeEvent>
 
 // Valid
 <SomeEvent>
-  <TouchHitSlop>
+  <TouchHitTarget>
     <div />
-  </TouchHitSlop>
+  </TouchHitTarget>
 </SomeEvent>
 <SomeEvent>
-  <TouchHitSlop>
+  <TouchHitTarget>
     <div />
-  </TouchHitSlop>
+  </TouchHitTarget>
 </SomeEvent>
 ```
 
@@ -343,7 +320,7 @@ Event responders, like that offered by the `react-events/press` module, will int
 
 ## Event Responder API
 
-Event responders are the core of how the new event system works. All event components hand-off events to the respective event responders (defined by the object passed to `createEvent`). It's up to the event responders to decide what should happen when a given event occurs (if anything). Event responders can be thought of as state machines (they have their own local state) for controlling the flow of many events, the creation of synthetic events and also the handling of ownership (in relation to other event responders).
+Event responders are the core of how the new event system works. All event components hand-off events to the respective event responders. It's up to the event responders to decide what should happen when a given event occurs (if anything). Event responders can be thought of as state machines (they have their own local state) for controlling the flow of many events, the creation of synthetic events and also the handling of ownership (in relation to other event responders).
 
 ```jsx
 type EventResponder {

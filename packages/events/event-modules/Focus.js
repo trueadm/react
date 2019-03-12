@@ -7,7 +7,7 @@
  * @flow
  */
 
-const childEventTypes = ['focus', 'blur'];
+const targetEventTypes = ['focus', 'blur'];
 
 function dispatchFocusInEvents(context, props) {
   const {nativeEvent, eventTarget} = context;
@@ -49,8 +49,8 @@ function dispatchFocusOutEvents(context, props) {
   }
 }
 
-const FocusModule = {
-  childEventTypes,
+const FocusResponder = {
+  targetEventTypes,
   createInitialState(props) {
     return {
       isFocused: false,
@@ -78,4 +78,14 @@ const FocusModule = {
   },
 };
 
-export default FocusModule;
+// The Symbol used to tag the ReactElement-like types. If there is no native Symbol
+// nor polyfill, then a plain number is used for performance.
+const hasSymbol = typeof Symbol === 'function' && Symbol.for;
+
+const REACT_EVENT_TYPE = hasSymbol ? Symbol.for('react.event') : 0xead5;
+
+export default {
+  $$typeof: REACT_EVENT_TYPE,
+  props: null,
+  responder: FocusResponder,
+};

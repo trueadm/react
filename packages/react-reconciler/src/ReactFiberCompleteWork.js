@@ -64,7 +64,7 @@ import {
   createContainerChildSet,
   appendChildToContainerChildSet,
   finalizeContainerChildren,
-  handleEventModules,
+  handleEventResponder,
 } from './ReactFiberHostConfig';
 import {
   getRootHostContainer,
@@ -766,12 +766,17 @@ function completeWork(
     }
     case Event: {
       const rootContainerInstance = getRootHostContainer();
-      const modules = workInProgress.type.modules;
+      const responder = workInProgress.type.responder;
       if (newProps.hitSlop != null) {
         markUpdate(workInProgress);
       }
-      handleEventModules(workInProgress, modules, rootContainerInstance);
+      handleEventResponder(responder, workInProgress, rootContainerInstance);
       break;
+    }
+    case EventTarget: {
+      if (newProps.type === 'touch-hit') {
+        markUpdate(workInProgress);
+      }
     }
     default:
       invariant(

@@ -114,7 +114,7 @@ function createElementListeningObject(): ElementListeningObject {
   };
 }
 
-function getListeningSetForElement(
+export function getListeningSetForElement(
   element: Document | Element | Node,
   isLegacy: boolean,
 ): Set<DOMTopLevelEventType> {
@@ -161,7 +161,7 @@ export function listenTo(
   }
 }
 
-function listenToDependency(
+export function listenToDependency(
   dependency: DOMTopLevelEventType,
   listeningSet: Set<DOMTopLevelEventType>,
   mountAt: Document | Element | Node,

@@ -606,10 +606,7 @@ export function createFiberFromEvent(
   const fiber = createFiber(Event, pendingProps, key, mode);
   fiber.elementType = event;
   fiber.type = event;
-  fiber.stateNode = {
-    eventState: new Map(),
-    hitSlopElements: null,
-  };
+  fiber.stateNode = new Map();
   fiber.expirationTime = expirationTime;
   return fiber;
 }

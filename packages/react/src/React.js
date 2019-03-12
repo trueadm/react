@@ -24,7 +24,6 @@ import {
   isValidElement,
 } from './ReactElement';
 import {createContext} from './ReactContext';
-import {createEvent} from './ReactEvent';
 import {lazy} from './ReactLazy';
 import forwardRef from './forwardRef';
 import memo from './memo';
@@ -39,7 +38,7 @@ import {
   useReducer,
   useRef,
   useState,
-  useResponder,
+  useEvent,
 } from './ReactHooks';
 import {
   createElementWithValidation,
@@ -111,8 +110,7 @@ if (enableStableConcurrentModeAPIs) {
 }
 
 if (enableEventAPI) {
-  React.unstable_createEvent = createEvent;
-  React.unstable_useResponder = useResponder;
+  React.unstable_useEvent = useEvent;
 }
 
 export default React;

@@ -7,7 +7,7 @@
  * @flow
  */
 
-const childEventTypes = [
+const targetEventTypes = [
   'pointerover',
   'pointermove',
   'pointerout',
@@ -17,7 +17,7 @@ const childEventTypes = [
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
-  childEventTypes.push('touchstart', 'mouseover', 'mouseout');
+  targetEventTypes.push('touchstart', 'mouseover', 'mouseout');
 }
 
 function dispatchHoverInEvents(context, props, state) {
@@ -77,8 +77,8 @@ function dispatchHoverOutEvents(context, props) {
   }
 }
 
-const HoverModule = {
-  childEventTypes,
+const HoverResponder = {
+  targetEventTypes,
   createInitialState(props) {
     return {
       isHovered: false,
@@ -160,4 +160,14 @@ const HoverModule = {
   },
 };
 
-export default HoverModule;
+// The Symbol used to tag the ReactElement-like types. If there is no native Symbol
+// nor polyfill, then a plain number is used for performance.
+const hasSymbol = typeof Symbol === 'function' && Symbol.for;
+
+const REACT_EVENT_TYPE = hasSymbol ? Symbol.for('react.event') : 0xead5;
+
+export default {
+  $$typeof: REACT_EVENT_TYPE,
+  props: null,
+  responder: HoverResponder,
+};

@@ -15,7 +15,6 @@ import type {
   ChildSet,
   UpdatePayload,
 } from './ReactFiberHostConfig';
-import {handleEventHitSlop} from './ReactFiberHostConfig';
 import type {Fiber} from './ReactFiber';
 import type {FiberRoot} from './ReactFiberRoot';
 import type {ExpirationTime} from './ReactFiberExpirationTime';
@@ -44,7 +43,6 @@ import {
   IncompleteClassComponent,
   MemoComponent,
   SimpleMemoComponent,
-  Event,
 } from 'shared/ReactWorkTags';
 import {
   invokeGuardedCallback,
@@ -301,7 +299,6 @@ function commitBeforeMutationLifeCycles(
     case HostText:
     case HostPortal:
     case IncompleteClassComponent:
-    case Event:
       // Nothing to do for these component types
       return;
     default: {
@@ -588,7 +585,6 @@ function commitLifeCycles(
     }
     case SuspenseComponent:
     case IncompleteClassComponent:
-    case Event:
       break;
     default: {
       invariant(
@@ -1213,14 +1209,14 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       commitSuspenseComponent(finishedWork);
       return;
     }
-    case Event: {
-      const newProps = finishedWork.memoizedProps;
-      const hitSlop = newProps.hitSlop;
-      if (hitSlop != null) {
-        handleEventHitSlop(finishedWork, hitSlop);
-      }
-      return;
-    }
+    // case Event: {
+    //   const newProps = finishedWork.memoizedProps;
+    //   const hitSlop = newProps.hitSlop;
+    //   if (hitSlop != null) {
+    //     handleEventHitSlop(finishedWork, hitSlop);
+    //   }
+    //   return;
+    // }
     case IncompleteClassComponent: {
       return;
     }

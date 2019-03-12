@@ -165,7 +165,11 @@ const SelectEventPlugin = {
     targetInst,
     nativeEvent,
     nativeEventTarget,
+    passive,
   ) {
+    if (passive !== null) {
+      return null;
+    }
     const doc = getEventTargetDocument(nativeEventTarget);
     // Track whether all listeners exists for this plugin. If none exist, we do
     // not extract events. See #3639.
