@@ -234,7 +234,7 @@ const PressResponder = {
       }
       case 'mouseup':
       case 'pointerup': {
-        if (state.isPressed) {
+        if (state.isPressed && !context.isPassive) {
           dispatchPressOutEvents(context, props, state);
           if (
             state.pressTarget !== null &&
@@ -286,7 +286,7 @@ const PressResponder = {
         break;
       }
       case 'click': {
-        if (state.defaultPrevented) {
+        if (state.defaultPrevented && !context.isPassive) {
           nativeEvent.preventDefault();
           state.defaultPrevented = false;
         }

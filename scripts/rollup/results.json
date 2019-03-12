@@ -18,8 +18,8 @@
       "filename": "react.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react",
-      "size": 63704,
-      "gzip": 17181
+      "size": 64391,
+      "gzip": 17339
     },
     {
       "filename": "react.production.min.js",
@@ -235,8 +235,8 @@
       "filename": "react-art.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-art",
-      "size": 491818,
-      "gzip": 104175
+      "size": 495728,
+      "gzip": 105271
     },
     {
       "filename": "react-art.production.min.js",
@@ -305,8 +305,8 @@
       "filename": "react-test-renderer.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-test-renderer",
-      "size": 498258,
-      "gzip": 105207
+      "size": 500323,
+      "gzip": 105807
     },
     {
       "filename": "react-test-renderer.production.min.js",
@@ -340,8 +340,8 @@
       "filename": "react-test-renderer-shallow.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-test-renderer",
-      "size": 32246,
-      "gzip": 8323
+      "size": 32249,
+      "gzip": 8319
     },
     {
       "filename": "react-test-renderer-shallow.production.min.js",
@@ -361,8 +361,8 @@
       "filename": "react-noop-renderer.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-noop-renderer",
-      "size": 28240,
-      "gzip": 6740
+      "size": 25213,
+      "gzip": 6161
     },
     {
       "filename": "react-noop-renderer.production.min.js",
@@ -375,8 +375,8 @@
       "filename": "react-reconciler.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-reconciler",
-      "size": 489120,
-      "gzip": 102507
+      "size": 493954,
+      "gzip": 103747
     },
     {
       "filename": "react-reconciler.production.min.js",
@@ -389,8 +389,8 @@
       "filename": "react-reconciler-persistent.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-reconciler",
-      "size": 487276,
-      "gzip": 101780
+      "size": 492037,
+      "gzip": 102997
     },
     {
       "filename": "react-reconciler-persistent.production.min.js",
@@ -403,8 +403,8 @@
       "filename": "react-reconciler-reflection.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-reconciler",
-      "size": 16132,
-      "gzip": 5091
+      "size": 16135,
+      "gzip": 5085
     },
     {
       "filename": "react-reconciler-reflection.production.min.js",
@@ -445,8 +445,8 @@
       "filename": "react-is.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-is",
-      "size": 8066,
-      "gzip": 2445
+      "size": 8178,
+      "gzip": 2456
     },
     {
       "filename": "react-is.production.min.js",
@@ -704,8 +704,8 @@
       "filename": "react-noop-renderer-persistent.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-noop-renderer",
-      "size": 28359,
-      "gzip": 6753
+      "size": 25332,
+      "gzip": 6174
     },
     {
       "filename": "react-noop-renderer-persistent.production.min.js",
@@ -844,8 +844,8 @@
       "filename": "react-cache.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-cache",
-      "size": 9030,
-      "gzip": 3016
+      "size": 9192,
+      "gzip": 3076
     },
     {
       "filename": "react-cache.production.min.js",
@@ -886,8 +886,8 @@
       "filename": "jest-react.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "jest-react",
-      "size": 9286,
-      "gzip": 3053
+      "size": 7419,
+      "gzip": 2722
     },
     {
       "filename": "jest-react.production.min.js",
@@ -914,8 +914,8 @@
       "filename": "react-debug-tools.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-debug-tools",
-      "size": 19024,
-      "gzip": 5638
+      "size": 19625,
+      "gzip": 5835
     },
     {
       "filename": "react-debug-tools.production.min.js",
@@ -928,8 +928,8 @@
       "filename": "eslint-plugin-react-hooks.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "eslint-plugin-react-hooks",
-      "size": 50458,
-      "gzip": 11887
+      "size": 62292,
+      "gzip": 14385
     },
     {
       "filename": "eslint-plugin-react-hooks.production.min.js",
@@ -956,8 +956,8 @@
       "filename": "react-noop-renderer-server.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-noop-renderer",
-      "size": 1861,
-      "gzip": 869
+      "size": 1864,
+      "gzip": 868
     },
     {
       "filename": "react-noop-renderer-server.production.min.js",
@@ -970,8 +970,8 @@
       "filename": "react-stream.development.js",
       "bundleType": "NODE_DEV",
       "packageName": "react-stream",
-      "size": 4633,
-      "gzip": 1683
+      "size": 4636,
+      "gzip": 1680
     },
     {
       "filename": "react-stream.production.min.js",
