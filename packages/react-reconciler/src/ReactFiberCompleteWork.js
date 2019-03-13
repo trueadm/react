@@ -39,6 +39,7 @@ import {
   LazyComponent,
   IncompleteClassComponent,
   Event,
+  EventTarget,
 } from 'shared/ReactWorkTags';
 import {
   Placement,

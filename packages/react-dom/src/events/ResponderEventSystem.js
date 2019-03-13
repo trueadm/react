@@ -216,7 +216,7 @@ EventContext.prototype._deleteRootEventTypes = function() {
   }
 };
 
-EventContext.prototype.isPositionWithinHitSlop = function(
+EventContext.prototype.isPositionWithinTouchHitTarget = function(
   x: number,
   y: number,
 ) {

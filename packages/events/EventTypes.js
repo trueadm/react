@@ -21,7 +21,7 @@ export type EventContext = {
   ) => boolean,
   isTargetOwned: EventTarget => boolean,
   isTargetWithinEvent: EventTarget => boolean,
-  isPositionWithinHitSlop: (x: number, y: number) => boolean,
+  isPositionWithinTouchHitTarget: (x: number, y: number) => boolean,
   addRootEventTypes: (rootEventTypes: Array<string>) => void,
   removeRootEventTypes: (rootEventTypes: Array<string>) => void,
   dispatchBubbledEvent: (

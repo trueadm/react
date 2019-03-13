@@ -226,9 +226,9 @@ const PressResponder = {
           if ((nativeEvent: any).pointerType === 'mouse') {
             // Ignore if we are pressing on hit slop area with mouse
             if (
-              context.isPositionWithinHitSlop(
-                (nativeEvent: any).clientX,
-                (nativeEvent: any).clientY,
+              context.isPositionWithinTouchHitTarget(
+                (nativeEvent: any).x,
+                (nativeEvent: any).y,
               )
             ) {
               return;

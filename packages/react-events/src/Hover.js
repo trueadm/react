@@ -103,9 +103,9 @@ const HoverResponder = {
             return;
           }
           if (
-            context.isPositionWithinHitSlop(
-              (nativeEvent: any).screenX,
-              (nativeEvent: any).screenY,
+            context.isPositionWithinTouchHitTarget(
+              (nativeEvent: any).x,
+              (nativeEvent: any).y,
             )
           ) {
             state.isInHitSlop = true;
@@ -130,9 +130,9 @@ const HoverResponder = {
         if (!state.isTouched) {
           if (state.isInHitSlop) {
             if (
-              !context.isPositionWithinHitSlop(
-                (nativeEvent: any).screenX,
-                (nativeEvent: any).screenY,
+              !context.isPositionWithinTouchHitTarget(
+                (nativeEvent: any).x,
+                (nativeEvent: any).y,
               )
             ) {
               dispatchHoverInEvents(context, props, state);
@@ -141,9 +141,9 @@ const HoverResponder = {
             }
           } else if (
             state.isHovered &&
-            context.isPositionWithinHitSlop(
-              (nativeEvent: any).screenX,
-              (nativeEvent: any).screenY,
+            context.isPositionWithinTouchHitTarget(
+              (nativeEvent: any).x,
+              (nativeEvent: any).y,
             )
           ) {
             dispatchHoverOutEvents(context, props);

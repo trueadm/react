@@ -826,8 +826,8 @@ export function didNotFindHydratableSuspenseInstance(
   }
 }
 
-export function commitEventTarget(fiber: Fiber, props: Props) {
-  if (props.type === 'touch-hit') {
+export function commitEventTarget(fiber: Fiber, type: string, props: Props) {
+  if (type === 'touch-hit') {
     handleTouchHitSlop(fiber, props);
   }
 }

@@ -43,6 +43,7 @@ import {
   IncompleteClassComponent,
   MemoComponent,
   SimpleMemoComponent,
+  EventTarget,
 } from 'shared/ReactWorkTags';
 import {
   invokeGuardedCallback,
@@ -300,6 +301,7 @@ function commitBeforeMutationLifeCycles(
     case HostText:
     case HostPortal:
     case IncompleteClassComponent:
+    case EventTarget:
       // Nothing to do for these component types
       return;
     default: {
@@ -586,6 +588,7 @@ function commitLifeCycles(
     }
     case SuspenseComponent:
     case IncompleteClassComponent:
+    case EventTarget:
       break;
     default: {
       invariant(
@@ -1212,7 +1215,8 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
     }
     case EventTarget: {
       const newProps = finishedWork.memoizedProps;
-      commitEventTarget(finishedWork, newProps);
+      const type = finishedWork.type.type;
+      commitEventTarget(finishedWork, type, newProps);
       return;
     }
     case IncompleteClassComponent: {

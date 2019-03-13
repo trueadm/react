@@ -89,23 +89,24 @@ export function handleTouchHitSlop(eventFiber: Fiber, props: Props): void {
       continue;
     }
     const hitSlopElement = childElement.ownerDocument.createElement('hit-slop');
+    const childStyle = (childElement: any).style;
+    const hitSlopElementStyle = (hitSlopElement: any).style;
     // TODO: making it relative might break things, maybe we should
     // check first?
-    const style = (childElement: any).style;
-    style.position = 'relative';
-    style.position = 'absolute';
-    style.display = 'block';
+    childStyle.position = 'relative';
+    hitSlopElementStyle.position = 'absolute';
+    hitSlopElementStyle.display = 'block';
     if (props.top) {
-      style.top = `-${props.top}px`;
+      hitSlopElementStyle.top = `-${props.top}px`;
     }
     if (props.left) {
-      style.left = `-${props.left}px`;
+      hitSlopElementStyle.left = `-${props.left}px`;
     }
     if (props.right) {
-      style.right = `-${props.right}px`;
+      hitSlopElementStyle.right = `-${props.right}px`;
     }
     if (props.bottom) {
-      style.bottom = `-${props.bottom}px`;
+      hitSlopElementStyle.bottom = `-${props.bottom}px`;
     }
     childElement.appendChild(hitSlopElement);
     hitSlopElements.set(childElement, hitSlopElement);
