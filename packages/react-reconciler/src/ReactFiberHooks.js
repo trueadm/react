@@ -81,7 +81,7 @@ export type Dispatcher = {
     deps: Array<mixed> | void | null,
   ): void,
   useDebugValue<T>(value: T, formatterFn: ?(value: T) => mixed): void,
-  useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent,
+  useEvent(props: Object | null, responder: ReactEventResponder): ReactEvent,
 };
 
 type Update<S, A> = {
@@ -1054,6 +1054,10 @@ function mountEvent<P>(
   responder: ReactEventResponder,
 ): ReactEvent {
   const hook = mountWorkInProgressHook();
+  invariant(
+    typeof props === 'object',
+    'useEvent(): expected props argument to be an object or null',
+  );
   const eventComponent = {
     $$typeof: REACT_EVENT_TYPE,
     props,
@@ -1390,6 +1394,11 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountDebugValue(value, formatterFn);
     },
+    useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent {
+      currentHookNameInDev = 'useEvent';
+      mountHookTypesDev();
+      return mountEvent(props, responder);
+    },
   };
 
   HooksDispatcherOnMountWithHookTypesInDEV = {
@@ -1487,6 +1496,11 @@ if (__DEV__) {
       updateHookTypesDev();
       return mountDebugValue(value, formatterFn);
     },
+    useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent {
+      currentHookNameInDev = 'useEvent';
+      updateHookTypesDev();
+      return mountEvent(props, responder);
+    },
   };
 
   HooksDispatcherOnUpdateInDEV = {
@@ -1583,6 +1597,11 @@ if (__DEV__) {
       currentHookNameInDev = 'useDebugValue';
       updateHookTypesDev();
       return updateDebugValue(value, formatterFn);
+    },
+    useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent {
+      currentHookNameInDev = 'useEvent';
+      updateHookTypesDev();
+      return updateEvent(props, responder);
     },
   };
 
@@ -1696,7 +1715,7 @@ if (__DEV__) {
       currentHookNameInDev = 'useEvent';
       warnInvalidHookAccess();
       mountHookTypesDev();
-      return updateEvent(props, responder);
+      return mountEvent(props, responder);
     },
   };
 

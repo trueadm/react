@@ -7,11 +7,17 @@
  * @flow
  */
 
+import type {EventContext} from 'events/EventTypes';
+
 const targetEventTypes = ['focus', 'blur'];
 
-function dispatchFocusInEvents(context, props) {
+type FocusState = {
+  isFocused: boolean,
+};
+
+function dispatchFocusInEvents(context: EventContext, props: Object) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent((nativeEvent: any).relatedTarget)) {
     return;
   }
   if (props.onFocus) {
@@ -29,9 +35,9 @@ function dispatchFocusInEvents(context, props) {
   }
 }
 
-function dispatchFocusOutEvents(context, props) {
+function dispatchFocusOutEvents(context: EventContext, props: Object) {
   const {nativeEvent, eventTarget} = context;
-  if (context.isTargetWithinEvent(nativeEvent.relatedTarget)) {
+  if (context.isTargetWithinEvent((nativeEvent: any).relatedTarget)) {
     return;
   }
   if (props.onBlur) {
@@ -51,12 +57,12 @@ function dispatchFocusOutEvents(context, props) {
 
 const FocusResponder = {
   targetEventTypes,
-  createInitialState(props) {
+  createInitialState(): FocusState {
     return {
       isFocused: false,
     };
   },
-  handleEvent(context, props, state): void {
+  handleEvent(context: EventContext, props: Object, state: FocusState): void {
     const {eventTarget, eventType} = context;
 
     switch (eventType) {

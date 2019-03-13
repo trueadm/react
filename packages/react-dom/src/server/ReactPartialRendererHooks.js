@@ -16,6 +16,8 @@ import {validateContextBounds} from './ReactPartialRendererContext';
 import invariant from 'shared/invariant';
 import warning from 'shared/warning';
 import is from 'shared/objectIs';
+import type {ReactEvent, ReactEventResponder} from 'shared/ReactTypes';
+import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
 
 type BasicStateAction<S> = (S => S) | S;
 type Dispatch<A> = A => void;
@@ -442,6 +444,28 @@ export function useCallback<T>(
   return callback;
 }
 
+const useEvent = (
+  props: Object | null,
+  responder: ReactEventResponder,
+): ReactEvent => {
+  currentlyRenderingComponent = resolveCurrentlyRenderingComponent();
+  workInProgressHook = createWorkInProgressHook();
+  const previousEventComponent = workInProgressHook.memoizedState;
+  if (previousEventComponent === null) {
+    const nextEventComponent = {
+      $$typeof: REACT_EVENT_TYPE,
+      props,
+      responder,
+    };
+    if (__DEV__) {
+      Object.freeze(nextEventComponent);
+    }
+    workInProgressHook.memoizedState = nextEventComponent;
+    return nextEventComponent;
+  }
+  return previousEventComponent;
+};
+
 function noop(): void {}
 
 export let currentThreadID: ThreadID = 0;
@@ -465,4 +489,5 @@ export const Dispatcher: DispatcherType = {
   useEffect: noop,
   // Debugging effect
   useDebugValue: noop,
+  useEvent,
 };

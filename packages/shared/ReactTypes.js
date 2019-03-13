@@ -7,6 +7,8 @@
  * @flow
  */
 
+import type {DOMTopLevelEventType} from 'events/TopLevelEventTypes';
+
 export type ReactNode =
   | React$Element<any>
   | ReactPortal
@@ -82,7 +84,7 @@ export type RefObject = {|
 |};
 
 export type ReactEventResponder = {
-  targetEventTypes: Array<string>,
+  targetEventTypes: Array<DOMTopLevelEventType>,
   createInitialState?: (props: Object) => Object,
   handleEvent: (context: Object, props: Object, state: Object) => void,
 };

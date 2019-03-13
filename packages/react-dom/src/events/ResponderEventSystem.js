@@ -6,8 +6,8 @@
  * @flow
  */
 
-import type {AnyNativeEvent} from './PluginModuleType';
-import type {TopLevelType} from 'events/TopLevelEventTypes';
+import type {AnyNativeEvent} from 'events/PluginModuleType';
+import type {DOMTopLevelEventType} from 'events/TopLevelEventTypes';
 import {Event} from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
@@ -26,22 +26,24 @@ import type {Fiber} from 'react-reconciler/src/ReactFiber';
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
 export const currentEventFibers: Set<Fiber> = new Set();
-export const rootEventTypesToFibers: Map<TopLevelType, Set<Fiber>> = new Map();
+export const rootEventTypesToFibers: Map<
+  DOMTopLevelEventType,
+  Set<Fiber>,
+> = new Map();
 export const eventResponderValidEventTypes: Map<
   ReactEventResponder,
-  Set<TopLevelType>,
+  Set<DOMTopLevelEventType>,
 > = new Map();
 export const targetOwnership: Map<EventTarget, Fiber> = new Map();
 
 function EventContext(
   nativeEvent: AnyNativeEvent,
-  eventType: TopLevelType,
+  eventType: DOMTopLevelEventType,
   passive: boolean,
   nativeEventTarget: EventTarget,
 ) {
-  this.bubblePhaseEvents = [];
-  this.capturePhaseEvents = [];
-  this.eventListener = null;
+  this._bubblePhaseEvents = [];
+  this._capturePhaseEvents = [];
   this.eventTarget = nativeEventTarget;
   this.eventType = eventType;
   this.nativeEvent = nativeEvent;
@@ -79,9 +81,9 @@ EventContext.prototype._dispatchTwoPhaseEvent = function(
   syntheticEvent._dispatchListeners = [eventListener];
 
   if (isCapturePhase) {
-    this.capturePhaseEvents.push(syntheticEvent);
+    this._capturePhaseEvents.push(syntheticEvent);
   } else {
-    this.bubblePhaseEvents.push(syntheticEvent);
+    this._bubblePhaseEvents.push(syntheticEvent);
   }
 };
 
@@ -137,41 +139,26 @@ EventContext.prototype.dispatchImmediateEvent = function(
 
 EventContext.prototype._extractEvents = function() {
   let events;
-  for (let i = this.capturePhaseEvents.length; i-- > 0; ) {
-    const syntheticEvent = this.capturePhaseEvents[i];
+  for (let i = this._capturePhaseEvents.length; i-- > 0; ) {
+    const syntheticEvent = this._capturePhaseEvents[i];
     events = accumulateInto(events, syntheticEvent);
   }
-  for (let i = 0, length = this.bubblePhaseEvents.length; i < length; i++) {
-    const syntheticEvent = this.bubblePhaseEvents[i];
+  for (let i = 0, length = this._bubblePhaseEvents.length; i < length; i++) {
+    const syntheticEvent = this._bubblePhaseEvents[i];
     events = accumulateInto(events, syntheticEvent);
   }
   return events;
-};
-
-EventContext.prototype.getClosestElementKeyFromTarget = function(
-  eventTarget,
-): string | null {
-  const eventTargetFiber = getClosestInstanceFromNode(eventTarget);
-  let currentFiber = eventTargetFiber;
-
-  while (currentFiber !== null) {
-    if (currentFiber === this._fiber) {
-      return null;
-    }
-    if (currentFiber.key !== null) {
-      return currentFiber.key;
-    }
-    currentFiber = currentFiber.return;
-  }
-  return null;
 };
 
 EventContext.prototype.addRootEventTypes = function(rootEventTypes) {
   const container = this.eventTarget.ownerDocument;
   const listeningSet = getListeningSetForElement(container, false);
   const validEventTypesForResponder = eventResponderValidEventTypes.get(
-    this._responder,
+    ((this._responder: any): ReactEventResponder),
   );
+  if (validEventTypesForResponder === undefined) {
+    return;
+  }
   for (let i = 0; i < rootEventTypes.length; i++) {
     const rootEventType = rootEventTypes[i];
     if (__DEV__) {
@@ -195,7 +182,9 @@ EventContext.prototype.addRootEventTypes = function(rootEventTypes) {
   }
 };
 
-EventContext.prototype.removeRootEventTypes = function(rootEventTypes) {
+EventContext.prototype.removeRootEventTypes = function(
+  rootEventTypes: Array<DOMTopLevelEventType>,
+) {
   if (this._eventsToRemove === null) {
     this._eventsToRemove = rootEventTypes;
   } else {
@@ -209,21 +198,27 @@ EventContext.prototype._deleteRootEventTypes = function() {
     return;
   }
   const validEventTypesForResponder = eventResponderValidEventTypes.get(
-    this._responder,
+    ((this._responder: any): ReactEventResponder),
   );
+  if (validEventTypesForResponder === undefined) {
+    return;
+  }
   for (let i = 0; i < eventsToRemove.length; i++) {
     const rootEventType = eventsToRemove[i];
     if (validEventTypesForResponder.has(rootEventType)) {
       validEventTypesForResponder.delete(rootEventType);
       let eventFibers = rootEventTypesToFibers.get(rootEventType);
       if (eventFibers !== undefined) {
-        eventFibers.delete(this._fiber);
+        eventFibers.delete(((this._fiber: any): Fiber));
       }
     }
   }
 };
 
-EventContext.prototype.isPositionWithinHitSlop = function(x, y) {
+EventContext.prototype.isPositionWithinHitSlop = function(
+  x: number,
+  y: number,
+) {
   const target = this.eventTarget.ownerDocument.elementFromPoint(x, y);
   if (target.nodeName === 'HIT-SLOP') {
     const {
@@ -256,8 +251,8 @@ EventContext.prototype.isTargetWithinEvent = function(target) {
 };
 
 EventContext.prototype.isTargetWithinElement = function(
-  childTarget,
-  parentTarget,
+  childTarget: EventTarget,
+  parentTarget: EventTarget,
 ) {
   const childFiber = getClosestInstanceFromNode(childTarget);
   const parentFiber = getClosestInstanceFromNode(parentTarget);
@@ -300,7 +295,7 @@ EventContext.prototype.releaseOwnership = function(targetElement) {
 };
 
 function handleTopLevelType(
-  topLevelType: TopLevelType,
+  topLevelType: DOMTopLevelEventType,
   fiber: Fiber,
   context: EventContext,
 ): void {
@@ -329,6 +324,7 @@ function handleTopLevelType(
   responder.handleEvent(context, props, state);
 }
 
+<<<<<<< HEAD:packages/react-dom/src/events/ResponderEventSystem.js
 export function handleResponderEvents(
   topLevelType: TopLevelType,
   targetFiber: Fiber,
@@ -350,6 +346,37 @@ export function handleResponderEvents(
         currentFiber = currentFiber.alternate;
       }
       handleTopLevelType(topLevelType, currentFiber, context);
+=======
+const UnstableEventPlugin = {
+  isLegacy: false,
+
+  extractEvents: function(
+    topLevelType: DOMTopLevelEventType,
+    targetFiber: Fiber,
+    nativeEvent: AnyNativeEvent,
+    nativeEventTarget: EventTarget,
+    passive: boolean,
+  ) {
+    const context = new EventContext(
+      nativeEvent,
+      topLevelType,
+      passive,
+      nativeEventTarget,
+    );
+    let currentFiber = targetFiber;
+
+    while (currentFiber !== null) {
+      if (currentFiber.tag === Event) {
+        if (!currentEventFibers.has(currentFiber)) {
+          currentFiber = currentFiber.alternate;
+        }
+        handleTopLevelType(topLevelType, ((currentFiber: any): Fiber), context);
+      }
+      currentFiber = ((currentFiber: any): Fiber).return;
+    }
+    if (currentFiber === null) {
+      return null;
+>>>>>>> WIP:packages/react-dom/src/events/UnstableEventPlugin.js
     }
     currentFiber = currentFiber.return;
   }

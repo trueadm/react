@@ -7,6 +7,9 @@
  * @flow
  */
 
+import SyntheticEvent from '../SyntheticEvent';
+import type {EventContext} from 'events/EventTypes';
+
 const targetEventTypes = [
   'click',
   'keydown',
@@ -23,35 +26,36 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   rootEventTypes.push('mouseup');
 }
 
-function dispatchPressEvent(context, name, state, listener) {
-  if (listener.length > 1) {
-    const key = context.getClosestElementKeyFromTarget(state.pressTarget);
-    context.dispatchBubbledEvent(
-      name,
-      e => listener(e, key),
-      state.pressTarget,
-    );
-  } else {
-    context.dispatchBubbledEvent(name, listener, state.pressTarget);
-  }
+type PressState = {
+  defaultPrevented: boolean,
+  isAnchorTouched: boolean,
+  isLongPressed: boolean,
+  isPressed: boolean,
+  longPressTimeout: null | TimeoutID,
+  pressTarget: null | EventTarget,
+};
+
+function dispatchPressEvent(
+  context: EventContext,
+  name: string,
+  state: PressState,
+  listener: (e: SyntheticEvent) => void,
+): void {
+  context.dispatchBubbledEvent(name, listener, state.pressTarget);
 }
 
-function dispatchPressInEvents(context, props, state) {
+function dispatchPressInEvents(
+  context: EventContext,
+  props: Object,
+  state: PressState,
+): void {
   if (props.onPressIn) {
     context.dispatchBubbledEvent('pressin', props.onPressIn, state.pressTarget);
   }
   if (props.onPressChange) {
-    let pressChangeEventListener;
-    if (props.onPressChange.length === 2) {
-      const key = context.getClosestElementKeyFromTarget(state.pressTarget);
-      pressChangeEventListener = () => {
-        props.onPressChange(true, key);
-      };
-    } else {
-      pressChangeEventListener = () => {
-        props.onPressChange(true);
-      };
-    }
+    const pressChangeEventListener = () => {
+      props.onPressChange(true);
+    };
     context.dispatchBubbledEvent(
       'presschange',
       pressChangeEventListener,
@@ -77,7 +81,11 @@ function dispatchPressInEvents(context, props, state) {
   }
 }
 
-function dispatchPressOutEvents(context, props, state) {
+function dispatchPressOutEvents(
+  context: EventContext,
+  props: Object,
+  state: PressState,
+): void {
   if (state.longPressTimeout !== null) {
     clearTimeout(state.longPressTimeout);
     state.longPressTimeout = null;
@@ -111,13 +119,13 @@ function dispatchPressOutEvents(context, props, state) {
   }
 }
 
-function isAnchorTagElement(eventTarget) {
-  return eventTarget.nodeName === 'A';
+function isAnchorTagElement(eventTarget: EventTarget): boolean {
+  return (eventTarget: any).nodeName === 'A';
 }
 
 const PressResponder = {
   targetEventTypes,
-  createInitialState() {
+  createInitialState(): PressState {
     return {
       defaultPrevented: false,
       isAnchorTouched: false,
@@ -127,7 +135,7 @@ const PressResponder = {
       pressTarget: null,
     };
   },
-  handleEvent(context, props, state): void {
+  handleEvent(context: EventContext, props: Object, state: PressState): void {
     const {eventTarget, eventType, nativeEvent} = context;
 
     switch (eventType) {
@@ -136,9 +144,9 @@ const PressResponder = {
           return;
         }
         const isValidKeyPress =
-          nativeEvent.which === 13 ||
-          nativeEvent.which === 32 ||
-          nativeEvent.keyCode === 13;
+          (nativeEvent: any).which === 13 ||
+          (nativeEvent: any).which === 32 ||
+          (nativeEvent: any).keyCode === 13;
 
         if (!isValidKeyPress) {
           return;
@@ -186,10 +194,11 @@ const PressResponder = {
             (props.onPress || props.onLongPress)
           ) {
             // Find if the X/Y of the end touch is still that of the original target
-            const changedTouch = nativeEvent.changedTouches[0];
-            const target = eventTarget.ownerDocument.elementFromPoint(
-              changedTouch.clientX,
-              changedTouch.clientY,
+            const changedTouch = (nativeEvent: any).changedTouches[0];
+            const doc = (eventTarget: any).ownerDocument;
+            const target = doc.elementFromPoint(
+              changedTouch.screenX,
+              changedTouch.screenY,
             );
             if (target !== null && context.isTargetWithinEvent(target)) {
               if (state.isLongPressed && props.onLongPress) {
@@ -207,7 +216,7 @@ const PressResponder = {
           state.isPressed = false;
           state.isLongPressed = false;
           // Prevent mouse events from firing
-          nativeEvent.preventDefault();
+          (nativeEvent: any).preventDefault();
           context.removeRootEventTypes(rootEventTypes);
         }
         break;
@@ -215,9 +224,14 @@ const PressResponder = {
       case 'pointerdown':
       case 'mousedown': {
         if (!state.isPressed && !context.isTargetOwned(eventTarget)) {
-          if (nativeEvent.pointerType === 'mouse') {
+          if ((nativeEvent: any).pointerType === 'mouse') {
             // Ignore if we are pressing on hit slop area with mouse
-            if (context.isPositionWithinHitSlop(nativeEvent.x, nativeEvent.y)) {
+            if (
+              context.isPositionWithinHitSlop(
+                (nativeEvent: any).clientX,
+                (nativeEvent: any).clientY,
+              )
+            ) {
               return;
             }
             // Ignore right-clicks
@@ -287,7 +301,7 @@ const PressResponder = {
       }
       case 'click': {
         if (state.defaultPrevented && !context.isPassive) {
-          nativeEvent.preventDefault();
+          (nativeEvent: any).preventDefault();
           state.defaultPrevented = false;
         }
       }

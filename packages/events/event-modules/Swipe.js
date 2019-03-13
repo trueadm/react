@@ -7,6 +7,9 @@
  * @flow
  */
 
+import SyntheticEvent from '../SyntheticEvent';
+import type {EventContext} from 'events/EventTypes';
+
 const targetEventTypes = ['pointerdown', 'pointercancel'];
 const rootEventTypes = ['pointerup', 'pointermove'];
 
@@ -17,13 +20,34 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   rootEventTypes.push('mouseup', 'mousemove', 'touchmove');
 }
 
-function dispatchSwipeEvent(context, name, listener, state, eventData) {
+function dispatchSwipeEvent(
+  context: EventContext,
+  name: string,
+  listener: (e: SyntheticEvent) => void,
+  state: SwipeState,
+  eventData?: {
+    diffX: number,
+    diffY: number,
+  },
+) {
   context.dispatchBubbledEvent(name, listener, state.swipeTarget, eventData);
 }
 
+type SwipeState = {
+  direction: number,
+  isSwiping: boolean,
+  lastDirection: number,
+  startX: number,
+  startY: number,
+  touchId: null | number,
+  swipeTarget: null | EventTarget,
+  x: number,
+  y: number,
+};
+
 const SwipeResponder = {
   targetEventTypes,
-  createInitialState() {
+  createInitialState(): SwipeState {
     return {
       direction: 0,
       isSwiping: false,
@@ -36,7 +60,7 @@ const SwipeResponder = {
       y: 0,
     };
   },
-  handleEvent(context, props, state): void {
+  handleEvent(context: EventContext, props: Object, state: SwipeState): void {
     const {eventTarget, eventType, nativeEvent} = context;
 
     switch (eventType) {
@@ -46,11 +70,11 @@ const SwipeResponder = {
         if (!state.isSwiping && !context.isTargetOwned(eventTarget)) {
           let obj = nativeEvent;
           if (eventType === 'touchstart') {
-            obj = nativeEvent.targetTouches[0];
+            obj = (nativeEvent: any).targetTouches[0];
             state.touchId = obj.identifier;
           }
-          const x = obj.screenX;
-          const y = obj.screenY;
+          const x = (obj: any).screenX;
+          const y = (obj: any).screenY;
 
           let shouldEnableSwiping = true;
 
@@ -80,7 +104,7 @@ const SwipeResponder = {
         if (state.isSwiping) {
           let obj = null;
           if (eventType === 'touchmove') {
-            const targetTouches = nativeEvent.targetTouches;
+            const targetTouches = (nativeEvent: any).targetTouches;
             for (let i = 0; i < targetTouches.length; i++) {
               if (state.touchId === targetTouches[i].identifier) {
                 obj = targetTouches[i];
@@ -97,8 +121,8 @@ const SwipeResponder = {
             context.removeRootEventTypes(rootEventTypes);
             return;
           }
-          const x = obj.screenX;
-          const y = obj.screenY;
+          const x = (obj: any).screenX;
+          const y = (obj: any).screenY;
           if (x < state.x && props.onSwipeLeft) {
             state.direction = 3;
           } else if (x > state.x && props.onSwipeRight) {
@@ -118,7 +142,7 @@ const SwipeResponder = {
               state,
               eventData,
             );
-            nativeEvent.preventDefault();
+            (nativeEvent: any).preventDefault();
           }
         }
         break;

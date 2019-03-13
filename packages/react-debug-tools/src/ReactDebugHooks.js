@@ -7,13 +7,19 @@
  * @flow
  */
 
-import type {ReactContext, ReactProviderType} from 'shared/ReactTypes';
+import type {
+  ReactContext,
+  ReactProviderType,
+  ReactEvent,
+  ReactEventResponder,
+} from 'shared/ReactTypes';
 import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {Hook} from 'react-reconciler/src/ReactFiberHooks';
 import type {Dispatcher as DispatcherType} from 'react-reconciler/src/ReactFiberHooks';
 
 import ErrorStackParser from 'error-stack-parser';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
+import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
 import {
   FunctionComponent,
   SimpleMemoComponent,
@@ -59,6 +65,10 @@ function getPrimitiveStackCache(): Map<string, Array<any>> {
       Dispatcher.useDebugValue(null);
       Dispatcher.useCallback(() => {});
       Dispatcher.useMemo(() => null);
+      Dispatcher.useEvent(null, {
+        targetEventTypes: [],
+        handleEvent: () => {},
+      });
     } finally {
       readHookLog = hookLog;
       hookLog = [];
@@ -215,6 +225,27 @@ function useMemo<T>(
   return value;
 }
 
+function useEvent(
+  props: Object | null,
+  responder: ReactEventResponder,
+): ReactEvent {
+  let hook = nextHook();
+  let eventComponent =
+    hook !== null
+      ? hook.memoizedState
+      : {
+          $$typeof: REACT_EVENT_TYPE,
+          props,
+          responder,
+        };
+  hookLog.push({
+    primitive: 'Event',
+    stackError: new Error(),
+    value: eventComponent,
+  });
+  return eventComponent;
+}
+
 const Dispatcher: DispatcherType = {
   readContext,
   useCallback,
@@ -227,6 +258,7 @@ const Dispatcher: DispatcherType = {
   useReducer,
   useRef,
   useState,
+  useEvent,
 };
 
 // Inspect

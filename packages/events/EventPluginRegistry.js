@@ -138,8 +138,10 @@ function publishRegistrationName(
     registrationName,
   );
   registrationNameModules[registrationName] = pluginModule;
-  registrationNameDependencies[registrationName] =
-    pluginModule.eventTypes[eventName].dependencies;
+  if (pluginModule.eventTypes) {
+    const dependencies = pluginModule.eventTypes[eventName].dependencies;
+    registrationNameDependencies[registrationName] = dependencies;
+  }
 
   if (__DEV__) {
     const lowerCasedName = registrationName.toLowerCase();

@@ -7,8 +7,21 @@
  * @flow
  */
 
+import SyntheticEvent from '../SyntheticEvent';
+import type {EventContext} from 'events/EventTypes';
+
 const targetEventTypes = ['pointerdown', 'pointercancel'];
 const rootEventTypes = ['pointerup', 'pointermove'];
+
+type DragState = {
+  dragTarget: null | EventTarget,
+  isPointerDown: boolean,
+  isDragging: boolean,
+  startX: number,
+  startY: number,
+  x: number,
+  y: number,
+};
 
 // In the case we don't have PointerEvents (Safari), we listen to touch events
 // too
@@ -17,23 +30,22 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
   rootEventTypes.push('mouseup', 'mousemove', 'touchmove');
 }
 
-function dispatchDragEvent(context, name, listener, state, eventData) {
-  if (listener.length > 1) {
-    const key = context.getClosestElementKeyFromTarget(state.dragTarget);
-    context.dispatchBubbledEvent(
-      name,
-      e => listener(e, key),
-      state.dragTarget,
-      eventData,
-    );
-  } else {
-    context.dispatchBubbledEvent(name, listener, state.dragTarget, eventData);
-  }
+function dispatchDragEvent(
+  context: EventContext,
+  name: string,
+  listener: (e: SyntheticEvent) => void,
+  state: DragState,
+  eventData?: {
+    diffX: number,
+    diffY: number,
+  },
+): void {
+  context.dispatchBubbledEvent(name, listener, state.dragTarget, eventData);
 }
 
 const DragResponder = {
   targetEventTypes,
-  createInitialState() {
+  createInitialState(): DragState {
     return {
       dragTarget: null,
       isPointerDown: false,
@@ -44,20 +56,20 @@ const DragResponder = {
       y: 0,
     };
   },
-  handleEvent(context, props, state): void {
+  handleEvent(context: EventContext, props: Object, state: DragState): void {
     const {eventTarget, eventType, nativeEvent} = context;
 
     switch (eventType) {
       case 'touchstart':
       case 'mousedown':
       case 'pointerdown': {
-        if (!state.isSwiping) {
+        if (!state.isDragging) {
           const obj =
             eventType === 'touchstart'
-              ? nativeEvent.changedTouches[0]
+              ? (nativeEvent: any).changedTouches[0]
               : nativeEvent;
-          const x = (state.startX = obj.screenX);
-          const y = (state.startY = obj.screenY);
+          const x = (state.startX = (obj: any).screenX);
+          const y = (state.startY = (obj: any).screenY);
           state.x = x;
           state.y = y;
           state.dragTarget = eventTarget;
@@ -75,13 +87,13 @@ const DragResponder = {
         if (state.isPointerDown) {
           const obj =
             eventType === 'touchmove'
-              ? nativeEvent.changedTouches[0]
+              ? (nativeEvent: any).changedTouches[0]
               : nativeEvent;
-          const x = obj.screenX;
-          const y = obj.screenY;
+          const x = (obj: any).screenX;
+          const y = (obj: any).screenY;
           state.x = x;
           state.y = y;
-          if (!state.isDragging && x !== state.startX && y !== state.start) {
+          if (!state.isDragging && x !== state.startX && y !== state.startY) {
             let shouldEnableDragging = true;
 
             if (
@@ -93,19 +105,9 @@ const DragResponder = {
             if (shouldEnableDragging) {
               state.isDragging = true;
               if (props.onDragChange) {
-                let dragChangeEventListener;
-                if (props.onDragChange.length === 2) {
-                  const key = context.getClosestElementKeyFromTarget(
-                    state.pressTarget,
-                  );
-                  dragChangeEventListener = () => {
-                    props.onDragChange(true, key);
-                  };
-                } else {
-                  dragChangeEventListener = () => {
-                    props.onDragChange(true);
-                  };
-                }
+                const dragChangeEventListener = () => {
+                  props.onDragChange(true);
+                };
                 context.dispatchBubbledEvent(
                   'dragchange',
                   dragChangeEventListener,
@@ -131,7 +133,7 @@ const DragResponder = {
                 eventData,
               );
             }
-            nativeEvent.preventDefault();
+            (nativeEvent: any).preventDefault();
           }
         }
         break;
@@ -149,19 +151,9 @@ const DragResponder = {
             dispatchDragEvent(context, 'dragend', props.onDragEnd, state);
           }
           if (props.onDragChange) {
-            let dragChangeEventListener;
-            if (props.onDragChange.length === 2) {
-              const key = context.getClosestElementKeyFromTarget(
-                state.pressTarget,
-              );
-              dragChangeEventListener = () => {
-                props.onDragChange(false, key);
-              };
-            } else {
-              dragChangeEventListener = () => {
-                props.onDragChange(false);
-              };
-            }
+            const dragChangeEventListener = () => {
+              props.onDragChange(false);
+            };
             context.dispatchBubbledEvent(
               'dragchange',
               dragChangeEventListener,

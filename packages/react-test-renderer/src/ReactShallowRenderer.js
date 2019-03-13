@@ -19,7 +19,11 @@ import warning from 'shared/warning';
 import is from 'shared/objectIs';
 
 import type {Dispatcher as DispatcherType} from 'react-reconciler/src/ReactFiberHooks';
-import type {ReactContext, ReactEvent} from 'shared/ReactTypes';
+import type {
+  ReactContext,
+  ReactEvent,
+  ReactEventResponder,
+} from 'shared/ReactTypes';
 import type {ReactElement} from 'shared/ReactElementType';
 import {REACT_EVENT_TYPE} from 'shared/ReactSymbols';
 
@@ -348,24 +352,22 @@ class ReactShallowRenderer {
       return context._currentValue;
     };
 
-    const useEvent = <E, P>(eventComponent: E, props?: P): ReactEvent => {
+    const useEvent = (
+      props: Object | null,
+      responder: ReactEventResponder,
+    ): ReactEvent => {
       this._validateCurrentlyRenderingComponent();
       this._createWorkInProgressHook();
-      const previousEventComponent = (this._workInProgressHook: any).memoizedState;
+      const previousEventComponent = (this._workInProgressHook: any)
+        .memoizedState;
       if (previousEventComponent === null) {
-        invariant(
-          eventComponent != null && eventComponent.$$typeof === REACT_EVENT_TYPE,
-          'useEvent(): The first argument must be a React event component ' +
-            'imported from an React event module or via useEvent().',
-        );
-        const responder = ((eventComponent: any): ReactEvent).responder;
         const nextEventComponent = {
           $$typeof: REACT_EVENT_TYPE,
-          props: ((props: any): Object) || null,
+          props,
           responder,
         };
         if (__DEV__) {
-          Object.freeze(eventComponent);
+          Object.freeze(nextEventComponent);
         }
         (this._workInProgressHook: any).memoizedState = nextEventComponent;
         return nextEventComponent;
