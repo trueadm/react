@@ -140,6 +140,6 @@ export function useEvent<E, P>(eventComponent: E, props?: P): ReactEvent {
     'useEvent(): The first argument must be a React event component ' +
       'imported from an React event module or via useEvent().',
   );
-  const responder = eventComponent.responder;
+  const responder = ((eventComponent: any): ReactEvent).responder;
   return dispatcher.useEvent(props || null, responder);
 }

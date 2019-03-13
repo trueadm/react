@@ -14,8 +14,8 @@ export type ReactNode =
   | ReactFragment
   | ReactProvider<any>
   | ReactConsumer<any>
-  | ReactEvent<any>
-  | ReactTarget<any>;
+  | ReactEvent
+  | ReactEventTarget;
 
 export type ReactEmpty = null | void | boolean;
 
@@ -81,15 +81,15 @@ export type RefObject = {|
   current: any,
 |};
 
-export type ReactEventResponder<S> = {
+export type ReactEventResponder = {
   targetEventTypes: Array<string>,
-  createInitialState?: (props: Object) => S,
-  handleEvent: (context: Object, props: Object, state: S) => void,
+  createInitialState?: (props: Object) => Object,
+  handleEvent: (context: Object, props: Object, state: Object) => void,
 };
 
 export type ReactEvent = {|
   $$typeof: Symbol | number,
-  defaultProps: null | Object,
+  props: null | Object,
   responder: ReactEventResponder,
 |};
 

@@ -29,6 +29,7 @@ import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import SimpleEventPlugin from './SimpleEventPlugin';
 import {getRawEventName} from './DOMTopLevelEventTypes';
 import {passiveBrowserEventsSupported} from './checkPassiveEvents';
+import {handleResponderEvents} from './ResponderEventSystem';
 
 const {isInteractiveTopLevelEventType} = SimpleEventPlugin;
 
@@ -125,15 +126,23 @@ function handleTopLevel(bookKeeping: BookKeepingInstance) {
     targetInst = bookKeeping.ancestors[i];
     // For events that don't use the new passive event type system,
     // we use the current event plugin hub for extracting and
-    // dispatching events. For future experimental APIs, we'll
-    // likely use an alternative system without the abstraction
-    // costs of a full plugin even system.
+    // dispatching events.
     if (bookKeeping.listenerType === PASSIVE_DISABLED) {
       runExtractedEventsInBatch(
         ((bookKeeping.topLevelType: any): DOMTopLevelEventType),
         targetInst,
         ((bookKeeping.nativeEvent: any): AnyNativeEvent),
         getEventTarget(bookKeeping.nativeEvent),
+      );
+    } else {
+      // For other events, we use the responder event system
+      // and the experimental event API to handle these events.
+      handleResponderEvents(
+        ((bookKeeping.topLevelType: any): DOMTopLevelEventType),
+        targetInst,
+        ((bookKeeping.nativeEvent: any): AnyNativeEvent),
+        eventTarget,
+        bookKeeping.listenerType,
       );
     }
   }

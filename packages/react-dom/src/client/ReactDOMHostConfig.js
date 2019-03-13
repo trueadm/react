@@ -42,7 +42,7 @@ import {
   DOCUMENT_FRAGMENT_NODE,
 } from '../shared/HTMLNodeType';
 import dangerousStyleValue from '../shared/dangerousStyleValue';
-import {currentEventFibers} from '../events/UnstableEventPlugin';
+import {currentEventFibers} from '../events/ResponderEventSystem';
 import {
   getListeningSetForElement,
   listenToDependency,

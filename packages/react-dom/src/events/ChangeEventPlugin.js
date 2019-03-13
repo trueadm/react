@@ -265,11 +265,7 @@ const ChangeEventPlugin = {
     targetInst,
     nativeEvent,
     nativeEventTarget,
-    passive,
   ) {
-    if (passive !== null) {
-      return null;
-    }
     const targetNode = targetInst ? getNodeFromInstance(targetInst) : window;
 
     let getTargetInstFunc, handleEventFunc;

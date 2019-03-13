@@ -1028,23 +1028,6 @@ function mountMemo<T>(
   return nextValue;
 }
 
-function mountEvent<P>(
-  props: null | P,
-  responder: ReactEventResponder,
-): ReactEvent {
-  const hook = mountWorkInProgressHook();
-  const eventComponent = {
-    $$typeof: REACT_EVENT_TYPE,
-    props,
-    responder,
-  };
-  if (__DEV__) {
-    Object.freeze(eventComponent);
-  }
-  hook.memoizedState = eventComponent;
-  return eventComponent;
-}
-
 function updateMemo<T>(
   nextCreate: () => T,
   deps: Array<mixed> | void | null,
@@ -1064,6 +1047,32 @@ function updateMemo<T>(
   const nextValue = nextCreate();
   hook.memoizedState = [nextValue, nextDeps];
   return nextValue;
+}
+
+function mountEvent<P>(
+  props: null | P,
+  responder: ReactEventResponder,
+): ReactEvent {
+  const hook = mountWorkInProgressHook();
+  const eventComponent = {
+    $$typeof: REACT_EVENT_TYPE,
+    props,
+    responder,
+  };
+  if (__DEV__) {
+    Object.freeze(eventComponent);
+  }
+  hook.memoizedState = eventComponent;
+  return eventComponent;
+}
+
+function updateEvent<P>(
+  props: null | P,
+  responder: ReactEventResponder,
+): ReactEvent {
+  const hook = updateWorkInProgressHook();
+  // TODO check responder and props match
+  return hook.memoizedState;
 }
 
 // in a test-like environment, we want to warn if dispatchAction()
@@ -1219,6 +1228,7 @@ export const ContextOnlyDispatcher: Dispatcher = {
   useRef: throwInvalidHookError,
   useState: throwInvalidHookError,
   useDebugValue: throwInvalidHookError,
+  useEvent: throwInvalidHookError,
 };
 
 const HooksDispatcherOnMount: Dispatcher = {
@@ -1250,6 +1260,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useRef: updateRef,
   useState: updateState,
   useDebugValue: updateDebugValue,
+  useEvent: updateEvent,
 };
 
 let HooksDispatcherOnMountInDEV: Dispatcher | null = null;
@@ -1681,6 +1692,12 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountDebugValue(value, formatterFn);
     },
+    useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent {
+      currentHookNameInDev = 'useEvent';
+      warnInvalidHookAccess();
+      mountHookTypesDev();
+      return updateEvent(props, responder);
+    },
   };
 
   InvalidNestedHooksDispatcherOnUpdateInDEV = {
@@ -1788,6 +1805,12 @@ if (__DEV__) {
       warnInvalidHookAccess();
       updateHookTypesDev();
       return updateDebugValue(value, formatterFn);
+    },
+    useEvent<P>(props: P | null, responder: ReactEventResponder): ReactEvent {
+      currentHookNameInDev = 'useEvent';
+      warnInvalidHookAccess();
+      updateHookTypesDev();
+      return updateEvent(props, responder);
     },
   };
 }

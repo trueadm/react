@@ -6,11 +6,14 @@
  * @flow
  */
 
+import type {AnyNativeEvent} from './PluginModuleType';
 import type {TopLevelType} from 'events/TopLevelEventTypes';
 import {Event} from 'shared/ReactWorkTags';
 import accumulateInto from 'events/accumulateInto';
 import SyntheticEvent from 'events/SyntheticEvent';
 import {executeDispatch} from 'events/EventPluginUtils';
+import type {ReactEventResponder} from 'shared/ReactTypes';
+import {runEventsInBatch} from 'events/EventPluginHub';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import {
@@ -18,19 +21,23 @@ import {
   listenToDependency,
 } from './ReactBrowserEventEmitter';
 import warningWithoutStack from 'shared/warningWithoutStack';
+import type {Fiber} from 'react-reconciler/src/ReactFiber';
 
 // To improve performance, this set contains the current "active" fiber
 // of a pair of fibers who are each other's alternate.
-export const currentEventFibers = new Set();
-export const rootEventTypesToFibers = new Map();
-export const eventResponderValidEventTypes = new Map();
-export const targetOwnership = new Map();
+export const currentEventFibers: Set<Fiber> = new Set();
+export const rootEventTypesToFibers: Map<TopLevelType, Set<Fiber>> = new Map();
+export const eventResponderValidEventTypes: Map<
+  ReactEventResponder,
+  Set<TopLevelType>,
+> = new Map();
+export const targetOwnership: Map<EventTarget, Fiber> = new Map();
 
 function EventContext(
-  nativeEvent: Event,
+  nativeEvent: AnyNativeEvent,
   eventType: TopLevelType,
   passive: boolean,
-  nativeEventTarget: Element | Document,
+  nativeEventTarget: EventTarget,
 ) {
   this.bubblePhaseEvents = [];
   this.capturePhaseEvents = [];
@@ -197,14 +204,15 @@ EventContext.prototype.removeRootEventTypes = function(rootEventTypes) {
 };
 
 EventContext.prototype._deleteRootEventTypes = function() {
-  if (this._eventsToRemove === null) {
+  const eventsToRemove = this._eventsToRemove;
+  if (eventsToRemove === null) {
     return;
   }
   const validEventTypesForResponder = eventResponderValidEventTypes.get(
     this._responder,
   );
-  for (let i = 0; i < this._eventsToRemove.length; i++) {
-    const rootEventType = this._eventsToRemove[i];
+  for (let i = 0; i < eventsToRemove.length; i++) {
+    const rootEventType = eventsToRemove[i];
     if (validEventTypesForResponder.has(rootEventType)) {
       validEventTypesForResponder.delete(rootEventType);
       let eventFibers = rootEventTypesToFibers.get(rootEventType);
@@ -321,48 +329,39 @@ function handleTopLevelType(
   responder.handleEvent(context, props, state);
 }
 
-const UnstableEventPlugin = {
-  extractEvents: function(
-    topLevelType: TopLevelType,
-    targetFiber: Fiber,
-    nativeEvent: Event,
-    nativeEventTarget: Element | Document,
-    passive: null | boolean,
-  ) {
-    // We skip over legacy events that had no passive boolean flag.
-    // All events with the new event API will have true/false for isPassive.
-    if (passive === null) {
-      return;
-    }
-    const context = new EventContext(
-      nativeEvent,
-      topLevelType,
-      passive,
-      nativeEventTarget,
-    );
-    let currentFiber = targetFiber;
+export function handleResponderEvents(
+  topLevelType: TopLevelType,
+  targetFiber: Fiber,
+  nativeEvent: AnyNativeEvent,
+  nativeEventTarget: EventTarget,
+  passive: boolean,
+) {
+  const context = new EventContext(
+    nativeEvent,
+    topLevelType,
+    passive,
+    nativeEventTarget,
+  );
+  let currentFiber = targetFiber;
 
-    while (currentFiber !== null) {
-      if (currentFiber.tag === Event) {
-        if (!currentEventFibers.has(currentFiber)) {
-          currentFiber = currentFiber.alternate;
-        }
-        handleTopLevelType(topLevelType, currentFiber, context);
+  while (currentFiber !== null) {
+    if (currentFiber.tag === Event) {
+      if (!currentEventFibers.has(currentFiber)) {
+        currentFiber = currentFiber.alternate;
       }
-      currentFiber = currentFiber.return;
+      handleTopLevelType(topLevelType, currentFiber, context);
     }
-    if (rootEventTypesToFibers.has(topLevelType)) {
-      const eventFibers = rootEventTypesToFibers.get(topLevelType);
-      const eventFibersArr = Array.from(eventFibers);
+    currentFiber = currentFiber.return;
+  }
+  if (rootEventTypesToFibers.has(topLevelType)) {
+    const eventFibers = rootEventTypesToFibers.get(topLevelType);
+    const eventFibersArr = Array.from(((eventFibers: any): Set<Fiber>));
 
-      for (let i = 0; i < eventFibersArr.length; i++) {
-        const eventFiber = eventFibersArr[i];
-        handleTopLevelType(topLevelType, eventFiber, context);
-      }
+    for (let i = 0; i < eventFibersArr.length; i++) {
+      const eventFiber = eventFibersArr[i];
+      handleTopLevelType(topLevelType, eventFiber, context);
     }
-    context._deleteRootEventTypes();
-    return context._extractEvents();
-  },
-};
-
-export default UnstableEventPlugin;
+  }
+  context._deleteRootEventTypes();
+  runEventsInBatch(context._extractEvents());
+}
