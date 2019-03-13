@@ -9,4 +9,8 @@
 
 'use strict';
 
-module.exports = require('./hover.node');
+const Swipe = require('./src/Swipe');
+
+// TODO: decide on the top-level export form.
+// This is hacky but makes it work with both Rollup and Jest
+module.exports = Swipe.default || Swipe;

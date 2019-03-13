@@ -7,7 +7,6 @@
  * @flow
  */
 
-import SyntheticEvent from '../SyntheticEvent';
 import type {EventContext} from 'events/EventTypes';
 
 const targetEventTypes = ['pointerdown', 'pointercancel'];
@@ -33,7 +32,7 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 function dispatchDragEvent(
   context: EventContext,
   name: string,
-  listener: (e: SyntheticEvent) => void,
+  listener: (e: Object) => void,
   state: DragState,
   eventData?: {
     diffX: number,

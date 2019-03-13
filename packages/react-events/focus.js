@@ -9,8 +9,4 @@
 
 'use strict';
 
-const Focus = require('events/event-modules/Focus');
-
-// TODO: decide on the top-level export form.
-// This is hacky but makes it work with both Rollup and Jest
-module.exports = Focus.default || Focus;
+module.exports = require('./focus.node');

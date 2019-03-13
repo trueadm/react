@@ -9,8 +9,4 @@
 
 'use strict';
 
-const Drag = require('events/event-modules/Drag');
-
-// TODO: decide on the top-level export form.
-// This is hacky but makes it work with both Rollup and Jest
-module.exports = Drag.default || Drag;
+module.exports = require('./drag.node');

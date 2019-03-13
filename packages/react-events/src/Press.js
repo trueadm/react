@@ -7,7 +7,6 @@
  * @flow
  */
 
-import SyntheticEvent from '../SyntheticEvent';
 import type {EventContext} from 'events/EventTypes';
 
 const targetEventTypes = [
@@ -39,7 +38,7 @@ function dispatchPressEvent(
   context: EventContext,
   name: string,
   state: PressState,
-  listener: (e: SyntheticEvent) => void,
+  listener: (e: Object) => void,
 ): void {
   context.dispatchBubbledEvent(name, listener, state.pressTarget);
 }

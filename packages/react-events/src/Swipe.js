@@ -7,7 +7,6 @@
  * @flow
  */
 
-import SyntheticEvent from '../SyntheticEvent';
 import type {EventContext} from 'events/EventTypes';
 
 const targetEventTypes = ['pointerdown', 'pointercancel'];
@@ -23,7 +22,7 @@ if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
 function dispatchSwipeEvent(
   context: EventContext,
   name: string,
-  listener: (e: SyntheticEvent) => void,
+  listener: (e: Object) => void,
   state: SwipeState,
   eventData?: {
     diffX: number,

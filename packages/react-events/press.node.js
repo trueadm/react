@@ -9,4 +9,8 @@
 
 'use strict';
 
-module.exports = require('./hover.node');
+const Press = require('./src/Press');
+
+// TODO: decide on the top-level export form.
+// This is hacky but makes it work with both Rollup and Jest
+module.exports = Press.default || Press;

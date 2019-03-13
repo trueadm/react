@@ -165,15 +165,15 @@
       "filename": "react-dom-server.browser.development.js",
       "bundleType": "UMD_DEV",
       "packageName": "react-dom",
-      "size": 130425,
-      "gzip": 34746
+      "size": 131701,
+      "gzip": 34954
     },
     {
       "filename": "react-dom-server.browser.production.min.js",
       "bundleType": "UMD_PROD",
       "packageName": "react-dom",
-      "size": 19319,
-      "gzip": 7379
+      "size": 19619,
+      "gzip": 7433
     },
     {
       "filename": "react-dom-server.browser.development.js",
@@ -186,8 +186,8 @@
       "filename": "react-dom-server.browser.production.min.js",
       "bundleType": "NODE_PROD",
       "packageName": "react-dom",
-      "size": 19239,
-      "gzip": 7368
+      "size": 19540,
+      "gzip": 7424
     },
     {
       "filename": "ReactDOMServer-dev.js",
@@ -214,8 +214,8 @@
       "filename": "react-dom-server.node.production.min.js",
       "bundleType": "NODE_PROD",
       "packageName": "react-dom",
-      "size": 20132,
-      "gzip": 7685
+      "size": 20433,
+      "gzip": 7737
     },
     {
       "filename": "react-art.development.js",
@@ -550,15 +550,15 @@
       "filename": "ReactDOMServer-dev.js",
       "bundleType": "FB_WWW_DEV",
       "packageName": "react-dom",
-      "size": 127337,
-      "gzip": 33235
+      "size": 128494,
+      "gzip": 33384
     },
     {
       "filename": "ReactDOMServer-prod.js",
       "bundleType": "FB_WWW_PROD",
       "packageName": "react-dom",
-      "size": 46343,
-      "gzip": 10662
+      "size": 47318,
+      "gzip": 10767
     },
     {
       "filename": "ReactART-dev.js",
@@ -1147,6 +1147,76 @@
       "packageName": "scheduler",
       "size": 12088,
       "gzip": 2473
+    },
+    {
+      "filename": "react-events.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 1135,
+      "gzip": 623
+    },
+    {
+      "filename": "react-events.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 448,
+      "gzip": 328
+    },
+    {
+      "filename": "ReactEvents-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 1106,
+      "gzip": 613
+    },
+    {
+      "filename": "ReactEvents-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 643,
+      "gzip": 376
+    },
+    {
+      "filename": "react-events-press.node.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 9417,
+      "gzip": 2265
+    },
+    {
+      "filename": "react-events-press.node.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 3853,
+      "gzip": 1324
+    },
+    {
+      "filename": "undefined-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 9654,
+      "gzip": 2301
+    },
+    {
+      "filename": "undefined-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 7819,
+      "gzip": 1664
+    },
+    {
+      "filename": "Press-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 9654,
+      "gzip": 2301
+    },
+    {
+      "filename": "Press-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 7819,
+      "gzip": 1664
     }
   ]
 }
