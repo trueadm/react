@@ -220,7 +220,8 @@ EventContext.prototype.isPositionWithinHitSlop = function(
   y: number,
 ) {
   const target = this.eventTarget.ownerDocument.elementFromPoint(x, y);
-  if (target.nodeName === 'HIT-SLOP') {
+
+  if (target !== null && target.nodeName === 'HIT-SLOP') {
     const {
       left,
       top,
@@ -374,6 +375,7 @@ const UnstableEventPlugin = {
       }
       currentFiber = ((currentFiber: any): Fiber).return;
     }
+<<<<<<< HEAD:packages/react-dom/src/events/ResponderEventSystem.js
     if (currentFiber === null) {
       return null;
 >>>>>>> WIP:packages/react-dom/src/events/UnstableEventPlugin.js
@@ -383,6 +385,11 @@ const UnstableEventPlugin = {
   if (rootEventTypesToFibers.has(topLevelType)) {
     const eventFibers = rootEventTypesToFibers.get(topLevelType);
     const eventFibersArr = Array.from(((eventFibers: any): Set<Fiber>));
+=======
+    if (rootEventTypesToFibers.has(topLevelType)) {
+      const eventFibers = rootEventTypesToFibers.get(topLevelType);
+      const eventFibersArr = Array.from(((eventFibers: any): Set<Fiber>));
+>>>>>>> WIP:packages/react-dom/src/events/UnstableEventPlugin.js
 
     for (let i = 0; i < eventFibersArr.length; i++) {
       const eventFiber = eventFibersArr[i];
