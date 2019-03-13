@@ -474,8 +474,40 @@ const bundles = [
   {
     bundleTypes: [NODE_DEV, NODE_PROD, FB_WWW_DEV, FB_WWW_PROD],
     moduleType: NON_FIBER_RENDERER,
-    global: 'Press',
     entry: 'react-events/press.node',
+    global: 'ReactEventsPress',
+    externals: [],
+  },
+
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD, FB_WWW_DEV, FB_WWW_PROD],
+    moduleType: NON_FIBER_RENDERER,
+    entry: 'react-events/hover.node',
+    global: 'ReactEventsHover',
+    externals: [],
+  },
+
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD, FB_WWW_DEV, FB_WWW_PROD],
+    moduleType: NON_FIBER_RENDERER,
+    entry: 'react-events/focus.node',
+    global: 'ReactEventsFocus',
+    externals: [],
+  },
+
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD, FB_WWW_DEV, FB_WWW_PROD],
+    moduleType: NON_FIBER_RENDERER,
+    entry: 'react-events/drag.node',
+    global: 'ReactEventsDrag',
+    externals: [],
+  },
+
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD, FB_WWW_DEV, FB_WWW_PROD],
+    moduleType: NON_FIBER_RENDERER,
+    entry: 'react-events/swipe.node',
+    global: 'ReactEventsSwipe',
     externals: [],
   },
 ];

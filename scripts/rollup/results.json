@@ -1194,15 +1194,15 @@
       "filename": "undefined-dev.js",
       "bundleType": "FB_WWW_DEV",
       "packageName": "react-events",
-      "size": 9654,
-      "gzip": 2301
+      "size": 4965,
+      "gzip": 1400
     },
     {
       "filename": "undefined-prod.js",
       "bundleType": "FB_WWW_PROD",
       "packageName": "react-events",
-      "size": 7819,
-      "gzip": 1664
+      "size": 3943,
+      "gzip": 1044
     },
     {
       "filename": "Press-dev.js",
@@ -1217,6 +1217,132 @@
       "packageName": "react-events",
       "size": 7819,
       "gzip": 1664
+    },
+    {
+      "filename": "react-events-hover.node.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 4808,
+      "gzip": 1371
+    },
+    {
+      "filename": "react-events-hover.node.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 2020,
+      "gzip": 844
+    },
+    {
+      "filename": "ReactEventsPress-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 9654,
+      "gzip": 2301
+    },
+    {
+      "filename": "ReactEventsPress-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 7819,
+      "gzip": 1664
+    },
+    {
+      "filename": "ReactEventsHover-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 4965,
+      "gzip": 1400
+    },
+    {
+      "filename": "ReactEventsHover-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 3943,
+      "gzip": 1044
+    },
+    {
+      "filename": "react-events-focus.node.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 2840,
+      "gzip": 1022
+    },
+    {
+      "filename": "react-events-focus.node.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 1188,
+      "gzip": 583
+    },
+    {
+      "filename": "ReactEventsFocus-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 2809,
+      "gzip": 1005
+    },
+    {
+      "filename": "ReactEventsFocus-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 2055,
+      "gzip": 702
+    },
+    {
+      "filename": "react-events-drag.node.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 5224,
+      "gzip": 1586
+    },
+    {
+      "filename": "react-events-drag.node.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 2191,
+      "gzip": 954
+    },
+    {
+      "filename": "ReactEventsDrag-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 5414,
+      "gzip": 1625
+    },
+    {
+      "filename": "ReactEventsDrag-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 4697,
+      "gzip": 1214
+    },
+    {
+      "filename": "react-events-swipe.node.development.js",
+      "bundleType": "NODE_DEV",
+      "packageName": "react-events",
+      "size": 5941,
+      "gzip": 1754
+    },
+    {
+      "filename": "react-events-swipe.node.production.min.js",
+      "bundleType": "NODE_PROD",
+      "packageName": "react-events",
+      "size": 2459,
+      "gzip": 1097
+    },
+    {
+      "filename": "ReactEventsSwipe-dev.js",
+      "bundleType": "FB_WWW_DEV",
+      "packageName": "react-events",
+      "size": 5934,
+      "gzip": 1759
+    },
+    {
+      "filename": "ReactEventsSwipe-prod.js",
+      "bundleType": "FB_WWW_PROD",
+      "packageName": "react-events",
+      "size": 5523,
+      "gzip": 1408
     }
   ]
 }
