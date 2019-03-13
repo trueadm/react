@@ -14,6 +14,11 @@ import SyntheticEvent from 'events/SyntheticEvent';
 import {executeDispatch} from 'events/EventPluginUtils';
 import type {ReactEventResponder} from 'shared/ReactTypes';
 import {runEventsInBatch} from 'events/EventPluginHub';
+import {
+  type ListenerType,
+  PASSIVE_TRUE,
+  PASSIVE_FALSE,
+} from 'events/ListenerTypes';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import {
@@ -138,7 +143,7 @@ EventContext.prototype.dispatchImmediateEvent = function(
 };
 
 EventContext.prototype._extractEvents = function() {
-  let events;
+  let events = [];
   for (let i = this._capturePhaseEvents.length; i-- > 0; ) {
     const syntheticEvent = this._capturePhaseEvents[i];
     events = accumulateInto(events, syntheticEvent);
@@ -325,18 +330,17 @@ function handleTopLevelType(
   responder.handleEvent(context, props, state);
 }
 
-<<<<<<< HEAD:packages/react-dom/src/events/ResponderEventSystem.js
 export function handleResponderEvents(
-  topLevelType: TopLevelType,
+  topLevelType: DOMTopLevelEventType,
   targetFiber: Fiber,
   nativeEvent: AnyNativeEvent,
   nativeEventTarget: EventTarget,
-  passive: boolean,
+  listenerType: ListenerType,
 ) {
   const context = new EventContext(
     nativeEvent,
     topLevelType,
-    passive,
+    listenerType === PASSIVE_TRUE,
     nativeEventTarget,
   );
   let currentFiber = targetFiber;
@@ -346,50 +350,13 @@ export function handleResponderEvents(
       if (!currentEventFibers.has(currentFiber)) {
         currentFiber = currentFiber.alternate;
       }
-      handleTopLevelType(topLevelType, currentFiber, context);
-=======
-const UnstableEventPlugin = {
-  isLegacy: false,
-
-  extractEvents: function(
-    topLevelType: DOMTopLevelEventType,
-    targetFiber: Fiber,
-    nativeEvent: AnyNativeEvent,
-    nativeEventTarget: EventTarget,
-    passive: boolean,
-  ) {
-    const context = new EventContext(
-      nativeEvent,
-      topLevelType,
-      passive,
-      nativeEventTarget,
-    );
-    let currentFiber = targetFiber;
-
-    while (currentFiber !== null) {
-      if (currentFiber.tag === Event) {
-        if (!currentEventFibers.has(currentFiber)) {
-          currentFiber = currentFiber.alternate;
-        }
-        handleTopLevelType(topLevelType, ((currentFiber: any): Fiber), context);
-      }
-      currentFiber = ((currentFiber: any): Fiber).return;
+      handleTopLevelType(topLevelType, ((currentFiber: any): Fiber), context);
     }
-<<<<<<< HEAD:packages/react-dom/src/events/ResponderEventSystem.js
-    if (currentFiber === null) {
-      return null;
->>>>>>> WIP:packages/react-dom/src/events/UnstableEventPlugin.js
-    }
-    currentFiber = currentFiber.return;
+    currentFiber = ((currentFiber: any): Fiber).return;
   }
   if (rootEventTypesToFibers.has(topLevelType)) {
     const eventFibers = rootEventTypesToFibers.get(topLevelType);
     const eventFibersArr = Array.from(((eventFibers: any): Set<Fiber>));
-=======
-    if (rootEventTypesToFibers.has(topLevelType)) {
-      const eventFibers = rootEventTypesToFibers.get(topLevelType);
-      const eventFibersArr = Array.from(((eventFibers: any): Set<Fiber>));
->>>>>>> WIP:packages/react-dom/src/events/UnstableEventPlugin.js
 
     for (let i = 0; i < eventFibersArr.length; i++) {
       const eventFiber = eventFibersArr[i];
