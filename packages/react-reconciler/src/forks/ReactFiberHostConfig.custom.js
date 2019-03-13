@@ -60,7 +60,7 @@ export const supportsMutation = $$$hostConfig.supportsMutation;
 export const supportsPersistence = $$$hostConfig.supportsPersistence;
 export const supportsHydration = $$$hostConfig.supportsHydration;
 export const handleEventResponder = $$$hostConfig.handleEventResponder;
-export const handleEventHitSlop = $$$hostConfig.handleEventHitSlop;
+export const commitEventTarget = $$$hostConfig.commitEventTarget;
 
 // -------------------
 //      Mutation

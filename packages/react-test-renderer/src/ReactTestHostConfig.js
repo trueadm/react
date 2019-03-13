@@ -265,6 +265,6 @@ export function handleEventResponder() {
   // TODO
 }
 
-export function handleEventHitSlop() {
+export function commitEventTarget() {
   // TODO
 }

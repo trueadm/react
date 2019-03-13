@@ -14,11 +14,7 @@ import SyntheticEvent from 'events/SyntheticEvent';
 import {executeDispatch} from 'events/EventPluginUtils';
 import type {ReactEventResponder} from 'shared/ReactTypes';
 import {runEventsInBatch} from 'events/EventPluginHub';
-import {
-  type ListenerType,
-  PASSIVE_TRUE,
-  PASSIVE_FALSE,
-} from 'events/ListenerTypes';
+import {type ListenerType, PASSIVE_TRUE} from 'events/ListenerTypes';
 
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import {

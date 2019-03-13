@@ -435,6 +435,6 @@ export function handleEventResponder() {
   // Noop
 }
 
-export function handleEventHitSlop() {
+export function commitEventTarget() {
   // Noop
 }
