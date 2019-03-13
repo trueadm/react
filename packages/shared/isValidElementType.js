@@ -19,6 +19,7 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
   REACT_EVENT_TYPE,
+  REACT_EVENT_TARGET_TYPE,
 } from 'shared/ReactSymbols';
 
 export default function isValidElementType(type: mixed) {
@@ -38,6 +39,7 @@ export default function isValidElementType(type: mixed) {
         type.$$typeof === REACT_PROVIDER_TYPE ||
         type.$$typeof === REACT_CONTEXT_TYPE ||
         type.$$typeof === REACT_FORWARD_REF_TYPE ||
-        type.$$typeof === REACT_EVENT_TYPE))
+        type.$$typeof === REACT_EVENT_TYPE ||
+        type.$$typeof === REACT_EVENT_TARGET_TYPE))
   );
 }

@@ -238,6 +238,7 @@ const PressResponder = {
               return;
             }
           }
+          state.pressTarget = eventTarget;
           dispatchPressInEvents(context, props, state);
           state.isPressed = true;
           context.addRootEventTypes(rootEventTypes);
@@ -273,7 +274,6 @@ const PressResponder = {
                     state.defaultPrevented = true;
                   }
                 };
-                state.pressTarget = eventTarget;
                 dispatchPressEvent(context, 'press', state, pressEventListener);
               }
             }

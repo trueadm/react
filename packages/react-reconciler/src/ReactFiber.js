@@ -13,6 +13,7 @@ import type {
   ReactPortal,
   RefObject,
   ReactEvent,
+  ReactEventTarget,
 } from 'shared/ReactTypes';
 import type {WorkTag} from 'shared/ReactWorkTags';
 import type {TypeOfMode} from './ReactTypeOfMode';
@@ -44,6 +45,7 @@ import {
   MemoComponent,
   LazyComponent,
   Event,
+  EventTarget,
 } from 'shared/ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
 
@@ -67,6 +69,7 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
   REACT_EVENT_TYPE,
+  REACT_EVENT_TARGET_TYPE,
 } from 'shared/ReactSymbols';
 
 let hasBadMapPolyfill;
@@ -518,6 +521,14 @@ export function createFiberFromTypeAndProps(
                 expirationTime,
                 key,
               );
+            case REACT_EVENT_TARGET_TYPE:
+              return createFiberFromEventTarget(
+                type,
+                pendingProps,
+                mode,
+                expirationTime,
+                key,
+              );
           }
         }
         let info = '';
@@ -607,6 +618,20 @@ export function createFiberFromEvent(
   fiber.elementType = event;
   fiber.type = event;
   fiber.stateNode = new Map();
+  fiber.expirationTime = expirationTime;
+  return fiber;
+}
+
+export function createFiberFromEventTarget(
+  eventTarget: ReactEventTarget,
+  pendingProps: any,
+  mode: TypeOfMode,
+  expirationTime: ExpirationTime,
+  key: null | string,
+): Fiber {
+  const fiber = createFiber(EventTarget, pendingProps, key, mode);
+  fiber.elementType = eventTarget;
+  fiber.type = eventTarget;
   fiber.expirationTime = expirationTime;
   return fiber;
 }

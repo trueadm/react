@@ -90,6 +90,7 @@ import {
   hideTextInstance,
   unhideInstance,
   unhideTextInstance,
+  commitEventTarget,
 } from './ReactFiberHostConfig';
 import {
   captureCommitPhaseError,
@@ -1209,14 +1210,11 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       commitSuspenseComponent(finishedWork);
       return;
     }
-    // case Event: {
-    //   const newProps = finishedWork.memoizedProps;
-    //   const hitSlop = newProps.hitSlop;
-    //   if (hitSlop != null) {
-    //     handleEventHitSlop(finishedWork, hitSlop);
-    //   }
-    //   return;
-    // }
+    case EventTarget: {
+      const newProps = finishedWork.memoizedProps;
+      commitEventTarget(finishedWork, newProps);
+      return;
+    }
     case IncompleteClassComponent: {
       return;
     }

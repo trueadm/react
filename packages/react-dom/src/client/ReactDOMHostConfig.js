@@ -49,8 +49,7 @@ import {
 } from '../events/ReactBrowserEventEmitter';
 
 import type {Fiber} from 'react-reconciler/src/ReactFiber';
-
-import {HostComponent} from 'shared/ReactWorkTags';
+import {handleTouchHitSlop} from './ReactDOMTouchHitSlop';
 import type {DOMContainer} from './ReactDOM';
 
 export type Type = string;
@@ -63,6 +62,11 @@ export type Props = {
   style?: {
     display?: string,
   },
+  top?: number,
+  right?: number,
+  left?: number,
+  bottom?: number,
+  type?: string,
 };
 export type Container = Element | Document;
 export type Instance = Element;
@@ -105,33 +109,6 @@ const SUSPENSE_PENDING_START_DATA = '$?';
 const SUSPENSE_FALLBACK_START_DATA = '$!';
 
 const STYLE = 'style';
-
-const excludeElementsFromHitSlop = new Set([
-  'IFRAME',
-  'AREA',
-  'BASE',
-  'BR',
-  'COL',
-  'EMBED',
-  'HR',
-  'IMG',
-  'SELECT',
-  'INPUT',
-  'TEXTAREA',
-  'KEYGEN',
-  'LINK',
-  'META',
-  'PARAM',
-  'SOURCE',
-  'TRACK',
-  'WBR',
-  'MENUITEM',
-  'VIDEO',
-  'AUDIO',
-  'SCRIPT',
-  'STYLE',
-  'CANVAS',
-]);
 
 let eventsEnabled: ?boolean = null;
 let selectionInformation: ?mixed = null;
@@ -273,73 +250,6 @@ export function handleEventResponder(
     listenToDependency(childEventType, listeningSet, container, false);
   }
 }
-
-// function getChildDomElementsFromFiber(
-//   fiber: Fiber,
-// ): Array<Element | Document | Node> {
-//   const domElements = [];
-//   let currentFiber = fiber.child;
-
-//   while (currentFiber !== null) {
-//     if (currentFiber.tag === HostComponent) {
-//       domElements.push(currentFiber.stateNode);
-//       currentFiber = currentFiber.return;
-//       if (currentFiber === fiber) {
-//         break;
-//       }
-//     } else if (currentFiber.child !== null) {
-//       currentFiber = currentFiber.child;
-//     }
-//     const sibling = currentFiber.sibling;
-//     if (sibling !== null) {
-//       currentFiber = sibling;
-//     } else {
-//       break;
-//     }
-//   }
-//   return domElements;
-// }
-
-// export function handleEventHitSlop(eventFiber: Fiber, hitSlop: Object): void {
-//   const stateNode = eventFiber.stateNode;
-//   let hitSlopElements = stateNode.hitSlopElements;
-
-//   if (hitSlopElements === null) {
-//     hitSlopElements = stateNode.hitSlopElements = new Map();
-//   }
-//   const childElements = getChildDomElementsFromFiber(eventFiber);
-
-//   for (let i = 0; i < childElements.length; i++) {
-//     const childElement = childElements[i];
-
-//     if (hitSlopElements.has(childElement)) {
-//       continue;
-//     }
-//     if (excludeElementsFromHitSlop.has(childElement.nodeName)) {
-//       continue;
-//     }
-//     const hitSlopElement = childElement.ownerDocument.createElement('hit-slop');
-//     // TODO: making it relative might break things, maybe we should
-//     // check first?
-//     childElement.style.position = 'relative';
-//     hitSlopElement.style.position = 'absolute';
-//     hitSlopElement.style.display = 'block';
-//     if (hitSlop.top) {
-//       hitSlopElement.style.top = `-${hitSlop.top}px`;
-//     }
-//     if (hitSlop.left) {
-//       hitSlopElement.style.left = `-${hitSlop.left}px`;
-//     }
-//     if (hitSlop.right) {
-//       hitSlopElement.style.right = `-${hitSlop.right}px`;
-//     }
-//     if (hitSlop.bottom) {
-//       hitSlopElement.style.bottom = `-${hitSlop.bottom}px`;
-//     }
-//     childElement.appendChild(hitSlopElement);
-//     hitSlopElements.set(childElement, hitSlopElement);
-//   }
-// }
 
 export function appendInitialChild(
   parentInstance: Instance,
@@ -913,5 +823,11 @@ export function didNotFindHydratableSuspenseInstance(
 ) {
   if (__DEV__ && parentProps[SUPPRESS_HYDRATION_WARNING] !== true) {
     // TODO: warnForInsertedHydratedSuspense(parentInstance);
+  }
+}
+
+export function commitEventTarget(fiber: Fiber, props: Props) {
+  if (props.type === 'touch-hit') {
+    handleTouchHitSlop(fiber, props);
   }
 }

@@ -36,6 +36,7 @@ import {
   LazyComponent,
   IncompleteClassComponent,
   Event,
+  EventTarget,
 } from 'shared/ReactWorkTags';
 import {
   NoEffect,
@@ -939,6 +940,44 @@ function updateHostEvent(current, workInProgress, renderExpirationTime) {
         );
       }
       child = child.sibling;
+    }
+  }
+  return workInProgress.child;
+}
+
+function updateHostEventTarget(current, workInProgress, renderExpirationTime) {
+  const nextProps = workInProgress.pendingProps;
+  let nextChildren = nextProps.children;
+
+  reconcileChildren(
+    current,
+    workInProgress,
+    nextChildren,
+    renderExpirationTime,
+  );
+  const parent = workInProgress.return;
+  invariant(
+    parent !== null && parent.tag === Event,
+    'Event target components must be direct child of event components',
+  );
+  // These invariants only occur in DEV to reduce overhead in production
+  if (__DEV__ && nextProps.type === 'touch-hit') {
+    let childrenCount = 0;
+    let child = workInProgress.child;
+    while (child !== null) {
+      if (child.tag === HostText) {
+        childrenCount++;
+        invariant(
+          false,
+          '<TouchHitTarget> cannot have text nodes as direct children',
+        );
+      } else if (child.tag === HostComponent) {
+        childrenCount++;
+      }
+      child = child.sibling;
+    }
+    if (childrenCount !== 1) {
+      invariant(false, '<TouchHitTarget> must only have a single child.');
     }
   }
   return workInProgress.child;
@@ -2268,6 +2307,12 @@ function beginWork(
     }
     case Event:
       return updateHostEvent(current, workInProgress, renderExpirationTime);
+    case EventTarget:
+      return updateHostEventTarget(
+        current,
+        workInProgress,
+        renderExpirationTime,
+      );
   }
   invariant(
     false,

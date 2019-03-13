@@ -774,9 +774,8 @@ function completeWork(
       break;
     }
     case EventTarget: {
-      if (newProps.type === 'touch-hit') {
-        markUpdate(workInProgress);
-      }
+      markUpdate(workInProgress);
+      break;
     }
     default:
       invariant(
