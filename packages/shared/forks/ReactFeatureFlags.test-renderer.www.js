@@ -23,11 +23,8 @@ export const enableSuspenseServerRenderer = false;
 export const enableStableConcurrentModeAPIs = false;
 export const enableSchedulerDebugging = false;
 export const warnAboutDeprecatedSetNativeProps = false;
-<<<<<<< HEAD
 export const disableJavaScriptURLs = false;
-=======
 export const enableEventAPI = true;
->>>>>>> WIP
 
 // Only used in www builds.
 export function addUserTimingListener() {
