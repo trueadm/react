@@ -604,22 +604,31 @@ export function deferredUpdates<A>(fn: () => A): A {
   return runWithPriority(NormalPriority, fn);
 }
 
+let interactiveUpdatesDepth = 0;
+
 export function interactiveUpdates<A, B, C, R>(
   fn: (A, B, C) => R,
   a: A,
   b: B,
   c: C,
 ): R {
-  if (workPhase === NotWorking) {
-    // TODO: Remove this call. Instead of doing this automatically, the caller
-    // should explicitly call flushInteractiveUpdates.
-    flushPendingDiscreteUpdates();
+  if (interactiveUpdatesDepth === 0) {
+    if (workPhase === NotWorking) {
+      // TODO: Remove this call. Instead of doing this automatically, the caller
+      // should explicitly call flushInteractiveUpdates.
+      flushPendingDiscreteUpdates();
+    }
+    if (!revertPassiveEffectsChange) {
+      // TODO: Remove this call for the same reason as above.
+      flushPassiveEffects();
+    }
   }
-  if (!revertPassiveEffectsChange) {
-    // TODO: Remove this call for the same reason as above.
-    flushPassiveEffects();
+  interactiveUpdatesDepth++;
+  try {
+    return runWithPriority(UserBlockingPriority, fn.bind(null, a, b, c));
+  } finally {
+    interactiveUpdatesDepth--;
   }
-  return runWithPriority(UserBlockingPriority, fn.bind(null, a, b, c));
 }
 
 export function syncUpdates<A, B, C, R>(
