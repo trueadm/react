@@ -22,6 +22,7 @@ type PressProps = {
   delayPressEnd: number,
   delayPressStart: number,
   onContextMenu: (e: PressEvent) => void,
+  onUnandledPress: (e: PressEvent) => void,
   onLongPress: (e: PressEvent) => void,
   onLongPressChange: boolean => void,
   onLongPressShouldCancelPress: () => boolean,
@@ -46,7 +47,9 @@ type PressState = {
     x: number,
     y: number,
   |}>,
+  addedRootClickEvent: boolean,
   addedRootEvents: boolean,
+  addedRootClickEvent: boolean,
   isActivePressed: boolean,
   isActivePressStart: boolean,
   isLongPressed: boolean,
@@ -81,7 +84,8 @@ type PressEventType =
   | 'presschange'
   | 'longpress'
   | 'longpresschange'
-  | 'contextmenu';
+  | 'contextmenu'
+  | 'unhandledpress';
 
 type PressEvent = {|
   target: Element | Document,
@@ -117,7 +121,6 @@ const DEFAULT_PRESS_RETENTION_OFFSET = {
 };
 
 const targetEventTypes = [
-  {name: 'click', passive: false},
   {name: 'keydown', passive: false},
   {name: 'contextmenu', passive: false},
   // We need to preventDefault on pointerdown for mouse/pen events
@@ -131,6 +134,9 @@ const rootEventTypes = [
   'scroll',
   'pointercancel',
 ];
+const rootClickEventType = [{name: 'click', passive: false}];
+
+let dispatchUnhandledPressEventDuringClick = true;
 
 // If PointerEvents is not supported (e.g., Safari), also listen to touch and mouse events.
 if (typeof window !== 'undefined' && window.PointerEvent === undefined) {
@@ -424,6 +430,7 @@ function dispatchCancel(
   } else if (state.allowPressReentry) {
     removeRootEventTypes(context, state);
   }
+  removeRootClickEventType(context, state);
 }
 
 function isValidKeyboardEvent(nativeEvent: Object): boolean {
@@ -552,6 +559,7 @@ function unmountResponder(
     removeRootEventTypes(context, state);
     dispatchPressEndEvents(null, context, props, state);
   }
+  removeRootClickEventType(context, state);
 }
 
 function addRootEventTypes(
@@ -561,6 +569,26 @@ function addRootEventTypes(
   if (!state.addedRootEvents) {
     state.addedRootEvents = true;
     context.addRootEventTypes(rootEventTypes);
+  }
+}
+
+function addRootClickEventType(
+  context: ReactResponderContext,
+  state: PressState,
+): void {
+  if (!state.addedRootClickEvent) {
+    state.addedRootClickEvent = true;
+    context.addRootEventTypes(rootClickEventType);
+  }
+}
+
+function removeRootClickEventType(
+  context: ReactResponderContext,
+  state: PressState,
+): void {
+  if (state.addedRootClickEvent) {
+    context.removeRootEventTypes(rootClickEventType);
+    state.addedRootClickEvent = false;
   }
 }
 
@@ -577,9 +605,11 @@ function removeRootEventTypes(
 
 const PressResponder = {
   targetEventTypes,
+  rootEventTypes: ['pointerdown', 'mousedown', 'touchstart'],
   createInitialState(): PressState {
     return {
       activationPosition: null,
+      addedRootClickEvent: false,
       addedRootEvents: false,
       didDispatchEvent: false,
       isActivePressed: false,
@@ -606,7 +636,7 @@ const PressResponder = {
     props: PressProps,
     state: PressState,
   ): void {
-    const {target, type} = event;
+    const {type} = event;
 
     if (props.disabled) {
       removeRootEventTypes(context, state);
@@ -647,6 +677,7 @@ const PressResponder = {
           ) {
             // We need to prevent the native event to block the focus
             nativeEvent.preventDefault();
+            removeRootClickEventType(context, state);
             return;
           }
 
@@ -701,29 +732,6 @@ const PressResponder = {
             props.onContextMenu,
             DiscreteEvent,
           );
-        }
-        break;
-      }
-
-      case 'click': {
-        if (context.isTargetWithinHostComponent(target, 'a', true)) {
-          const {
-            altKey,
-            ctrlKey,
-            metaKey,
-            shiftKey,
-          } = (nativeEvent: MouseEvent);
-          // Check "open in new window/tab" and "open context menu" key modifiers
-          const preventDefault = props.preventDefault;
-          if (
-            preventDefault !== false &&
-            !shiftKey &&
-            !metaKey &&
-            !ctrlKey &&
-            !altKey
-          ) {
-            nativeEvent.preventDefault();
-          }
         }
         break;
       }
@@ -847,6 +855,9 @@ const PressResponder = {
 
           if (state.pressTarget !== null && props.onPress) {
             if (state.isPressWithinResponderRegion) {
+              // At this point, we know this is a handled press event so
+              // we should not dispatch an unhandled event later in the click.
+              dispatchUnhandledPressEventDuringClick = false;
               if (
                 !(
                   wasLongPressed &&
@@ -879,6 +890,53 @@ const PressResponder = {
       case 'touchcancel':
       case 'dragstart': {
         dispatchCancel(event, context, props, state);
+        break;
+      }
+
+      // Unhandled press logic
+      case 'touchstart':
+      case 'mousedown':
+      case 'pointerdown': {
+        dispatchUnhandledPressEventDuringClick = true;
+        addRootClickEventType(context, state);
+        break;
+      }
+
+      case 'click': {
+        if (
+          context.isTargetWithinEventComponent(target) &&
+          context.isTargetWithinHostComponent(target, 'a', true)
+        ) {
+          const {
+            altKey,
+            ctrlKey,
+            metaKey,
+            shiftKey,
+          } = (nativeEvent: MouseEvent);
+          // Check "open in new window/tab" and "open context menu" key modifiers
+          const preventDefault = props.preventDefault;
+          if (
+            preventDefault !== false &&
+            !shiftKey &&
+            !metaKey &&
+            !ctrlKey &&
+            !altKey
+          ) {
+            nativeEvent.preventDefault();
+          }
+        }
+        if (dispatchUnhandledPressEventDuringClick && props.onUnandledPress) {
+          state.pressTarget = ((target: any): Element);
+          dispatchEvent(
+            event,
+            context,
+            state,
+            'unhandledpress',
+            props.onUnandledPress,
+            DiscreteEvent,
+          );
+        }
+        removeRootClickEventType(context, state);
       }
     }
   },
