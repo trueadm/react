@@ -93,8 +93,12 @@ export type ReactEventComponentInstance<T, E, C> = {|
 
 export type ReactEventResponder<T, E, C> = {
   displayName: string,
-  targetType: string,
-  targetEventTypes?: Array<T>,
+  targetEvents: {
+    pointer?: Array<T>,
+    focus?: Array<T>,
+    scroll?: Array<T>,
+    input?: Array<T>,
+  },
   rootEventTypes?: Array<T>,
   createInitialState?: (props: Object) => Object,
   allowMultipleHostChildren: boolean,
@@ -119,7 +123,9 @@ type FocusTargetPayload = {|
 |};
 
 export type ReactEventTargetComponentMappings<Props> = {|
-  hit?: boolean | ((ReactEventTargetProp<Props>) => boolean),
+  pointer?: boolean | ((ReactEventTargetProp<Props>) => boolean),
+  scroll?: boolean | ((ReactEventTargetProp<Props>) => boolean),
+  input?: boolean | ((ReactEventTargetProp<Props>) => boolean),
   focus?:
     | boolean
     | FocusTargetPayload

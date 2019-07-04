@@ -48,6 +48,7 @@ function getFirstFocusableElement(
 
 const FocusScopeResponder: ReactDOMEventResponder = {
   displayName: 'FocusScope',
+  targetType: 'focus',
   targetEventTypes,
   rootEventTypes,
   createInitialState(): FocusScopeState {

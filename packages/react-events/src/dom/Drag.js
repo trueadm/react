@@ -87,6 +87,7 @@ function dispatchDragEvent(
 
 const DragResponder: ReactDOMEventResponder = {
   displayName: 'Drag',
+  targetType: 'hit',
   targetEventTypes,
   createInitialState(): DragState {
     return {

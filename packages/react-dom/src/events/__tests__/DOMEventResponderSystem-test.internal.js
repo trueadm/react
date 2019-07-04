@@ -89,7 +89,7 @@ describe('DOMEventResponderSystem', () => {
     container = null;
   });
 
-  it('the event responder event listeners should fire on click event', () => {
+  it.only('the event responder event listeners should fire on click event', () => {
     let eventResponderFiredCount = 0;
     let eventLog = [];
     const buttonRef = React.createRef();
@@ -116,9 +116,13 @@ describe('DOMEventResponderSystem', () => {
       },
     });
 
+    const Button = React.unstable_createEventTarget('button', {
+      hit: true,
+    });
+
     const Test = () => (
       <ClickEventComponent>
-        <button ref={buttonRef}>Click me!</button>
+        <Button ref={buttonRef}>Click me!</Button>
       </ClickEventComponent>
     );
 

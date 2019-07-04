@@ -219,6 +219,7 @@ let isGlobalFocusVisible = true;
 
 const FocusResponder: ReactDOMEventResponder = {
   displayName: 'Focus',
+  targetType: 'focus',
   targetEventTypes,
   rootEventTypes,
   createInitialState(): FocusState {

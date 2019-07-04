@@ -91,6 +91,7 @@ type SwipeState = {
 
 const SwipeResponder: ReactDOMEventResponder = {
   displayName: 'Scroll',
+  targetType: 'hit',
   targetEventTypes,
   createInitialState(): SwipeState {
     return {

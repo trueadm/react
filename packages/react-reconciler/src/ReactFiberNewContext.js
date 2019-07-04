@@ -378,6 +378,7 @@ export function readContext<T>(
         expirationTime: NoWork,
         firstContext: contextItem,
         events: null,
+        mappings: null,
       };
     } else {
       // Append a new context item.

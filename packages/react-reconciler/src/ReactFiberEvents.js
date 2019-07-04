@@ -51,6 +51,7 @@ export function updateEventComponentInstance<T, E, C>(
       expirationTime: NoWork,
       firstContext: null,
       events,
+      mappings: null,
     };
   } else {
     events = dependencies.events;

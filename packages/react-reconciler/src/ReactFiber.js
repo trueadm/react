@@ -13,6 +13,8 @@ import type {
   ReactPortal,
   RefObject,
   ReactEventComponent,
+  ReactEventTargetComponent,
+  ReactEventTargetComponentMappings,
 } from 'shared/ReactTypes';
 import type {RootTag} from 'shared/ReactRootTags';
 import type {WorkTag} from 'shared/ReactWorkTags';
@@ -79,6 +81,7 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
   REACT_EVENT_COMPONENT_TYPE,
+  REACT_EVENT_TARGET_COMPONENT_TYPE,
 } from 'shared/ReactSymbols';
 
 let hasBadMapPolyfill;
@@ -104,6 +107,7 @@ export type Dependencies = {
   expirationTime: ExpirationTime,
   firstContext: ContextDependency<mixed> | null,
   events: Array<ReactEventComponentInstance<any, any, any>> | null,
+  mappings: ReactEventTargetComponentMappings<any> | null,
 };
 
 // A Fiber is work on a Component that needs to be done or was done. There can
@@ -447,6 +451,7 @@ export function createWorkInProgress(
           expirationTime: currentDependencies.expirationTime,
           firstContext: currentDependencies.firstContext,
           events: currentDependencies.events,
+          mappings: currentDependencies.mappings,
         };
 
   // These will be overridden during the parent's reconciliation
@@ -541,6 +546,7 @@ export function resetWorkInProgress(
             expirationTime: currentDependencies.expirationTime,
             firstContext: currentDependencies.firstContext,
             events: currentDependencies.events,
+            mappings: currentDependencies.mappings,
           };
 
     if (enableProfilerTimer) {
@@ -662,6 +668,17 @@ export function createFiberFromTypeAndProps(
                 );
               }
               break;
+            case REACT_EVENT_TARGET_COMPONENT_TYPE:
+              if (enableFlareAPI) {
+                return createFiberFromEventTargetComponent(
+                  type,
+                  pendingProps,
+                  mode,
+                  expirationTime,
+                  key,
+                );
+              }
+              break;
           }
         }
         let info = '';
@@ -751,6 +768,27 @@ export function createFiberFromEventComponent(
   fiber.elementType = eventComponent;
   fiber.type = eventComponent;
   fiber.expirationTime = expirationTime;
+  return fiber;
+}
+
+export function createFiberFromEventTargetComponent(
+  eventTarget: ReactEventTargetComponent<any>,
+  pendingProps: any,
+  mode: TypeOfMode,
+  expirationTime: ExpirationTime,
+  key: null | string,
+): Fiber {
+  const {mappings, type} = eventTarget;
+  const fiber = createFiber(HostComponent, pendingProps, key, mode);
+  fiber.elementType = type;
+  fiber.type = type;
+  fiber.expirationTime = expirationTime;
+  fiber.dependencies = {
+    expirationTime,
+    firstContext: null,
+    events: null,
+    mappings,
+  };
   return fiber;
 }
 
