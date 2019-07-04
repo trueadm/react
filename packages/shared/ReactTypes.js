@@ -14,7 +14,8 @@ export type ReactNode =
   | ReactFragment
   | ReactProvider<any>
   | ReactConsumer<any>
-  | ReactEventComponent<any, any, any>;
+  | ReactEventComponent<any, any, any>
+  | ReactEventTargetComponent<any>;
 
 export type ReactEmpty = null | void | boolean;
 
@@ -92,6 +93,7 @@ export type ReactEventComponentInstance<T, E, C> = {|
 
 export type ReactEventResponder<T, E, C> = {
   displayName: string,
+  targetType: string,
   targetEventTypes?: Array<T>,
   rootEventTypes?: Array<T>,
   createInitialState?: (props: Object) => Object,
@@ -108,6 +110,26 @@ export type ReactEventResponder<T, E, C> = {
 export type ReactEventComponent<T, E, C> = {|
   $$typeof: Symbol | number,
   responder: ReactEventResponder<T, E, C>,
+|};
+
+type ReactEventTargetProp<Props> = $PropertyType<Props, 'eventTarget'>;
+
+type FocusTargetPayload = {|
+  focusHandle: Symbol | number,
+|};
+
+export type ReactEventTargetComponentMappings<Props> = {|
+  hit?: boolean | ((ReactEventTargetProp<Props>) => boolean),
+  focus?:
+    | boolean
+    | FocusTargetPayload
+    | ((ReactEventTargetProp<Props>) => boolean | FocusTargetPayload),
+|};
+
+export type ReactEventTargetComponent<Props> = {|
+  $$typeof: Symbol | number,
+  mappings: ReactEventTargetComponentMappings<Props>,
+  type: string,
 |};
 
 export opaque type EventPriority = 0 | 1 | 2;

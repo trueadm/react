@@ -53,6 +53,7 @@ import {
 import ReactSharedInternals from './ReactSharedInternals';
 import {error, warn} from './withComponentStack';
 import createEvent from 'shared/createEventComponent';
+import createEventTarget from 'shared/createEventTargetComponent';
 import {enableJSXTransformAPI, enableFlareAPI} from 'shared/ReactFeatureFlags';
 const React = {
   Children: {
@@ -106,6 +107,7 @@ const React = {
 
 if (enableFlareAPI) {
   React.unstable_createEvent = createEvent;
+  React.unstable_createEventTarget = createEventTarget;
   React.unstable_useEvent = useEvent;
 }
 
