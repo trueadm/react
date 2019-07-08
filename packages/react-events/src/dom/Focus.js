@@ -23,12 +23,17 @@ type FocusProps = {
   onFocus: (e: FocusEvent) => void,
   onFocusChange: boolean => void,
   onFocusVisibleChange: boolean => void,
+  autoFocus: boolean,
+  contain: boolean,
+  restoreFocus: boolean,
 };
 
 type FocusState = {
+  currentFocusedNode: null | Element | Document,
   focusTarget: null | Element | Document,
   isFocused: boolean,
   isLocalFocusVisible: boolean,
+  nodeToRestore: null | Element | Document,
   pointerType: PointerType,
 };
 
@@ -46,7 +51,7 @@ const isMac =
     ? /^Mac/.test(window.navigator.platform)
     : false;
 
-const targetEventTypes = ['focus', 'blur'];
+const targetEventTypes = ['focus', 'blur', 'keydown_active'];
 
 const rootEventTypes = [
   'keydown',
@@ -80,6 +85,17 @@ function createFocusEvent(
     pointerType,
     timeStamp: context.getTimeStamp(),
   };
+}
+
+function isValidTabPress(nativeEvent): boolean {
+  return (
+    nativeEvent.key === 'Tab' &&
+    !(
+      nativeEvent.metaKey ||
+      (!isMac && nativeEvent.altKey) ||
+      (nativeEvent: any).ctrlKey
+    )
+  );
 }
 
 function dispatchFocusInEvents(
@@ -155,6 +171,24 @@ function dispatchFocusOutEvents(
   dispatchFocusVisibleOutEvent(context, props, state);
 }
 
+function getFirstFocusableElement(
+  context: ReactDOMResponderContext,
+): Element | null {
+  const elements = context.getFocusableElementsInScope();
+  if (elements.length > 0) {
+    return elements[0] || null;
+  }
+  return null;
+}
+
+function focusElement(element: Element | Document | null) {
+  if (element != null) {
+    try {
+      ((element: any): HTMLElement).focus();
+    } catch (err) {}
+  }
+}
+
 function dispatchFocusVisibleOutEvent(
   context: ReactDOMResponderContext,
   props: FocusProps,
@@ -214,6 +248,12 @@ function handleRootPointerEvent(
   }
 }
 
+function getActiveFocusedElement(
+  context: ReactDOMResponderContext,
+): Element | Document | null {
+  return context.getActiveDocument().activeElement;
+}
+
 let isGlobalFocusVisible = true;
 
 const FocusResponder: ReactDOMEventResponder = {
@@ -222,9 +262,11 @@ const FocusResponder: ReactDOMEventResponder = {
   rootEventTypes,
   getInitialState(): FocusState {
     return {
+      currentFocusedNode: null,
       focusTarget: null,
       isFocused: false,
       isLocalFocusVisible: false,
+      nodeToRestore: null,
       pointerType: '',
     };
   },
@@ -236,7 +278,7 @@ const FocusResponder: ReactDOMEventResponder = {
     props: FocusProps,
     state: FocusState,
   ): void {
-    const {type, target} = event;
+    const {nativeEvent, type, target} = event;
 
     if (props.disabled) {
       if (state.isFocused) {
@@ -248,6 +290,58 @@ const FocusResponder: ReactDOMEventResponder = {
     }
 
     switch (type) {
+      case 'keydown': {
+        if (isValidTabPress(nativeEvent)) {
+          const focusedElement = getActiveFocusedElement(context);
+          if (
+            focusedElement !== null &&
+            context.isTargetWithinEventComponent(focusedElement)
+          ) {
+            // We don't need to manually handle the tab, as a child
+            // <Focus> will have done it for us.
+            if (context.isRespondingToHook()) {
+              state.currentFocusedNode = focusedElement;
+              return;
+            }
+            const elements = context.getFocusableElementsInScope();
+            const position = elements.indexOf(focusedElement);
+            const lastPosition = elements.length - 1;
+            let nextElement = null;
+
+            if (nativeEvent.shiftKey) {
+              if (position === 0) {
+                if (props.contain) {
+                  nextElement = elements[lastPosition];
+                } else {
+                  // Out of bounds
+                  context.continueLocalPropagation();
+                  return;
+                }
+              } else {
+                nextElement = elements[position - 1];
+              }
+            } else {
+              if (position === lastPosition) {
+                if (props.contain) {
+                  nextElement = elements[0];
+                } else {
+                  // Out of bounds
+                  context.continueLocalPropagation();
+                  return;
+                }
+              } else {
+                nextElement = elements[position + 1];
+              }
+            }
+            if (nextElement !== null) {
+              focusElement(nextElement);
+              state.currentFocusedNode = nextElement;
+              ((nativeEvent: any): KeyboardEvent).preventDefault();
+            }
+          }
+        }
+        break;
+      }
       case 'focus': {
         if (!state.isFocused) {
           // Limit focus events to the direct child of the event component.
@@ -277,9 +371,24 @@ const FocusResponder: ReactDOMEventResponder = {
     props: FocusProps,
     state: FocusState,
   ): void {
-    const {type} = event;
+    const {target, type} = event;
 
     switch (type) {
+      case 'focus': {
+        // Handle global focus containment
+        if (props.contain) {
+          if (!context.isTargetWithinEventComponent(target)) {
+            const currentFocusedNode = state.currentFocusedNode;
+            if (currentFocusedNode !== null) {
+              focusElement(currentFocusedNode);
+            } else if (props.autoFocus) {
+              const firstElement = getFirstFocusableElement(context);
+              focusElement(firstElement);
+            }
+          }
+        }
+        break;
+      }
       case 'mousemove':
       case 'mousedown':
       case 'mouseup': {
@@ -307,14 +416,7 @@ const FocusResponder: ReactDOMEventResponder = {
       case 'keydown':
       case 'keyup': {
         const nativeEvent = event.nativeEvent;
-        if (
-          nativeEvent.key === 'Tab' &&
-          !(
-            nativeEvent.metaKey ||
-            (!isMac && nativeEvent.altKey) ||
-            nativeEvent.ctrlKey
-          )
-        ) {
+        if (isValidTabPress(nativeEvent)) {
           state.pointerType = 'keyboard';
           isGlobalFocusVisible = true;
         }
@@ -322,11 +424,27 @@ const FocusResponder: ReactDOMEventResponder = {
       }
     }
   },
+  onMount(
+    context: ReactDOMResponderContext,
+    props: FocusProps,
+    state: FocusState,
+  ): void {
+    if (props.restoreFocus) {
+      state.nodeToRestore = getActiveFocusedElement(context);
+    }
+    if (props.autoFocus) {
+      const firstElement = getFirstFocusableElement(context);
+      focusElement(firstElement);
+    }
+  },
   onUnmount(
     context: ReactDOMResponderContext,
     props: FocusProps,
     state: FocusState,
   ) {
+    if (props.restoreFocus && state.nodeToRestore !== null) {
+      focusElement(state.nodeToRestore);
+    }
     unmountResponder(context, props, state);
   },
   onOwnershipChange(

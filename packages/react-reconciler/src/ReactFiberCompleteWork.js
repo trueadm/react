@@ -1131,16 +1131,6 @@ function completeWork(
 
         if (eventComponentInstance === null) {
           let responderState = null;
-          if (__DEV__ && !responder.allowMultipleHostChildren) {
-            const hostChildrenCount = getEventComponentHostChildrenCount(
-              workInProgress,
-            );
-            warning(
-              (hostChildrenCount || 0) < 2,
-              'A "<%s>" event component cannot contain multiple host children.',
-              getComponentName(workInProgress.type),
-            );
-          }
           const getInitialState = responder.getInitialState;
           if (getInitialState !== undefined) {
             responderState = getInitialState(newProps);

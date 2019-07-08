@@ -60,3 +60,16 @@ Called when the element changes focus state (i.e., after `onBlur` and
 
 Called when the element receives or loses focus following keyboard navigation.
 This can be used to display focus styles only for keyboard interactions.
+
+### autoFocus: boolean = false
+
+Automatically moves focus to the first focusable element within scope.
+
+### contain: boolean = false
+
+Contain focus within the subtree of the `FocusScope` instance.
+
+### restoreFocus: boolean = false
+
+Automatically restores focus to element that was last focused before focus moved
+within the scope.
