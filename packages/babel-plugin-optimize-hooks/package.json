@@ -1,0 +1,15 @@
+{
+  "name": "babel-plugin-optimize-hooks",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "esutils": "^2.0.0"
+  },
+  "files": [
+    "README.md",
+    "index.js",
+    "cjs/",
+    "umd/"
+  ]
+}
