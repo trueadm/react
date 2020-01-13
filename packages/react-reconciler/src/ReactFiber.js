@@ -15,7 +15,7 @@ import type {
   ReactEventResponder,
   ReactEventResponderInstance,
   ReactFundamentalComponent,
-  ReactScope,
+  ReactScopeInstance,
 } from 'shared/ReactTypes';
 import type {RootTag} from 'shared/ReactRootTags';
 import type {WorkTag} from 'shared/ReactWorkTags';
@@ -32,7 +32,6 @@ import {
   enableProfilerTimer,
   enableFundamentalAPI,
   enableUserTimingAPI,
-  enableScopeAPI,
   enableChunksAPI,
 } from 'shared/ReactFeatureFlags';
 import {NoEffect, Placement} from 'shared/ReactSideEffectTags';
@@ -58,7 +57,6 @@ import {
   SimpleMemoComponent,
   LazyComponent,
   FundamentalComponent,
-  ScopeComponent,
   Chunk,
 } from 'shared/ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
@@ -90,7 +88,6 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE,
   REACT_FUNDAMENTAL_TYPE,
-  REACT_SCOPE_TYPE,
   REACT_CHUNK_TYPE,
 } from 'shared/ReactSymbols';
 
@@ -113,15 +110,15 @@ if (__DEV__) {
   }
 }
 
-export type Dependencies = {
+export type Dependencies = {|
   expirationTime: ExpirationTime,
   firstContext: ContextDependency<mixed> | null,
   responders: Map<
     ReactEventResponder<any, any>,
     ReactEventResponderInstance<any, any>,
   > | null,
-  ...
-};
+  scopeInstance: ReactScopeInstance | null,
+|};
 
 // A Fiber is work on a Component that needs to be done or was done. There can
 // be more than one per component.
@@ -473,6 +470,7 @@ export function createWorkInProgress(
           expirationTime: currentDependencies.expirationTime,
           firstContext: currentDependencies.firstContext,
           responders: currentDependencies.responders,
+          scopeInstance: currentDependencies.scopeInstance,
         };
 
   // These will be overridden during the parent's reconciliation
@@ -568,6 +566,7 @@ export function resetWorkInProgress(
             expirationTime: currentDependencies.expirationTime,
             firstContext: currentDependencies.firstContext,
             responders: currentDependencies.responders,
+            scopeInstance: currentDependencies.scopeInstance,
           };
 
     if (enableProfilerTimer) {
@@ -692,16 +691,6 @@ export function createFiberFromTypeAndProps(
                 );
               }
               break;
-            case REACT_SCOPE_TYPE:
-              if (enableScopeAPI) {
-                return createFiberFromScope(
-                  type,
-                  pendingProps,
-                  mode,
-                  expirationTime,
-                  key,
-                );
-              }
           }
         }
         let info = '';
@@ -790,20 +779,6 @@ export function createFiberFromFundamental(
   const fiber = createFiber(FundamentalComponent, pendingProps, key, mode);
   fiber.elementType = fundamentalComponent;
   fiber.type = fundamentalComponent;
-  fiber.expirationTime = expirationTime;
-  return fiber;
-}
-
-function createFiberFromScope(
-  scope: ReactScope,
-  pendingProps: any,
-  mode: TypeOfMode,
-  expirationTime: ExpirationTime,
-  key: null | string,
-) {
-  const fiber = createFiber(ScopeComponent, pendingProps, key, mode);
-  fiber.type = scope;
-  fiber.elementType = scope;
   fiber.expirationTime = expirationTime;
   return fiber;
 }

@@ -11,7 +11,6 @@ import type {Fiber} from './ReactFiber';
 import type {
   ReactScope,
   ReactScopeInstance,
-  ReactScopeMethods,
   ReactContext,
   ReactScopeQuery,
 } from 'shared/ReactTypes';
@@ -21,7 +20,6 @@ import {getPublicInstance, getInstanceFromNode} from './ReactFiberHostConfig';
 import {
   HostComponent,
   SuspenseComponent,
-  ScopeComponent,
   ContextProvider,
 } from 'shared/ReactWorkTags';
 import {enableScopeAPI} from 'shared/ReactFeatureFlags';
@@ -146,10 +144,7 @@ function collectNearestChildContextValues<T>(
   }
 }
 
-export function createScopeMethods(
-  scope: ReactScope,
-  instance: ReactScopeInstance,
-): ReactScopeMethods {
+export function createReactScope(instance: ReactScopeInstance): ReactScope {
   return {
     DO_NOT_USE_queryAllNodes(fn: ReactScopeQuery): null | Array<Object> {
       const currentFiber = ((instance.fiber: any): Fiber);
@@ -169,13 +164,10 @@ export function createScopeMethods(
       return null;
     },
     containsNode(node: Object): boolean {
+      const currentFiber = ((instance.fiber: any): Fiber);
       let fiber = getInstanceFromNode(node);
       while (fiber !== null) {
-        if (
-          fiber.tag === ScopeComponent &&
-          fiber.type === scope &&
-          fiber.stateNode === instance
-        ) {
+        if (fiber === currentFiber || fiber.alternate === currentFiber) {
           return true;
         }
         fiber = fiber.return;

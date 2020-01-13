@@ -11,6 +11,7 @@ import type {
   ReactContext,
   ReactEventResponder,
   ReactEventResponderListener,
+  ReactScope,
 } from 'shared/ReactTypes';
 import invariant from 'shared/invariant';
 import {REACT_RESPONDER_TYPE} from 'shared/ReactSymbols';
@@ -168,4 +169,9 @@ export function useTransition(
 export function useDeferredValue<T>(value: T, config: ?Object): T {
   const dispatcher = resolveDispatcher();
   return dispatcher.useDeferredValue(value, config);
+}
+
+export function useScope(): ReactScope {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useScope();
 }

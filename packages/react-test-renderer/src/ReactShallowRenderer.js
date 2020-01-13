@@ -396,6 +396,17 @@ class ReactShallowRenderer {
       return value;
     };
 
+    function notImplemented() {
+      throw new Error('Not yet implemented.');
+    }
+
+    const useScope = () => ({
+      DO_NOT_USE_queryAllNodes: notImplemented,
+      DO_NOT_USE_queryFirstNode: notImplemented,
+      containsNode: notImplemented,
+      getChildContextValues: notImplemented,
+    });
+
     return {
       readContext,
       useCallback: (identity: any),
@@ -414,6 +425,7 @@ class ReactShallowRenderer {
       useResponder,
       useTransition,
       useDeferredValue,
+      useScope,
     };
   }
 

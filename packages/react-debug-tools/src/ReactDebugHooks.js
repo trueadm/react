@@ -12,6 +12,7 @@ import type {
   ReactProviderType,
   ReactEventResponder,
   ReactEventResponderListener,
+  ReactScope,
 } from 'shared/ReactTypes';
 import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {Hook, TimeoutConfig} from 'react-reconciler/src/ReactFiberHooks';
@@ -239,6 +240,21 @@ function useResponder(
   };
 }
 
+function notImplemented() {
+  throw new Error('Not yet implemented.');
+}
+
+function useScope(): ReactScope {
+  const value = {
+    DO_NOT_USE_queryAllNodes: notImplemented,
+    DO_NOT_USE_queryFirstNode: notImplemented,
+    containsNode: notImplemented,
+    getChildContextValues: notImplemented,
+  };
+  hookLog.push({primitive: 'Scope', stackError: new Error(), value});
+  return value;
+}
+
 function useTransition(
   config: SuspenseConfig | null | void,
 ): [(() => void) => void, boolean] {
@@ -276,6 +292,7 @@ const Dispatcher: DispatcherType = {
   useResponder,
   useTransition,
   useDeferredValue,
+  useScope,
 };
 
 // Inspect

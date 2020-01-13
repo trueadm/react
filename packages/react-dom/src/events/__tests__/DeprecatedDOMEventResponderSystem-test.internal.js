@@ -548,53 +548,6 @@ describe('DOMEventResponderSystem', () => {
     expect(onUnmountFired).toEqual(4);
   });
 
-  it('the event responder onUnmount() function should fire using scopes', () => {
-    let onUnmountFired = 0;
-
-    const TestScope = React.unstable_createScope();
-    const TestResponder = createEventResponder({
-      targetEventTypes: [],
-      onUnmount: () => {
-        onUnmountFired++;
-      },
-    });
-
-    function Test({test}) {
-      const listener = React.DEPRECATED_useResponder(TestResponder, {});
-      if (test === 0) {
-        return <TestScope DEPRECATED_flareListeners={[listener]} />;
-      } else if (test === 1) {
-        return <TestScope DEPRECATED_flareListeners={null} />;
-      } else if (test === 2) {
-        return <TestScope DEPRECATED_flareListeners={[]} />;
-      } else if (test === 3) {
-        return <TestScope />;
-      } else if (test === 4) {
-        return <TestScope DEPRECATED_flareListeners={listener} />;
-      }
-    }
-
-    ReactDOM.render(<Test test={0} />, container);
-    ReactDOM.render(null, container);
-    expect(onUnmountFired).toEqual(1);
-
-    ReactDOM.render(<Test test={0} />, container);
-    ReactDOM.render(<Test test={1} />, container);
-    expect(onUnmountFired).toEqual(2);
-
-    ReactDOM.render(<Test test={0} />, container);
-    ReactDOM.render(<Test test={2} />, container);
-    expect(onUnmountFired).toEqual(3);
-
-    ReactDOM.render(<Test test={0} />, container);
-    ReactDOM.render(<Test test={3} />, container);
-    expect(onUnmountFired).toEqual(4);
-
-    ReactDOM.render(<Test test={0} />, container);
-    ReactDOM.render(<Test test={4} />, container);
-    expect(onUnmountFired).toEqual(4);
-  });
-
   it('the event responder onUnmount() function should fire with state', () => {
     let counter = 0;
 

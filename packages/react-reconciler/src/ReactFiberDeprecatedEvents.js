@@ -157,6 +157,7 @@ export function updateDeprecatedEventListeners(
         expirationTime: NoWork,
         firstContext: null,
         responders: new Map(),
+        scopeInstance: null,
       };
     }
     let respondersMap = dependencies.responders;

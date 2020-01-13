@@ -50,7 +50,6 @@ import {
   SimpleMemoComponent,
   SuspenseListComponent,
   FundamentalComponent,
-  ScopeComponent,
   Chunk,
 } from 'shared/ReactWorkTags';
 import {
@@ -627,7 +626,6 @@ function commitLifeCycles(
     case SuspenseListComponent:
     case IncompleteClassComponent:
     case FundamentalComponent:
-    case ScopeComponent:
       return;
   }
   invariant(
@@ -699,10 +697,6 @@ function commitAttachRef(finishedWork: Fiber) {
         break;
       default:
         instanceToUse = instance;
-    }
-    // Moved outside to ensure DCE works with this flag
-    if (enableScopeAPI && finishedWork.tag === ScopeComponent) {
-      instanceToUse = instance.methods;
     }
     if (typeof ref === 'function') {
       ref(instanceToUse);
@@ -832,15 +826,6 @@ function commitUnmount(
             onDeleted((current.stateNode: SuspenseInstance));
           }
         }
-      }
-      return;
-    }
-    case ScopeComponent: {
-      if (enableDeprecatedFlareAPI) {
-        unmountDeprecatedResponderListeners(current);
-      }
-      if (enableScopeAPI) {
-        safelyDetachRef(current);
       }
       return;
     }
@@ -1328,6 +1313,16 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       // Note: We currently never use MountMutation, but useLayout uses
       // UnmountMutation.
       commitHookEffectList(UnmountMutation, MountMutation, finishedWork);
+      if (enableScopeAPI) {
+        // Update the scope fiber reference to the last committed fiber
+        const dependencies = finishedWork.dependencies;
+        if (dependencies !== null) {
+          const scopeInstance = dependencies.scopeInstance;
+          if (scopeInstance !== null) {
+            scopeInstance.fiber = finishedWork;
+          }
+        }
+      }
       return;
     }
     case ClassComponent: {
@@ -1412,23 +1407,6 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       if (enableFundamentalAPI) {
         const fundamentalInstance = finishedWork.stateNode;
         updateFundamentalComponent(fundamentalInstance);
-        return;
-      }
-      break;
-    }
-    case ScopeComponent: {
-      if (enableScopeAPI) {
-        const scopeInstance = finishedWork.stateNode;
-        scopeInstance.fiber = finishedWork;
-        if (enableDeprecatedFlareAPI) {
-          const newProps = finishedWork.memoizedProps;
-          const oldProps = current !== null ? current.memoizedProps : newProps;
-          const prevListeners = oldProps.DEPRECATED_flareListeners;
-          const nextListeners = newProps.DEPRECATED_flareListeners;
-          if (prevListeners !== nextListeners || current === null) {
-            updateDeprecatedEventListeners(nextListeners, finishedWork, null);
-          }
-        }
         return;
       }
       break;

@@ -43,6 +43,7 @@ import {
   useResponder,
   useTransition,
   useDeferredValue,
+  useScope,
 } from './ReactHooks';
 import {withSuspenseConfig} from './ReactBatchConfig';
 import {
@@ -56,7 +57,6 @@ import {
 import ReactSharedInternals from './ReactSharedInternals';
 import createFundamental from 'shared/createFundamentalComponent';
 import createResponder from 'shared/createEventResponder';
-import createScope from 'shared/createScope';
 import {
   enableJSXTransformAPI,
   enableDeprecatedFlareAPI,
@@ -130,7 +130,7 @@ if (enableFundamentalAPI) {
 }
 
 if (enableScopeAPI) {
-  React.unstable_createScope = createScope;
+  React.unstable_useScope = useScope;
 }
 
 // Note: some APIs are added with feature flags.

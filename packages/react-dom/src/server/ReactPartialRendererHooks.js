@@ -481,6 +481,17 @@ export function setCurrentThreadID(threadID: ThreadID) {
   currentThreadID = threadID;
 }
 
+function notImplemented() {
+  throw new Error('Not yet implemented.');
+}
+
+const useScope = () => ({
+  DO_NOT_USE_queryAllNodes: notImplemented,
+  DO_NOT_USE_queryFirstNode: notImplemented,
+  containsNode: notImplemented,
+  getChildContextValues: notImplemented,
+});
+
 export const Dispatcher: DispatcherType = {
   readContext,
   useContext,
@@ -499,4 +510,5 @@ export const Dispatcher: DispatcherType = {
   useResponder,
   useDeferredValue,
   useTransition,
+  useScope,
 };

@@ -11,8 +11,10 @@ import type {
   ReactEventResponder,
   ReactContext,
   ReactEventResponderListener,
+  ReactScope,
+  ReactScopeInstance,
 } from 'shared/ReactTypes';
-import type {Fiber} from './ReactFiber';
+import type {Fiber, Dependencies} from './ReactFiber';
 import type {ExpirationTime} from './ReactFiberExpirationTime';
 import type {HookEffectTag} from './ReactHookEffectTags';
 import type {SuspenseConfig} from './ReactFiberSuspenseConfig';
@@ -56,6 +58,8 @@ import {
   runWithPriority,
   getCurrentPriorityLevel,
 } from './SchedulerWithReactIntegration';
+import {createReactScope} from './ReactFiberScope';
+import {enableScopeAPI} from 'shared/ReactFeatureFlags';
 
 const {ReactCurrentDispatcher, ReactCurrentBatchConfig} = ReactSharedInternals;
 
@@ -99,6 +103,7 @@ export type Dispatcher = {|
   useTransition(
     config: SuspenseConfig | void | null,
   ): [(() => void) => void, boolean],
+  useScope(): ReactScope,
 |};
 
 type Update<S, A> = {|
@@ -131,7 +136,8 @@ export type HookType =
   | 'useDebugValue'
   | 'useResponder'
   | 'useDeferredValue'
-  | 'useTransition';
+  | 'useTransition'
+  | 'useScope';
 
 let didWarnAboutMismatchedHooksForComponent;
 if (__DEV__) {
@@ -1348,6 +1354,36 @@ function dispatchAction<S, A>(
   }
 }
 
+function readReactScope(): ReactScope {
+  if (enableScopeAPI) {
+    let dependencies = currentlyRenderingFiber.dependencies;
+    if (dependencies === null) {
+      dependencies = currentlyRenderingFiber.dependencies = ({
+        expirationTime: NoWork,
+        firstContext: null,
+        responders: null,
+        scopeInstance: null,
+      }: Dependencies);
+    }
+    let scopeInstance = dependencies.scopeInstance;
+    if (scopeInstance === null) {
+      scopeInstance = ({
+        fiber: currentlyRenderingFiber,
+        scope: null,
+      }: ReactScopeInstance);
+      dependencies.scopeInstance = scopeInstance;
+      scopeInstance.scope = createReactScope(scopeInstance);
+    } else {
+      // Switch the scopeInstace fiber in commit phase
+      currentlyRenderingFiber.effectTag |= UpdateEffect;
+    }
+    return ((scopeInstance.scope: any): ReactScope);
+  }
+  // We use a feature flag above, so we need to trick Flow
+  // to make it not complain.
+  return (undefined: any);
+}
+
 export const ContextOnlyDispatcher: Dispatcher = {
   readContext,
 
@@ -1364,6 +1400,7 @@ export const ContextOnlyDispatcher: Dispatcher = {
   useResponder: throwInvalidHookError,
   useDeferredValue: throwInvalidHookError,
   useTransition: throwInvalidHookError,
+  useScope: throwInvalidHookError,
 };
 
 const HooksDispatcherOnMount: Dispatcher = {
@@ -1382,6 +1419,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   useResponder: createDeprecatedResponderListener,
   useDeferredValue: mountDeferredValue,
   useTransition: mountTransition,
+  useScope: readReactScope,
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
@@ -1400,6 +1438,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useResponder: createDeprecatedResponderListener,
   useDeferredValue: updateDeferredValue,
   useTransition: updateTransition,
+  useScope: readReactScope,
 };
 
 let HooksDispatcherOnMountInDEV: Dispatcher | null = null;
@@ -1547,6 +1586,11 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountTransition(config);
     },
+    useScope(): ReactScope {
+      currentHookNameInDev = 'useScope';
+      mountHookTypesDev();
+      return readReactScope();
+    },
   };
 
   HooksDispatcherOnMountWithHookTypesInDEV = {
@@ -1664,6 +1708,11 @@ if (__DEV__) {
       updateHookTypesDev();
       return mountTransition(config);
     },
+    useScope(): ReactScope {
+      currentHookNameInDev = 'useScope';
+      updateHookTypesDev();
+      return readReactScope();
+    },
   };
 
   HooksDispatcherOnUpdateInDEV = {
@@ -1780,6 +1829,11 @@ if (__DEV__) {
       currentHookNameInDev = 'useTransition';
       updateHookTypesDev();
       return updateTransition(config);
+    },
+    useScope(): ReactScope {
+      currentHookNameInDev = 'useScope';
+      updateHookTypesDev();
+      return readReactScope();
     },
   };
 
@@ -1912,6 +1966,12 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountTransition(config);
     },
+    useScope(): ReactScope {
+      currentHookNameInDev = 'useScope';
+      warnInvalidHookAccess();
+      mountHookTypesDev();
+      return readReactScope();
+    },
   };
 
   InvalidNestedHooksDispatcherOnUpdateInDEV = {
@@ -2042,6 +2102,12 @@ if (__DEV__) {
       warnInvalidHookAccess();
       updateHookTypesDev();
       return updateTransition(config);
+    },
+    useScope(): ReactScope {
+      currentHookNameInDev = 'useScope';
+      warnInvalidHookAccess();
+      updateHookTypesDev();
+      return readReactScope();
     },
   };
 }

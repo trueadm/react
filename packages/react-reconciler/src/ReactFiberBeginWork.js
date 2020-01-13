@@ -41,7 +41,6 @@ import {
   LazyComponent,
   IncompleteClassComponent,
   FundamentalComponent,
-  ScopeComponent,
   Chunk,
 } from 'shared/ReactWorkTags';
 import {
@@ -64,7 +63,6 @@ import {
   enableSuspenseServerRenderer,
   enableFundamentalAPI,
   warnAboutDefaultPropsOnFunctionComponents,
-  enableScopeAPI,
   enableChunksAPI,
 } from 'shared/ReactFeatureFlags';
 import invariant from 'shared/invariant';
@@ -2767,19 +2765,6 @@ function updateFundamentalComponent(
   return workInProgress.child;
 }
 
-function updateScopeComponent(current, workInProgress, renderExpirationTime) {
-  const nextProps = workInProgress.pendingProps;
-  const nextChildren = nextProps.children;
-
-  reconcileChildren(
-    current,
-    workInProgress,
-    nextChildren,
-    renderExpirationTime,
-  );
-  return workInProgress.child;
-}
-
 export function markWorkInProgressReceivedUpdate() {
   didReceiveUpdate = true;
 }
@@ -3269,16 +3254,6 @@ function beginWork(
     case FundamentalComponent: {
       if (enableFundamentalAPI) {
         return updateFundamentalComponent(
-          current,
-          workInProgress,
-          renderExpirationTime,
-        );
-      }
-      break;
-    }
-    case ScopeComponent: {
-      if (enableScopeAPI) {
-        return updateScopeComponent(
           current,
           workInProgress,
           renderExpirationTime,

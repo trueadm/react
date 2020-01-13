@@ -9,10 +9,7 @@
 
 import type {Fiber} from './ReactFiber';
 import type {ExpirationTime} from './ReactFiberExpirationTime';
-import type {
-  ReactFundamentalComponentInstance,
-  ReactScopeInstance,
-} from 'shared/ReactTypes';
+import type {ReactFundamentalComponentInstance} from 'shared/ReactTypes';
 import type {FiberRoot} from './ReactFiberRoot';
 import type {
   Instance,
@@ -50,7 +47,6 @@ import {
   LazyComponent,
   IncompleteClassComponent,
   FundamentalComponent,
-  ScopeComponent,
   Chunk,
 } from 'shared/ReactWorkTags';
 import {NoMode, BlockingMode} from './ReactTypeOfMode';
@@ -118,7 +114,6 @@ import {
   enableSuspenseServerRenderer,
   enableDeprecatedFlareAPI,
   enableFundamentalAPI,
-  enableScopeAPI,
   enableChunksAPI,
 } from 'shared/ReactFeatureFlags';
 import {
@@ -131,7 +126,6 @@ import {createFundamentalStateInstance} from './ReactFiberFundamental';
 import {Never} from './ReactFiberExpirationTime';
 import {resetChildFibers} from './ReactChildFiber';
 import {updateDeprecatedEventListeners} from './ReactFiberDeprecatedEvents';
-import {createScopeMethods} from './ReactFiberScope';
 
 function markUpdate(workInProgress: Fiber) {
   // Tag the fiber with an update effect. This turns a Placement into
@@ -1240,55 +1234,6 @@ function completeWork(
           );
           if (shouldUpdate) {
             markUpdate(workInProgress);
-          }
-        }
-        return null;
-      }
-      break;
-    }
-    case ScopeComponent: {
-      if (enableScopeAPI) {
-        if (current === null) {
-          const type = workInProgress.type;
-          const scopeInstance: ReactScopeInstance = {
-            fiber: workInProgress,
-            methods: null,
-          };
-          workInProgress.stateNode = scopeInstance;
-          scopeInstance.methods = createScopeMethods(type, scopeInstance);
-          if (enableDeprecatedFlareAPI) {
-            const listeners = newProps.DEPRECATED_flareListeners;
-            if (listeners != null) {
-              const rootContainerInstance = getRootHostContainer();
-              updateDeprecatedEventListeners(
-                listeners,
-                workInProgress,
-                rootContainerInstance,
-              );
-            }
-          }
-          if (workInProgress.ref !== null) {
-            markRef(workInProgress);
-            markUpdate(workInProgress);
-          }
-        } else {
-          if (enableDeprecatedFlareAPI) {
-            const prevListeners =
-              current.memoizedProps.DEPRECATED_flareListeners;
-            const nextListeners = newProps.DEPRECATED_flareListeners;
-            if (
-              prevListeners !== nextListeners ||
-              workInProgress.ref !== null
-            ) {
-              markUpdate(workInProgress);
-            }
-          } else {
-            if (workInProgress.ref !== null) {
-              markUpdate(workInProgress);
-            }
-          }
-          if (current.ref !== workInProgress.ref) {
-            markRef(workInProgress);
           }
         }
         return null;

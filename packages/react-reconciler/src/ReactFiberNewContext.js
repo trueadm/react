@@ -390,6 +390,7 @@ export function readContext<T>(
         expirationTime: NoWork,
         firstContext: contextItem,
         responders: null,
+        scopeInstance: null,
       };
     } else {
       // Append a new context item.
