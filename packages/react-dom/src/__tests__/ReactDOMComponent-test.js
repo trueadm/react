@@ -14,6 +14,7 @@ describe('ReactDOMComponent', () => {
   let ReactTestUtils;
   let ReactDOM;
   let ReactDOMServer;
+  let Scheduler;
 
   function normalizeCodeLocInfo(str) {
     return str && str.replace(/\(at .+?:\d+\)/g, '(at **)');
@@ -25,6 +26,7 @@ describe('ReactDOMComponent', () => {
     ReactDOM = require('react-dom');
     ReactDOMServer = require('react-dom/server');
     ReactTestUtils = require('react-dom/test-utils');
+    Scheduler = require('scheduler');
   });
 
   describe('updateDOM', () => {
@@ -1449,6 +1451,32 @@ describe('ReactDOMComponent', () => {
         expect(console.log.calls.argsFor(0)[0]).toContain('onError called');
         expect(console.log.calls.argsFor(1)[0]).toContain('onLoad called');
       }
+    });
+
+    it.only('onLoad should work correctly in concurrent mode', () => {
+      const container = document.createElement('div');
+      const root = ReactDOM.createRoot(container);
+      const onLoad = jest.fn();
+
+      function Sibling1() {
+        Scheduler.unstable_yieldValue('First')
+        return <img onLoad={onLoad} />
+      }
+
+      function Sibling2() {
+        Scheduler.unstable_yieldValue('Second')
+        return <img onLoad={onLoad} />
+      }
+
+      root.render(
+        <div>
+          <Sibling1 />
+          <Sibling2 />
+        </div>,
+      );
+
+      expect(Scheduler).toFlushAndYieldThrough(['First'])
+
     });
 
     it('should receive a load event on <link> elements', () => {
