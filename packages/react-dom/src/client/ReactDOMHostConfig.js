@@ -13,6 +13,7 @@ import {
   precacheFiberNode,
   updateFiberProps,
   getClosestInstanceFromNode,
+  getListenersFromTarget,
 } from './ReactDOMComponentTree';
 import {
   createElement,
@@ -526,6 +527,22 @@ export function beforeRemoveInstance(
     instance === selectionInformation.focusedElem
   ) {
     dispatchBeforeDetachedBlur(((instance: any): HTMLElement));
+  }
+  if (enableUseEventAPI) {
+    // It's unfortunate that we have to do this cleanup, but
+    // it's necessary otherwise we will leak the host instances
+    // from the useEvent hook instances Map. We call destroy
+    // on each listener to ensure we properly remove the instance
+    // from the instances Map. Note: we have this Map so that we
+    // can properly unmount instances when the function component
+    // that the hook is attached to gets unmounted.
+    const listenersSet = getListenersFromTarget(instance);
+    if (listenersSet !== null) {
+      const listeners = Array.from(listenersSet);
+      for (let i = 0; i < listeners.length; i++) {
+        listeners[i].destroy(instance);
+      }
+    }
   }
 }
 
@@ -1108,9 +1125,11 @@ export function validateEventListenerTarget(
   listener: ?(Event) => void,
 ): boolean {
   if (enableUseEventAPI) {
+    const possibleTargetNode = ((target: any): Node);
     if (
-      target &&
-      (target === window || getClosestInstanceFromNode(((target: any): Node)))
+      possibleTargetNode &&
+      (possibleTargetNode === window ||
+        getClosestInstanceFromNode(possibleTargetNode))
     ) {
       if (listener == null || typeof listener === 'function') {
         return true;
@@ -1123,7 +1142,7 @@ export function validateEventListenerTarget(
       }
     }
     if (__DEV__) {
-      if (target && (target: any).nodeType === DOCUMENT_NODE) {
+      if (possibleTargetNode && possibleTargetNode.nodeType === DOCUMENT_NODE) {
         console.warn(
           'Event listener method setListener() from useEvent() hook requires the first argument to be a valid' +
             ' DOM node that was rendered and managed by React or a "window" object. It looks like' +

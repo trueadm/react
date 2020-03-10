@@ -16,6 +16,8 @@ import {HostComponent} from 'shared/ReactWorkTags';
 import {traverseEnterLeave} from 'shared/ReactTreeTraversal';
 import accumulateInto from './accumulateInto';
 import forEachAccumulated from './forEachAccumulated';
+import {enableUseEventAPI} from 'shared/ReactFeatureFlags';
+import {getListenersFromTarget} from 'react-dom/src/client/ReactDOMComponentTree';
 
 /**
  * A small set of propagation patterns, each of which will accept a small amount
@@ -79,6 +81,7 @@ export function accumulateDirectDispatches(
 export function accumulateTwoPhaseDispatches(
   event: ReactSyntheticEvent,
   skipTarget?: boolean,
+  accumulateUseEventListeners?: boolean,
 ): void {
   const phasedRegistrationNames = event.dispatchConfig.phasedRegistrationNames;
   if (phasedRegistrationNames == null) {
@@ -99,12 +102,12 @@ export function accumulateTwoPhaseDispatches(
   while (node !== null) {
     // We only care for listeners that are on HostComponents (i.e. <div>)
     if (node.tag === HostComponent) {
-      if (enableUseEventAPI) {
+      if (enableUseEventAPI && accumulateUseEventListeners) {
         // useEvent event listeners
         const instance = node.stateNode;
         const targetType = event.type;
-        const listeners = getListenersFromNode(instance);
-  
+        const listeners = getListenersFromTarget(instance);
+
         if (listeners !== null) {
           const listenersArr = Array.from(listeners);
           for (let i = 0; i < listenersArr.length; i++) {

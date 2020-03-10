@@ -63,6 +63,11 @@ declare module 'EventListener' {
       callback: Function,
       passive: boolean,
     ) => mixed,
-    ...
+    bubbleWithPassiveFlag: (
+      target: EventTarget,
+      type: string,
+      callback: Function,
+      passive: boolean,
+    ) => mixed,
   };
 }

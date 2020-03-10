@@ -62,7 +62,7 @@ import {
 } from './DOMTopLevelEventTypes';
 import {
   getClosestInstanceFromNode,
-  getListenersFromNode,
+  getListenersFromTarget,
   initListenersSet,
 } from '../client/ReactDOMComponentTree';
 import {DOCUMENT_NODE, COMMENT_NODE} from '../shared/HTMLNodeType';
@@ -150,7 +150,7 @@ function dispatchEventsForPlugins(
 
 export function listenToTopLevelEvent(
   topLevelType: DOMTopLevelEventType,
-  rootContainerElement: Element,
+  targetContainer: EventTarget,
   listenerMap: Map<DOMTopLevelEventType | string, null | (any => void)>,
   passive?: boolean,
   priority?: EventPriority,
@@ -158,7 +158,7 @@ export function listenToTopLevelEvent(
   if (!listenerMap.has(topLevelType)) {
     const isCapturePhase = capturePhaseEvents.has(topLevelType);
     addTrappedEventListener(
-      rootContainerElement,
+      targetContainer,
       topLevelType,
       isCapturePhase,
       false,
@@ -334,31 +334,41 @@ function getNearestRootOrPortalContainer(instance: Element): Element {
 }
 
 export function attachElementListener(listener: ReactDOMListener): void {
-  const {event, instance} = listener;
+  const {event, target} = listener;
   const {passive, priority, type} = event;
-  const rootContainerElement = getNearestRootOrPortalContainer(
-    ((instance: any): Element),
-  );
-  const listenerMap = getListenerMapForElement(rootContainerElement);
+  let containerEventTarget = target;
+
+  // If we the target is a managed React element, then we need to
+  // find the nearest root/portal contained to attach the event listener
+  // to. If it's not managed, i.e. the window, then we just attach
+  // the listener to the target.
+  const possibleManagedTarget = ((target: any): Element);
+  if (getClosestInstanceFromNode(possibleManagedTarget)) {
+    containerEventTarget = getNearestRootOrPortalContainer(
+      possibleManagedTarget,
+    );
+  }
+
+  const listenerMap = getListenerMapForElement(containerEventTarget);
   listenToTopLevelEvent(
     ((type: any): DOMTopLevelEventType),
-    rootContainerElement,
+    containerEventTarget,
     listenerMap,
     passive,
     priority,
   );
 
-  let listeners = getListenersFromNode(instance);
+  let listeners = getListenersFromTarget(target);
   if (listeners === null) {
     listeners = new Set();
-    initListenersSet(instance, listeners);
+    initListenersSet(target, listeners);
   }
   listeners.add(listener);
 }
 
 export function detachElementListener(listener: ReactDOMListener): void {
-  const {instance} = listener;
-  const listeners = getListenersFromNode(instance);
+  const {target} = listener;
+  const listeners = getListenersFromTarget(target);
 
   if (listeners !== null) {
     listeners.delete(listener);

@@ -11,6 +11,7 @@ import type {AnyNativeEvent} from 'legacy-events/PluginModuleType';
 import type {FiberRoot} from 'react-reconciler/src/ReactFiberRoot';
 import type {Container, SuspenseInstance} from '../client/ReactDOMHostConfig';
 import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
+import type {EventPriority} from 'shared/ReactTypes';
 
 // Intentionally not named imports because Rollup would use dynamic dispatch for
 // CommonJS interop named imports.
@@ -47,6 +48,7 @@ import {
   addEventBubbleListener,
   addEventCaptureListener,
   addEventCaptureListenerWithPassiveFlag,
+  addEventBubbleListenerWithPassiveFlag,
 } from './EventListener';
 import getEventTarget from './getEventTarget';
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
@@ -57,6 +59,7 @@ import {
   enableDeprecatedFlareAPI,
   enableModernEventSystem,
   enableLegacyFBPrimerSupport,
+  enableUseEventAPI,
 } from 'shared/ReactFeatureFlags';
 import {
   UserBlockingEvent,
@@ -134,10 +137,18 @@ export function addTrappedEventListener(
   topLevelType: DOMTopLevelEventType,
   capture: boolean,
   legacyFBSupport?: boolean,
+  passive?: boolean,
+  priority?: EventPriority,
 ): any => void {
+  const eventPriority =
+    priority !== undefined
+      ? priority
+      : getEventPriorityForPluginSystem(topLevelType);
   let listener;
   let listenerWrapper;
-  switch (getEventPriorityForPluginSystem(topLevelType)) {
+  let eventFlags = PLUGIN_EVENT_SYSTEM;
+
+  switch (eventPriority) {
     case DiscreteEvent:
       listenerWrapper = dispatchDiscreteEvent;
       break;
@@ -149,10 +160,15 @@ export function addTrappedEventListener(
       listenerWrapper = dispatchEvent;
       break;
   }
+  // If passive option is not supported, then the event will be
+  // active and not passive.
+  if (passive === true && !passiveBrowserEventsSupported) {
+    passive = false;
+  }
   listener = listenerWrapper.bind(
     null,
     topLevelType,
-    PLUGIN_EVENT_SYSTEM,
+    eventFlags,
     targetContainer,
   );
 
@@ -188,17 +204,35 @@ export function addTrappedEventListener(
     };
   }
   if (capture) {
-    fbListener = addEventCaptureListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
+    if (enableUseEventAPI && passive !== undefined) {
+      fbListener = addEventCaptureListenerWithPassiveFlag(
+        targetContainer,
+        rawEventName,
+        listener,
+        passive,
+      );
+    } else {
+      fbListener = addEventCaptureListener(
+        targetContainer,
+        rawEventName,
+        listener,
+      );
+    }
   } else {
-    fbListener = addEventBubbleListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
+    if (enableUseEventAPI && passive !== undefined) {
+      fbListener = addEventBubbleListenerWithPassiveFlag(
+        targetContainer,
+        rawEventName,
+        listener,
+        passive,
+      );
+    } else {
+      fbListener = addEventBubbleListener(
+        targetContainer,
+        rawEventName,
+        listener,
+      );
+    }
   }
   // If we have an fbListener, then use that.
   // We'll only have one if we use the forked
