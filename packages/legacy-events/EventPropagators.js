@@ -99,6 +99,32 @@ export function accumulateTwoPhaseDispatches(
   while (node !== null) {
     // We only care for listeners that are on HostComponents (i.e. <div>)
     if (node.tag === HostComponent) {
+      if (enableUseEventAPI) {
+        // useEvent event listeners
+        const instance = node.stateNode;
+        const targetType = event.type;
+        const listeners = getListenersFromNode(instance);
+  
+        if (listeners !== null) {
+          const listenersArr = Array.from(listeners);
+          for (let i = 0; i < listenersArr.length; i++) {
+            const listener = listenersArr[i];
+            const {
+              callback,
+              event: {capture, type},
+            } = listener;
+            if (type === targetType) {
+              if (capture) {
+                dispatchListeners.unshift(callback);
+                dispatchInstances.unshift(node);
+              } else {
+                dispatchListeners.push(callback);
+                dispatchInstances.push(node);
+              }
+            }
+          }
+        }
+      }
       // Standard React on* listeners, i.e. onClick prop
       const captureListener = getListener(node, captured);
       if (captureListener != null) {

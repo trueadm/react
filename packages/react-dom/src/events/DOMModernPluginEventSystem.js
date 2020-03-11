@@ -14,6 +14,7 @@ import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {PluginModule} from 'legacy-events/PluginModuleType';
 import type {ReactSyntheticEvent} from 'legacy-events/ReactSyntheticEventType';
 import type {ReactDOMListener} from 'shared/ReactDOMTypes';
+import type {EventPriority} from 'shared/ReactTypes';
 
 import {registrationNameDependencies} from 'legacy-events/EventPluginRegistry';
 import {batchedEventUpdates} from 'legacy-events/ReactGenericBatching';
@@ -59,7 +60,11 @@ import {
   TOP_PROGRESS,
   TOP_PLAYING,
 } from './DOMTopLevelEventTypes';
-import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
+import {
+  getClosestInstanceFromNode,
+  getListenersFromNode,
+  initListenersSet,
+} from '../client/ReactDOMComponentTree';
 import {DOCUMENT_NODE, COMMENT_NODE} from '../shared/HTMLNodeType';
 
 import {enableLegacyFBPrimerSupport} from 'shared/ReactFeatureFlags';
@@ -147,10 +152,19 @@ export function listenToTopLevelEvent(
   topLevelType: DOMTopLevelEventType,
   rootContainerElement: Element,
   listenerMap: Map<DOMTopLevelEventType | string, null | (any => void)>,
+  passive?: boolean,
+  priority?: EventPriority,
 ): void {
   if (!listenerMap.has(topLevelType)) {
     const isCapturePhase = capturePhaseEvents.has(topLevelType);
-    addTrappedEventListener(rootContainerElement, topLevelType, isCapturePhase);
+    addTrappedEventListener(
+      rootContainerElement,
+      topLevelType,
+      isCapturePhase,
+      false,
+      passive,
+      priority,
+    );
     listenerMap.set(topLevelType, null);
   }
 }
@@ -307,10 +321,46 @@ export function dispatchEventForPluginEventSystem(
   );
 }
 
+function getNearestRootOrPortalContainer(instance: Element): Element {
+  let node = getClosestInstanceFromNode(instance);
+  while (node !== null) {
+    const tag = node.tag;
+    if (tag === HostRoot || tag === HostPortal) {
+      return node.stateNode.containerInfo;
+    }
+    node = node.return;
+  }
+  return instance;
+}
+
 export function attachElementListener(listener: ReactDOMListener): void {
-  // TODO
+  const {event, instance} = listener;
+  const {passive, priority, type} = event;
+  const rootContainerElement = getNearestRootOrPortalContainer(
+    ((instance: any): Element),
+  );
+  const listenerMap = getListenerMapForElement(rootContainerElement);
+  listenToTopLevelEvent(
+    ((type: any): DOMTopLevelEventType),
+    rootContainerElement,
+    listenerMap,
+    passive,
+    priority,
+  );
+
+  let listeners = getListenersFromNode(instance);
+  if (listeners === null) {
+    listeners = new Set();
+    initListenersSet(instance, listeners);
+  }
+  listeners.add(listener);
 }
 
 export function detachElementListener(listener: ReactDOMListener): void {
-  // TODO
+  const {instance} = listener;
+  const listeners = getListenersFromNode(instance);
+
+  if (listeners !== null) {
+    listeners.delete(listener);
+  }
 }
