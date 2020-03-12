@@ -262,7 +262,7 @@ function dispatchUserBlockingUpdate(
 export function dispatchEvent(
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  targetContainer: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): void {
   if (!_enabled) {
@@ -276,7 +276,7 @@ export function dispatchEvent(
       null, // Flags that we're not actually blocked on anything as far as we know.
       topLevelType,
       eventSystemFlags,
-      container,
+      targetContainer,
       nativeEvent,
     );
     return;
@@ -285,7 +285,7 @@ export function dispatchEvent(
   const blockedOn = attemptToDispatchEvent(
     topLevelType,
     eventSystemFlags,
-    container,
+    targetContainer,
     nativeEvent,
   );
 
@@ -301,7 +301,7 @@ export function dispatchEvent(
       blockedOn,
       topLevelType,
       eventSystemFlags,
-      container,
+      targetContainer,
       nativeEvent,
     );
     return;
@@ -312,7 +312,7 @@ export function dispatchEvent(
       blockedOn,
       topLevelType,
       eventSystemFlags,
-      container,
+      targetContainer,
       nativeEvent,
     )
   ) {
@@ -333,7 +333,7 @@ export function dispatchEvent(
           eventSystemFlags,
           nativeEvent,
           null,
-          container,
+          targetContainer,
         );
       } else {
         dispatchEventForLegacyPluginEventSystem(
@@ -361,7 +361,7 @@ export function dispatchEvent(
         eventSystemFlags,
         nativeEvent,
         null,
-        container,
+        targetContainer,
       );
     } else {
       dispatchEventForLegacyPluginEventSystem(
@@ -378,7 +378,7 @@ export function dispatchEvent(
 export function attemptToDispatchEvent(
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  targetContainer: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): null | Container | SuspenseInstance {
   // TODO: Warn if _enabled is false.
@@ -432,7 +432,7 @@ export function attemptToDispatchEvent(
           eventSystemFlags,
           nativeEvent,
           targetInst,
-          container,
+          targetContainer,
         );
       } else {
         dispatchEventForLegacyPluginEventSystem(
@@ -460,7 +460,7 @@ export function attemptToDispatchEvent(
         eventSystemFlags,
         nativeEvent,
         targetInst,
-        container,
+        targetContainer,
       );
     } else {
       dispatchEventForLegacyPluginEventSystem(

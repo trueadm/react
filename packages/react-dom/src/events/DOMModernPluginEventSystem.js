@@ -107,7 +107,7 @@ function dispatchEventsForPlugins(
   eventSystemFlags: EventSystemFlags,
   nativeEvent: AnyNativeEvent,
   targetInst: null | Fiber,
-  rootContainer: EventTarget,
+  targetContainer: null | EventTarget,
 ): void {
   const nativeEventTarget = getEventTarget(nativeEvent);
   const syntheticEvents: Array<ReactSyntheticEvent> = [];
@@ -121,7 +121,7 @@ function dispatchEventsForPlugins(
         nativeEvent,
         nativeEventTarget,
         eventSystemFlags,
-        rootContainer,
+        targetContainer,
       );
       if (isArray(extractedEvents)) {
         // Flow complains about @@iterator being missing in ReactSyntheticEvent,
@@ -208,12 +208,12 @@ function willDeferLaterForFBLegacyPrimer(nativeEvent: any): boolean {
 
 function isMatchingRootContainer(
   grandContainer: Element,
-  rootContainer: EventTarget,
+  targetContainer: EventTarget,
 ): boolean {
   return (
-    grandContainer === rootContainer ||
+    grandContainer === targetContainer ||
     (grandContainer.nodeType === COMMENT_NODE &&
-      grandContainer.parentNode === rootContainer)
+      grandContainer.parentNode === targetContainer)
   );
 }
 
@@ -222,77 +222,85 @@ export function dispatchEventForPluginEventSystem(
   eventSystemFlags: EventSystemFlags,
   nativeEvent: AnyNativeEvent,
   targetInst: null | Fiber,
-  rootContainer: EventTarget,
+  targetContainer: null | EventTarget,
 ): void {
   let ancestorInst = targetInst;
-  // Given the rootContainer can be any EventTarget, if the
-  // target is that of a DOM node (other than the document)
-  // then we'll attempt to find the correct ancestor root.
-  // Note: the rootContainer can be other things like
-  // "window" or other valid EventTarget objects.
-  const possibleContainerNodeType = ((rootContainer: any): Node).nodeType;
-  if (
-    possibleContainerNodeType !== undefined &&
-    possibleContainerNodeType !== DOCUMENT_NODE
-  ) {
-    // If we detect the FB legacy primer system, we
-    // defer the event to the "document" with a one
-    // time event listener so we can defer the event.
+  if (targetContainer !== null) {
+    const possibleTargetContainerNode = ((targetContainer: any): Node);
+    // Given the rootContainer can be any EventTarget, if the
+    // target is that of a DOM node (other than the document)
+    // then we'll attempt to find the correct ancestor root.
+    // Note: the rootContainer can be other things like
+    // "window" or other valid EventTarget objects.
+    const possibleContainerNodeType = possibleTargetContainerNode.nodeType;
     if (
-      enableLegacyFBPrimerSupport &&
-      willDeferLaterForFBLegacyPrimer(nativeEvent)
+      possibleContainerNodeType !== undefined &&
+      possibleContainerNodeType !== DOCUMENT_NODE
     ) {
-      return;
-    }
-    // The below logic attempts to work out if we need to change
-    // the target fiber to a different ancestor. We had similar logic
-    // in the legacy event system, except the big difference between
-    // systems is that the modern event system now has an event listener
-    // attached to each React Root and React Portal Root. Together,
-    // the DOM nodes representing these roots are the "rootContainer".
-    // To figure out which ancestor instance we should use, we traverse
-    // up the fiber tree from the target instance and attempt to find
-    // root boundaries that match that of our current "rootContainer".
-    // If we find that "rootContainer", we find the parent fiber
-    // sub-tree for that root and make that our ancestor instance.
-    let node = targetInst;
-
-    while (true) {
-      if (node === null) {
+      // If we detect the FB legacy primer system, we
+      // defer the event to the "document" with a one
+      // time event listener so we can defer the event.
+      if (
+        enableLegacyFBPrimerSupport &&
+        willDeferLaterForFBLegacyPrimer(nativeEvent)
+      ) {
         return;
       }
-      if (node.tag === HostRoot || node.tag === HostPortal) {
-        const container = node.stateNode.containerInfo;
-        if (isMatchingRootContainer(container, rootContainer)) {
-          break;
-        }
-        if (node.tag === HostPortal) {
-          // The target is a portal, but it's not the rootContainer we're looking for.
-          // Normally portals handle their own events all the way down to the root.
-          // So we should be able to stop now. However, we don't know if this portal
-          // was part of *our* root.
-          let grandNode = node.return;
-          while (grandNode !== null) {
-            if (grandNode.tag === HostRoot || grandNode.tag === HostPortal) {
-              const grandContainer = grandNode.stateNode.containerInfo;
-              if (isMatchingRootContainer(grandContainer, rootContainer)) {
-                // This is the rootContainer we're looking for and we found it as
-                // a parent of the Portal. That means we can ignore it because the
-                // Portal will bubble through to us.
-                return;
-              }
-            }
-            grandNode = grandNode.return;
-          }
-        }
-        const parentSubtreeInst = getClosestInstanceFromNode(container);
-        if (parentSubtreeInst === null) {
+      // The below logic attempts to work out if we need to change
+      // the target fiber to a different ancestor. We had similar logic
+      // in the legacy event system, except the big difference between
+      // systems is that the modern event system now has an event listener
+      // attached to each React Root and React Portal Root. Together,
+      // the DOM nodes representing these roots are the "rootContainer".
+      // To figure out which ancestor instance we should use, we traverse
+      // up the fiber tree from the target instance and attempt to find
+      // root boundaries that match that of our current "rootContainer".
+      // If we find that "rootContainer", we find the parent fiber
+      // sub-tree for that root and make that our ancestor instance.
+      let node = targetInst;
+
+      while (true) {
+        if (node === null) {
           return;
         }
-        node = ancestorInst = parentSubtreeInst;
-        continue;
+        if (node.tag === HostRoot || node.tag === HostPortal) {
+          const container = node.stateNode.containerInfo;
+          if (isMatchingRootContainer(container, possibleTargetContainerNode)) {
+            break;
+          }
+          if (node.tag === HostPortal) {
+            // The target is a portal, but it's not the rootContainer we're looking for.
+            // Normally portals handle their own events all the way down to the root.
+            // So we should be able to stop now. However, we don't know if this portal
+            // was part of *our* root.
+            let grandNode = node.return;
+            while (grandNode !== null) {
+              if (grandNode.tag === HostRoot || grandNode.tag === HostPortal) {
+                const grandContainer = grandNode.stateNode.containerInfo;
+                if (
+                  isMatchingRootContainer(
+                    grandContainer,
+                    possibleTargetContainerNode,
+                  )
+                ) {
+                  // This is the rootContainer we're looking for and we found it as
+                  // a parent of the Portal. That means we can ignore it because the
+                  // Portal will bubble through to us.
+                  return;
+                }
+              }
+              grandNode = grandNode.return;
+            }
+          }
+          const parentSubtreeInst = getClosestInstanceFromNode(container);
+          if (parentSubtreeInst === null) {
+            return;
+          }
+          node = ancestorInst = parentSubtreeInst;
+          continue;
+        }
+        node = node.return;
       }
-      node = node.return;
     }
   }
 
@@ -302,7 +310,7 @@ export function dispatchEventForPluginEventSystem(
       eventSystemFlags,
       nativeEvent,
       ancestorInst,
-      rootContainer,
+      targetContainer,
     ),
   );
 }

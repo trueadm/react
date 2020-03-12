@@ -126,7 +126,7 @@ type QueuedReplayableEvent = {|
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
   nativeEvent: AnyNativeEvent,
-  container: EventTarget,
+  targetContainer: null | EventTarget,
 |};
 
 let hasScheduledReplayAttempt = false;
@@ -285,7 +285,7 @@ function createQueuedReplayableEvent(
   blockedOn: null | Container | SuspenseInstance,
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  targetContainer: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): QueuedReplayableEvent {
   return {
@@ -293,7 +293,7 @@ function createQueuedReplayableEvent(
     topLevelType,
     eventSystemFlags: eventSystemFlags | IS_REPLAYED,
     nativeEvent,
-    container,
+    targetContainer,
   };
 }
 
@@ -301,7 +301,7 @@ export function queueDiscreteEvent(
   blockedOn: null | Container | SuspenseInstance,
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  container: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): void {
   const queuedEvent = createQueuedReplayableEvent(
@@ -376,7 +376,7 @@ function accumulateOrCreateContinuousQueuedReplayableEvent(
   blockedOn: null | Container | SuspenseInstance,
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  targetContainer: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): QueuedReplayableEvent {
   if (
@@ -387,7 +387,7 @@ function accumulateOrCreateContinuousQueuedReplayableEvent(
       blockedOn,
       topLevelType,
       eventSystemFlags,
-      container,
+      targetContainer,
       nativeEvent,
     );
     if (blockedOn !== null) {
@@ -411,7 +411,7 @@ export function queueIfContinuousEvent(
   blockedOn: null | Container | SuspenseInstance,
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
-  container: EventTarget,
+  container: null | EventTarget,
   nativeEvent: AnyNativeEvent,
 ): boolean {
   // These set relatedTarget to null because the replayed event will be treated as if we
@@ -557,7 +557,7 @@ function attemptReplayContinuousQueuedEvent(
   let nextBlockedOn = attemptToDispatchEvent(
     queuedEvent.topLevelType,
     queuedEvent.eventSystemFlags,
-    queuedEvent.container,
+    queuedEvent.targetContainer,
     queuedEvent.nativeEvent,
   );
   if (nextBlockedOn !== null) {
@@ -600,7 +600,7 @@ function replayUnblockedEvents() {
     let nextBlockedOn = attemptToDispatchEvent(
       nextDiscreteEvent.topLevelType,
       nextDiscreteEvent.eventSystemFlags,
-      nextDiscreteEvent.container,
+      nextDiscreteEvent.targetContainer,
       nextDiscreteEvent.nativeEvent,
     );
     if (nextBlockedOn !== null) {
