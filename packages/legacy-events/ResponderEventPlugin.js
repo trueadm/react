@@ -16,7 +16,6 @@ import {
 import {
   accumulateDirectDispatches,
   accumulateTwoPhaseDispatches,
-  accumulateTwoPhaseDispatchesSkipTarget,
 } from './EventPropagators';
 import ResponderSyntheticEvent from './ResponderSyntheticEvent';
 import ResponderTouchHistoryStore from './ResponderTouchHistoryStore';
@@ -373,7 +372,7 @@ function setResponderAndExtractTransfer(
   );
   shouldSetEvent.touchHistory = ResponderTouchHistoryStore.touchHistory;
   if (skipOverBubbleShouldSetFrom) {
-    accumulateTwoPhaseDispatchesSkipTarget(shouldSetEvent);
+    accumulateTwoPhaseDispatches(shouldSetEvent, true);
   } else {
     accumulateTwoPhaseDispatches(shouldSetEvent);
   }

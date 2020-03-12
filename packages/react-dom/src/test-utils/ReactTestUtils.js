@@ -21,6 +21,8 @@ import {ELEMENT_NODE} from '../shared/HTMLNodeType';
 import * as DOMTopLevelEventTypes from '../events/DOMTopLevelEventTypes';
 import {PLUGIN_EVENT_SYSTEM} from 'legacy-events/EventSystemFlags';
 import act from './ReactTestUtilsAct';
+import forEachAccumulated from 'legacy-events/forEachAccumulated';
+import accumulateInto from 'legacy-events/accumulateInto';
 
 const {findDOMNode} = ReactDOM;
 // Keep in sync with ReactDOMUnstableNativeDependencies.js
@@ -34,7 +36,7 @@ const [
   /* eslint-enable no-unused-vars */
   eventNameDispatchConfigs,
   accumulateTwoPhaseDispatches,
-  accumulateDirectDispatches,
+  getListener,
   enqueueStateRestore,
   restoreStateIfNeeded,
   dispatchEvent,
@@ -375,6 +377,30 @@ function nativeTouchData(x, y) {
   return {
     touches: [{pageX: x, pageY: y}],
   };
+}
+
+function accumulateDispatches(inst, ignoredDirection, event) {
+  if (inst && event && event.dispatchConfig.registrationName) {
+    const registrationName = event.dispatchConfig.registrationName;
+    const listener = getListener(inst, registrationName);
+    if (listener) {
+      event._dispatchListeners = accumulateInto(
+        event._dispatchListeners,
+        listener,
+      );
+      event._dispatchInstances = accumulateInto(event._dispatchInstances, inst);
+    }
+  }
+}
+
+function accumulateDirectDispatchesSingle(event) {
+  if (event && event.dispatchConfig.registrationName) {
+    accumulateDispatches(event._targetInst, null, event);
+  }
+}
+
+function accumulateDirectDispatches(events) {
+  forEachAccumulated(events, accumulateDirectDispatchesSingle);
 }
 
 const Simulate = {};

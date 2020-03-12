@@ -26,7 +26,7 @@ import {getNodeFromInstance} from '../client/ReactDOMComponentTree';
 import {hasSelectionCapabilities} from '../client/ReactInputSelection';
 import {DOCUMENT_NODE} from '../shared/HTMLNodeType';
 import {isListeningToAllDependencies} from './DOMEventListenerMap';
-import accumulateTwoPhaseListeners from './accumulateTwoPhaseListeners';
+import {accumulateTwoPhaseDispatches} from 'legacy-events/EventPropagators';
 
 const skipSelectionChangeEvent =
   canUseDOM && 'documentMode' in document && document.documentMode <= 11;
@@ -135,7 +135,7 @@ function constructSelectEvent(nativeEvent, nativeEventTarget) {
     syntheticEvent.type = 'select';
     syntheticEvent.target = activeElement;
 
-    accumulateTwoPhaseListeners(syntheticEvent);
+    accumulateTwoPhaseDispatches(syntheticEvent);
 
     return syntheticEvent;
   }

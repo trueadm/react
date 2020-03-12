@@ -29,7 +29,7 @@ import {updateValueIfChanged} from '../client/inputValueTracking';
 import {setDefaultValue} from '../client/ReactDOMInput';
 
 import {disableInputAttributeSyncing} from 'shared/ReactFeatureFlags';
-import accumulateTwoPhaseListeners from './accumulateTwoPhaseListeners';
+import {accumulateTwoPhaseDispatches} from 'legacy-events/EventPropagators';
 
 const eventTypes = {
   change: {
@@ -60,7 +60,7 @@ function createAndAccumulateChangeEvent(inst, nativeEvent, target) {
   event.type = 'change';
   // Flag this event loop as needing state restore.
   enqueueStateRestore(target);
-  accumulateTwoPhaseListeners(event);
+  accumulateTwoPhaseDispatches(event);
   return event;
 }
 /**

@@ -24,7 +24,7 @@ const [
   injectEventPluginsByName,
   eventNameDispatchConfigs,
   accumulateTwoPhaseDispatches,
-  accumulateDirectDispatches,
+  getListener,
   enqueueStateRestore,
   restoreStateIfNeeded,
   dispatchEvent,

@@ -50,10 +50,7 @@ import {
   eventNameDispatchConfigs,
   injectEventPluginsByName,
 } from 'legacy-events/EventPluginRegistry';
-import {
-  accumulateTwoPhaseDispatches,
-  accumulateDirectDispatches,
-} from 'legacy-events/EventPropagators';
+import getListener from 'legacy-events/getListener';
 import ReactVersion from 'shared/ReactVersion';
 import invariant from 'shared/invariant';
 import {warnUnstableRenderSubtreeIntoContainer} from 'shared/ReactFeatureFlags';
@@ -73,6 +70,7 @@ import {
   setAttemptHydrationAtCurrentPriority,
   queueExplicitHydrationTarget,
 } from '../events/ReactDOMEventReplaying';
+import {accumulateTwoPhaseDispatches} from 'legacy-events/EventPropagators';
 
 setAttemptSynchronousHydration(attemptSynchronousHydration);
 setAttemptUserBlockingHydration(attemptUserBlockingHydration);
@@ -185,7 +183,7 @@ const Internals = {
     injectEventPluginsByName,
     eventNameDispatchConfigs,
     accumulateTwoPhaseDispatches,
-    accumulateDirectDispatches,
+    getListener,
     enqueueStateRestore,
     restoreStateIfNeeded,
     dispatchEvent,

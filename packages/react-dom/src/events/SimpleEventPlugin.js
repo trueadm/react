@@ -36,7 +36,7 @@ import SyntheticTransitionEvent from './SyntheticTransitionEvent';
 import SyntheticUIEvent from './SyntheticUIEvent';
 import SyntheticWheelEvent from './SyntheticWheelEvent';
 import getEventCharCode from './getEventCharCode';
-import accumulateTwoPhaseListeners from './accumulateTwoPhaseListeners';
+import {accumulateTwoPhaseDispatches} from 'legacy-events/EventPropagators';
 
 // Only used in DEV for exhaustiveness validation.
 const knownHTMLTopLevelTypes: Array<DOMTopLevelEventType> = [
@@ -191,7 +191,7 @@ const SimpleEventPlugin: PluginModule<MouseEvent> = {
       nativeEvent,
       nativeEventTarget,
     );
-    accumulateTwoPhaseListeners(event);
+    accumulateTwoPhaseDispatches(event);
     return event;
   },
 };
