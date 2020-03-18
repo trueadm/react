@@ -42,6 +42,7 @@ import {
   IS_PASSIVE,
   IS_ACTIVE,
   PASSIVE_NOT_SUPPORTED,
+  LEGACY_FB_SUPPORT,
 } from 'legacy-events/EventSystemFlags';
 
 import {
@@ -58,7 +59,7 @@ import {passiveBrowserEventsSupported} from './checkPassiveEvents';
 import {
   enableDeprecatedFlareAPI,
   enableModernEventSystem,
-  enableLegacyFBPrimerSupport,
+  enableLegacyFBSupport,
   enableUseEventAPI,
 } from 'shared/ReactFeatureFlags';
 import {
@@ -133,7 +134,7 @@ export function addResponderEventSystemEvent(
 }
 
 export function addTrappedEventListener(
-  targetContainer: null | EventTarget,
+  targetContainer: EventTarget,
   topLevelType: DOMTopLevelEventType,
   capture: boolean,
   legacyFBSupport?: boolean,
@@ -163,11 +164,15 @@ export function addTrappedEventListener(
   if (passive === true && !passiveBrowserEventsSupported) {
     passive = false;
   }
+  const eventSystemFlags =
+    enableLegacyFBSupport && legacyFBSupport
+      ? PLUGIN_EVENT_SYSTEM | LEGACY_FB_SUPPORT
+      : PLUGIN_EVENT_SYSTEM;
 
   listener = listenerWrapper.bind(
     null,
     topLevelType,
-    PLUGIN_EVENT_SYSTEM,
+    eventSystemFlags,
     targetContainer,
   );
 
@@ -181,7 +186,10 @@ export function addTrappedEventListener(
     targetContainer = document;
   }
 
-  const validTargetContainer = ((targetContainer: any): EventTarget);
+  const targetContainerToUse =
+    enableLegacyFBSupport && legacyFBSupport
+      ? targetContainer.ownerDocument
+      : targetContainer;
 
   const rawEventName = getRawEventName(topLevelType);
   let fbListener;
@@ -197,7 +205,7 @@ export function addTrappedEventListener(
   // browsers do not support this today, and given this is
   // to support legacy code patterns, it's likely they'll
   // need support for such browsers.
-  if (enableLegacyFBPrimerSupport && legacyFBSupport) {
+  if (enableLegacyFBSupport && legacyFBSupport) {
     const originalListener = listener;
     listener = function(...p) {
       try {
@@ -206,9 +214,10 @@ export function addTrappedEventListener(
         if (fbListener) {
           fbListener.remove();
         } else {
-          validTargetContainer.removeEventListener(
+          targetContainerToUse.removeEventListener(
             ((rawEventName: any): string),
             (listener: any),
+            capture,
           );
         }
       }
@@ -218,14 +227,14 @@ export function addTrappedEventListener(
     if (enableUseEventAPI && passive !== undefined) {
       // This is only used with passive is either true or false.
       fbListener = addEventCaptureListenerWithPassiveFlag(
-        validTargetContainer,
+        targetContainerToUse,
         rawEventName,
         listener,
         passive,
       );
     } else {
       fbListener = addEventCaptureListener(
-        validTargetContainer,
+        targetContainerToUse,
         rawEventName,
         listener,
       );
@@ -234,14 +243,14 @@ export function addTrappedEventListener(
     if (enableUseEventAPI && passive !== undefined) {
       // This is only used with passive is either true or false.
       fbListener = addEventBubbleListenerWithPassiveFlag(
-        validTargetContainer,
+        targetContainerToUse,
         rawEventName,
         listener,
         passive,
       );
     } else {
       fbListener = addEventBubbleListener(
-        validTargetContainer,
+        targetContainerToUse,
         rawEventName,
         listener,
       );
