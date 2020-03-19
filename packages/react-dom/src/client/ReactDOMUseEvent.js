@@ -15,6 +15,7 @@ import type {
 
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 import invariant from 'shared/invariant';
+import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
 
 import {getEventPriorityForListenerSystem} from '../events/DOMEventProperties';
 
@@ -41,7 +42,7 @@ function resolveDispatcher() {
 }
 
 export function useEvent(
-  type: string,
+  type: DOMTopLevelEventType,
   options?: EventOptions,
 ): ReactDOMListenerMap {
   const dispatcher = resolveDispatcher();

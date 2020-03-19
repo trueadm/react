@@ -7,7 +7,6 @@
  * @flow
  */
 
-import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
 import type {RootType} from './ReactDOMRoot';
 
 import {
@@ -81,6 +80,8 @@ import {
   isDOMDocument,
   isDOMElement,
   listenToTopLevelEvent,
+  attachTargetEventListener,
+  detachTargetEventListener,
 } from '../events/DOMModernPluginEventSystem';
 import {getListenerMapForElement} from '../events/DOMEventListenerMap';
 
@@ -1112,7 +1113,7 @@ export function registerEvent(
   // Add the event listener to the target container (falling back to
   // the target if we didn't find one).
   listenToTopLevelEvent(
-    ((type: any): DOMTopLevelEventType),
+    type,
     rootContainerInstance,
     listenerMap,
     passive,
@@ -1123,10 +1124,8 @@ export function registerEvent(
 export function mountEventListener(listener: ReactDOMListener): void {
   if (enableUseEventAPI) {
     const {target} = listener;
-    if (target === window) {
-      // TODO (useEvent)
-    } else if (isDOMDocument(target)) {
-      // TODO (useEvent)
+    if (target === window || isDOMDocument(target)) {
+      attachTargetEventListener(listener);
     } else if (isDOMElement(target)) {
       attachElementListener(listener);
     }
@@ -1136,10 +1135,8 @@ export function mountEventListener(listener: ReactDOMListener): void {
 export function unmountEventListener(listener: ReactDOMListener): void {
   if (enableUseEventAPI) {
     const {target} = listener;
-    if (target === window) {
-      // TODO (useEvent)
-    } else if (isDOMDocument(target)) {
-      // TODO (useEvent)
+    if (target === window || isDOMDocument(target)) {
+      detachTargetEventListener(listener);
     } else if (isDOMElement(target)) {
       detachElementListener(listener);
     }

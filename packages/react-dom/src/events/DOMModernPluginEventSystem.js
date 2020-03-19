@@ -120,6 +120,13 @@ const capturePhaseEvents = new Set([
 
 const isArray = Array.isArray;
 
+const PossiblyWeakMap = typeof WeakMap === 'function' ? WeakMap : Map;
+// $FlowFixMe: Flow cannot handle polymorphic WeakMaps
+export const eventTargetEventListenerStore: WeakMap<
+  EventTarget,
+  Map<DOMTopLevelEventType, Set<ReactDOMListener>>,
+> = new PossiblyWeakMap();
+
 function dispatchEventsForPlugins(
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
@@ -404,7 +411,7 @@ export function attachElementListener(listener: ReactDOMListener): void {
   // Add the event listener to the target container (falling back to
   // the target if we didn't find one).
   listenToTopLevelEvent(
-    ((type: any): DOMTopLevelEventType),
+    type,
     containerEventTarget,
     listenerMap,
     passive,
@@ -428,5 +435,38 @@ export function detachElementListener(listener: ReactDOMListener): void {
   if (listeners !== null) {
     // Remove out listener from the listeners Set.
     listeners.delete(listener);
+  }
+}
+
+export function attachTargetEventListener(listener: ReactDOMListener): void {
+  const {event, target} = listener;
+  const {passive, priority, type} = event;
+  const listenerMap = getListenerMapForElement(target);
+  // Add the event listener to the TargetEvent object.
+  listenToTopLevelEvent(type, target, listenerMap, passive, priority);
+  let eventTypeMap = eventTargetEventListenerStore.get(target);
+  if (eventTypeMap === undefined) {
+    eventTypeMap = new Map();
+    eventTargetEventListenerStore.set(target, eventTypeMap);
+  }
+  // Get the listeners by the event type
+  let listeners = eventTypeMap.get(type);
+  if (listeners === undefined) {
+    listeners = new Set();
+    eventTypeMap.set(type, listeners);
+  }
+  listeners.add(listener);
+}
+
+export function detachTargetEventListener(listener: ReactDOMListener): void {
+  const {event, target} = listener;
+  const {type} = event;
+  const eventTypeMap = eventTargetEventListenerStore.get(target);
+  if (eventTypeMap !== undefined) {
+    const listeners = eventTypeMap.get(type);
+    if (listeners !== undefined) {
+      // Remove out listener from the listeners Set.
+      listeners.delete(listener);
+    }
   }
 }
