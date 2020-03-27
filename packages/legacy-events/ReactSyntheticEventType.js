@@ -30,6 +30,17 @@ export type CustomDispatchConfig = {|
   customEvent: true,
 |};
 
+export type ReactSyntheticEventDispatchQueue = {|
+  bubbled: Array<ReactSyntheticEventDispatchQueueItem>,
+  captured: Array<ReactSyntheticEventDispatchQueueItem>,
+|};
+
+export type ReactSyntheticEventDispatchQueueItem = {|
+  callback: Function,
+  currentTarget: EventTarget,
+  instance: Fiber | null,
+|};
+
 export type ReactSyntheticEvent = {|
   dispatchConfig: DispatchConfig | CustomDispatchConfig,
   getPooled: (
@@ -39,8 +50,7 @@ export type ReactSyntheticEvent = {|
     nativeEventTarget: EventTarget,
   ) => ReactSyntheticEvent,
   isPersistent: () => boolean,
-  _dispatchInstances: null | Array<Fiber | EventTarget> | Fiber | EventTarget,
-  _dispatchListeners: null | Array<Function> | Function,
   _targetInst: Fiber,
   type: string,
+  isPropagationStopped: () => boolean,
 |};

@@ -19,13 +19,14 @@ import type {Fiber} from 'react-reconciler/src/ReactFiber';
 import type {PluginModule} from 'legacy-events/PluginModuleType';
 import type {
   ReactSyntheticEvent,
+  ReactSyntheticEventDispatchQueue,
+  ReactSyntheticEventDispatchQueueItem,
   CustomDispatchConfig,
 } from 'legacy-events/ReactSyntheticEventType';
 import type {ReactDOMListener} from '../shared/ReactDOMTypes';
 
 import {registrationNameDependencies} from 'legacy-events/EventPluginRegistry';
 import {batchedEventUpdates} from 'legacy-events/ReactGenericBatching';
-import {executeDispatchesInOrder} from 'legacy-events/EventPluginUtils';
 import {plugins} from 'legacy-events/EventPluginRegistry';
 import {
   LEGACY_FB_SUPPORT,
@@ -90,6 +91,7 @@ import {
   enableLegacyFBSupport,
   enableUseEventAPI,
 } from 'shared/ReactFeatureFlags';
+import {invokeGuardedCallbackAndCatchFirstError} from 'shared/ReactErrorUtils';
 
 const capturePhaseEvents = new Set([
   TOP_FOCUS,
@@ -159,11 +161,54 @@ export const eventTargetEventListenerStore: WeakMap<
 // $FlowFixMe: Flow cannot handle polymorphic WeakMaps
 export const reactScopeListenerStore: WeakMap<
   ReactScopeMethods,
-  Map<
-    DOMTopLevelEventType,
-    {bubbled: Set<ReactDOMListener>, captured: Set<ReactDOMListener>},
-  >,
+  Map<DOMTopLevelEventType, ReactSyntheticEventDispatchQueue>,
 > = new PossiblyWeakMap();
+
+// $FlowFixMe: Flow cannot handle polymorphic WeakMaps
+const syntheticEventDispatchQueues: WeakMap<
+  ReactSyntheticEvent,
+  {
+    bubbled: Array<ReactSyntheticEventDispatch>,
+    captured: Array<ReactSyntheticEventDispatch>,
+  },
+> = new PossiblyWeakMap();
+
+function executeDispatch(
+  event: ReactSyntheticEvent,
+  callback: Function,
+  currentTarget: EventTarget,
+): void {
+  const type = event.type || 'unknown-event';
+  event.currentTarget = currentTarget;
+  invokeGuardedCallbackAndCatchFirstError(type, callback, undefined, event);
+  event.currentTarget = null;
+}
+
+function executeDispatchesInOrder(event: ReactSyntheticEvent): void {
+  const dispatchQueue = syntheticEventDispatchQueues.get(event);
+
+  if (dispatchQueue !== undefined) {
+    let previousInstance;
+    const {captured, bubbled} = dispatchQueue;
+    for (let i = captured.length - 1; i >= 0; i--) {
+      const {currentTarget, instance, callback} = captured[i];
+      if (instance !== previousInstance && event.isPropagationStopped()) {
+        break;
+      }
+      executeDispatch(event, callback, currentTarget);
+      previousInstance = instance;
+    }
+    for (let i = 0; i < bubbled.length; i++) {
+      const {currentTarget, instance, callback} = bubbled[i];
+      if (instance !== previousInstance && event.isPropagationStopped()) {
+        break;
+      }
+      executeDispatch(event, callback, currentTarget);
+      previousInstance = instance;
+    }
+    syntheticEventDispatchQueues.delete(event);
+  }
+}
 
 function dispatchEventsForPlugins(
   topLevelType: DOMTopLevelEventType,
@@ -606,4 +651,30 @@ export function detachListenerFromReactScope(listener: ReactDOMListener): void {
       }
     }
   }
+}
+
+export function createSyntheticEventDispatchQueueItem(
+  callback: Function,
+  currentTarget: EventTarget,
+  instance: Fiber | null,
+): ReactSyntheticEventDispatchQueueItem {
+  return {
+    callback,
+    currentTarget,
+    instance,
+  };
+}
+
+export function initSyntheticEventDispatchQueue(
+  event: ReactSyntheticEvent,
+): ReactSyntheticEventDispatchQueue {
+  let dispatchQueue = syntheticEventDispatchQueues.get(event);
+  if (dispatchQueue === undefined) {
+    dispatchQueue = {
+      bubbled: [],
+      captured: [],
+    };
+    syntheticEventDispatchQueues.set(event, dispatchQueue);
+  }
+  return dispatchQueue;
 }

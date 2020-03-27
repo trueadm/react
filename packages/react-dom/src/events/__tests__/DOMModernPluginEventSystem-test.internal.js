@@ -873,7 +873,7 @@ describe('DOMModernPluginEventSystem', () => {
           document.body.removeChild(portalElement);
         });
 
-        it('handle propagation of enter and leave events between portals', () => {
+        it.only('handle propagation of enter and leave events between portals', () => {
           const buttonRef = React.createRef();
           const divRef = React.createRef();
           const log = [];
@@ -2458,6 +2458,40 @@ describe('DOMModernPluginEventSystem', () => {
                 ['bubble', buttonElement],
                 ['bubble', buttonElement],
               ]);
+            });
+
+            it('handle stopPropagation correctly between scopes', () => {
+              const buttonRef = React.createRef();
+              const onClick = jest.fn(e => e.stopPropagation());
+              const TestScope = React.unstable_createScope();
+              const TestScope2 = React.unstable_createScope();
+
+              function Test() {
+                const click = ReactDOM.unstable_useEvent('click');
+                const scopeRef = React.useRef(null);
+                const scope2Ref = React.useRef(null);
+
+                React.useEffect(() => {
+                  click.setListener(scopeRef.current, onClick);
+                  click.setListener(scope2Ref.current, onClick);
+                });
+
+                return (
+                  <TestScope ref={scopeRef}>
+                    <TestScope2 ref={scope2Ref}>
+                      <button ref={buttonRef} />
+                    </TestScope2>
+                  </TestScope>
+                );
+              }
+
+              ReactDOM.render(<Test />, container);
+              Scheduler.unstable_flushAll();
+
+              const buttonElement = buttonRef.current;
+              dispatchClickEvent(buttonElement);
+
+              expect(onClick).toHaveBeenCalledTimes(1);
             });
           });
         });

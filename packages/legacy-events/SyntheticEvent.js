@@ -185,8 +185,6 @@ Object.assign(SyntheticEvent.prototype, {
     this.nativeEvent = null;
     this.isDefaultPrevented = functionThatReturnsFalse;
     this.isPropagationStopped = functionThatReturnsFalse;
-    this._dispatchListeners = null;
-    this._dispatchInstances = null;
     if (__DEV__) {
       Object.defineProperty(
         this,

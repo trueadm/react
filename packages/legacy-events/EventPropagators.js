@@ -12,7 +12,6 @@ import type {ReactSyntheticEvent} from 'legacy-events/ReactSyntheticEventType';
 
 import getListener from 'legacy-events/getListener';
 
-import {traverseEnterLeave} from 'react-reconciler/src/ReactTreeTraversal';
 import accumulateInto from './accumulateInto';
 import forEachAccumulated from './forEachAccumulated';
 
@@ -58,15 +57,6 @@ function accumulateDirectDispatchesSingle(event: ReactSyntheticEvent) {
   if (event && event.dispatchConfig.registrationName) {
     accumulateDispatches(event._targetInst, null, event);
   }
-}
-
-export function accumulateEnterLeaveDispatches(
-  leave: ReactSyntheticEvent,
-  enter: ReactSyntheticEvent,
-  from: Fiber,
-  to: Fiber,
-) {
-  traverseEnterLeave(from, to, accumulateDispatches, leave, enter);
 }
 
 export function accumulateDirectDispatches(
