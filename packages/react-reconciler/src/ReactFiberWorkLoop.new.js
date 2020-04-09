@@ -1972,6 +1972,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     while (nextEffect !== null) {
       const nextNextEffect = nextEffect.nextEffect;
       nextEffect.nextEffect = null;
+      detachFiberPair(nextEffect);
       nextEffect = nextNextEffect;
     }
   }
@@ -2395,6 +2396,7 @@ function flushPassiveEffectsImpl() {
       const nextNextEffect = effect.nextEffect;
       // Remove nextEffect pointer to assist GC
       effect.nextEffect = null;
+      detachFiberPair(effect);
       effect = nextNextEffect;
     }
   }
@@ -3200,5 +3202,38 @@ function finishPendingInteractions(root, committedExpirationTime) {
         }
       },
     );
+  }
+}
+
+function detachFiberPair(fiber: Fiber) {
+  if (fiber.effectTag & Deletion) {
+    const alternate = fiber.alternate;
+    detachFiber(fiber);
+    if (alternate !== null) {
+      detachFiber(alternate);
+    }
+  }
+}
+
+function detachFiber(fiber: Fiber) {
+  // Cut off the return pointers to disconnect it from the tree. Ideally, we
+  // should clear the child pointer of the parent alternate to let this
+  // get GC:ed but we don't know which for sure which parent is the current
+  // one so we'll settle for GC:ing the subtree of this child. This child
+  // itself will be GC:ed when the parent updates the next time.
+  fiber.return = null;
+  fiber.child = null;
+  fiber.sibling = null;
+  fiber.memoizedState = null;
+  fiber.updateQueue = null;
+  fiber.dependencies = null;
+  fiber.alternate = null;
+  fiber.firstEffect = null;
+  fiber.lastEffect = null;
+  fiber.pendingProps = null;
+  fiber.memoizedProps = null;
+  fiber.stateNode = null;
+  if (__DEV__) {
+    fiber._debugOwner = null;
   }
 }
