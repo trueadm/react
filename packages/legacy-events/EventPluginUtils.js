@@ -91,6 +91,7 @@ export function executeDispatchesInOrder(event) {
   }
   event._dispatchListeners = null;
   event._dispatchInstances = null;
+  event._dispatchCurrentTargets = null
 }
 
 /**
