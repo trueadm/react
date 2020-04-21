@@ -16,9 +16,10 @@ import type {
 } from '../shared/ReactDOMTypes';
 
 import {
-  precacheFiberNode,
-  updateFiberProps,
   getClosestInstanceFromNode,
+  clearFiberAndProps,
+  updateFiberProps,
+  precacheFiberAndProps,
 } from './ReactDOMComponentTree';
 import {
   createElement,
@@ -284,8 +285,7 @@ export function createInstance(
     rootContainerInstance,
     parentNamespace,
   );
-  precacheFiberNode(internalInstanceHandle, domElement);
-  updateFiberProps(domElement, props);
+  precacheFiberAndProps(internalInstanceHandle, domElement, props);
   return domElement;
 }
 
@@ -367,7 +367,7 @@ export function createTextInstance(
     validateDOMNesting(null, text, hostContextDev.ancestorInfo);
   }
   const textNode: TextInstance = createTextNode(text, rootContainerInstance);
-  precacheFiberNode(internalInstanceHandle, textNode);
+  precacheFiberAndProps(internalInstanceHandle, textNode, null);
   return textNode;
 }
 
@@ -523,6 +523,7 @@ function dispatchAfterDetachedBlur(target: HTMLElement): void {
 export function beforeRemoveInstance(
   instance: Instance | TextInstance | SuspenseInstance,
 ) {
+  clearFiberAndProps(instance);
   // TODO for ReactDOM.createEventInstance
 }
 
@@ -734,10 +735,9 @@ export function hydrateInstance(
   hostContext: HostContext,
   internalInstanceHandle: Object,
 ): null | Array<mixed> {
-  precacheFiberNode(internalInstanceHandle, instance);
+  precacheFiberAndProps(internalInstanceHandle, instance, props);
   // TODO: Possibly defer this until the commit phase where all the events
   // get attached.
-  updateFiberProps(instance, props);
   let parentNamespace: string;
   if (__DEV__) {
     const hostContextDev = ((hostContext: any): HostContextDev);
@@ -759,7 +759,7 @@ export function hydrateTextInstance(
   text: string,
   internalInstanceHandle: Object,
 ): boolean {
-  precacheFiberNode(internalInstanceHandle, textInstance);
+  precacheFiberAndProps(internalInstanceHandle, textInstance, null);
   return diffHydratedText(textInstance, text);
 }
 
@@ -767,7 +767,7 @@ export function hydrateSuspenseInstance(
   suspenseInstance: SuspenseInstance,
   internalInstanceHandle: Object,
 ) {
-  precacheFiberNode(internalInstanceHandle, suspenseInstance);
+  precacheFiberAndProps(internalInstanceHandle, suspenseInstance, null);
 }
 
 export function getNextHydratableInstanceAfterSuspenseInstance(
@@ -997,7 +997,7 @@ export function getFundamentalComponentInstance(
   if (enableFundamentalAPI) {
     const {currentFiber, impl, props, state} = fundamentalInstance;
     const instance = impl.getInstance(null, props, state);
-    precacheFiberNode(currentFiber, instance);
+    precacheFiberAndProps(currentFiber, instance, null);
     return instance;
   }
   // Because of the flag above, this gets around the Flow error;

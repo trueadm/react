@@ -9,11 +9,11 @@
 
 import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
 import type {
-  Container,
   TextInstance,
   Instance,
-  SuspenseInstance,
+  Container,
   Props,
+  SuspenseInstance,
 } from './ReactDOMHostConfig';
 
 import {
@@ -26,30 +26,70 @@ import invariant from 'shared/invariant';
 
 import {getParentSuspenseInstance} from './ReactDOMHostConfig';
 
-const randomKey = Math.random()
-  .toString(36)
-  .slice(2);
-const internalInstanceKey = '__reactFiber$' + randomKey;
-const internalEventHandlersKey = '__reactEvents$' + randomKey;
-const internalContainerInstanceKey = '__reactContainer$' + randomKey;
+type InternalHandle = {
+  fiber: null | Fiber,
+  rootFiber: null | Fiber,
+  props: null | Props,
+};
 
-export function precacheFiberNode(
-  hostInst: Fiber,
-  node: Instance | TextInstance | SuspenseInstance,
-): void {
-  (node: any)[internalInstanceKey] = hostInst;
+const internalHandles: Map<EventTarget, InternalHandle> = new Map();
+
+function getInternalHandle(node: EventTarget): InternalHandle {
+  let internalHandle = internalHandles.get(node);
+  if (internalHandle === undefined) {
+    internalHandle = {
+      fiber: null,
+      rootFiber: null,
+      props: null,
+    };
+    internalHandles.set(node, internalHandle);
+  }
+  return internalHandle;
 }
 
-export function markContainerAsRoot(hostRoot: Fiber, node: Container): void {
-  node[internalContainerInstanceKey] = hostRoot;
+export function precacheFiberAndProps(
+  fiber: Fiber,
+  node: Instance | TextInstance | SuspenseInstance,
+  props: Props | null,
+): void {
+  const internalHandle = getInternalHandle(node);
+  internalHandle.fiber = fiber;
+  internalHandle.props = props;
+}
+
+export function clearFiberAndProps(node: EventTarget) {
+  const internalHandle = getInternalHandle(node);
+  internalHandle.fiber = null;
+  internalHandle.props = null;
+}
+
+export function markContainerAsRoot(rootFiber: Fiber, node: Container): void {
+  const internalHandle = getInternalHandle(node);
+  internalHandle.rootFiber = rootFiber;
 }
 
 export function unmarkContainerAsRoot(node: Container): void {
-  node[internalContainerInstanceKey] = null;
+  const internalHandle = internalHandles.get(node);
+  if (internalHandle !== undefined) {
+    internalHandle.rootFiber = null;
+  }
 }
 
 export function isContainerMarkedAsRoot(node: Container): boolean {
-  return !!node[internalContainerInstanceKey];
+  const internalHandle = internalHandles.get(node);
+  return internalHandle !== undefined && internalHandle.rootFiber !== null;
+}
+
+function getFiberFromNode(
+  node: EventTarget,
+  includeRoot?: boolean,
+): null | Fiber {
+  const internalHandle = internalHandles.get(node);
+  if (internalHandle !== undefined) {
+    const {rootFiber, fiber} = internalHandle;
+    return includeRoot ? rootFiber || fiber : fiber;
+  }
+  return null;
 }
 
 // Given a DOM node, return the closest HostComponent or HostText fiber ancestor.
@@ -60,7 +100,7 @@ export function isContainerMarkedAsRoot(node: Container): boolean {
 // HostRoot back. To get to the HostRoot, you need to pass a child of it.
 // The same thing applies to Suspense boundaries.
 export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
-  let targetInst = (targetNode: any)[internalInstanceKey];
+  let targetInst = getFiberFromNode(targetNode);
   if (targetInst) {
     // Don't return HostRoot or SuspenseComponent here.
     return targetInst;
@@ -77,9 +117,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
     // itself because the fibers are conceptually between the container
     // node and the first child. It isn't surrounding the container node.
     // If it's not a container, we check if it's an instance.
-    targetInst =
-      (parentNode: any)[internalContainerInstanceKey] ||
-      (parentNode: any)[internalInstanceKey];
+    targetInst = getFiberFromNode(parentNode, true);
     if (targetInst) {
       // Since this wasn't the direct target of the event, we might have
       // stepped past dehydrated DOM nodes to get here. However they could
@@ -112,7 +150,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
           // have had an internalInstanceKey on it.
           // Let's get the fiber associated with the SuspenseComponent
           // as the deepest instance.
-          const targetSuspenseInst = suspenseInstance[internalInstanceKey];
+          const targetSuspenseInst = getFiberFromNode(suspenseInstance);
           if (targetSuspenseInst) {
             return targetSuspenseInst;
           }
@@ -139,9 +177,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
  * instance, or null if the node was not rendered by this React.
  */
 export function getInstanceFromNode(node: Node): Fiber | null {
-  const inst =
-    (node: any)[internalInstanceKey] ||
-    (node: any)[internalContainerInstanceKey];
+  const inst = getFiberFromNode(node, true);
   if (inst) {
     if (
       inst.tag === HostComponent ||
@@ -175,13 +211,15 @@ export function getNodeFromInstance(inst: Fiber): Instance | TextInstance {
 
 export function getFiberCurrentPropsFromNode(
   node: Instance | TextInstance | SuspenseInstance,
-): Props {
-  return (node: any)[internalEventHandlersKey] || null;
+): Props | null {
+  const internalHandle = internalHandles.get(node);
+  return internalHandle !== undefined ? internalHandle.props : null;
 }
 
 export function updateFiberProps(
   node: Instance | TextInstance | SuspenseInstance,
   props: Props,
 ): void {
-  (node: any)[internalEventHandlersKey] = props;
+  const internalHandle = getInternalHandle(node);
+  internalHandle.props = props;
 }
