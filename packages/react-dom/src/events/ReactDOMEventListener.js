@@ -45,6 +45,7 @@ import {
   addEventCaptureListener,
   addEventCaptureListenerWithPassiveFlag,
   removeEventListener,
+  addEventBubbleListenerWithPassiveFlag,
 } from './EventListener';
 import getEventTarget from './getEventTarget';
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
@@ -197,18 +198,36 @@ export function addTrappedEventListener(
       }
     };
   }
-  if (capture) {
-    unsubscribeListener = addEventCaptureListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
+  if (passive === undefined) {
+    if (capture) {
+      unsubscribeListener = addEventCaptureListener(
+        targetContainer,
+        rawEventName,
+        listener,
+      );
+    } else {
+      unsubscribeListener = addEventBubbleListener(
+        targetContainer,
+        rawEventName,
+        listener,
+      );
+    }
   } else {
-    unsubscribeListener = addEventBubbleListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
+    if (capture) {
+      unsubscribeListener = addEventCaptureListenerWithPassiveFlag(
+        targetContainer,
+        rawEventName,
+        listener,
+        passive,
+      );
+    } else {
+      unsubscribeListener = addEventBubbleListenerWithPassiveFlag(
+        targetContainer,
+        rawEventName,
+        listener,
+        passive,
+      );
+    }
   }
   return unsubscribeListener;
 }
