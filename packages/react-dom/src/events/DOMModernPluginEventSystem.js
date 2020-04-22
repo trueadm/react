@@ -21,17 +21,15 @@ const {hasRegisteredEventOnContainer} = ReactDOMEventManger;
 
 import {registrationNameDependencies} from 'legacy-events/EventPluginRegistry';
 import {plugins} from 'legacy-events/EventPluginRegistry';
-import {
-  PLUGIN_EVENT_SYSTEM,
-} from './EventSystemFlags';
+import {PLUGIN_EVENT_SYSTEM, IS_TARGET_PHASE_ONLY} from './EventSystemFlags';
 
 import {
+  HostRoot,
+  HostPortal,
   HostComponent,
 } from 'react-reconciler/src/ReactWorkTags';
 
-import {
-  addModernTrappedEventListener,
-} from './ReactDOMEventListener';
+import {addModernTrappedEventListener} from './ReactDOMEventListener';
 import getEventTarget from './getEventTarget';
 import {
   TOP_FOCUS,
@@ -66,7 +64,6 @@ import {
   TOP_RATE_CHANGE,
   TOP_PROGRESS,
   TOP_PLAYING,
-  TOP_CLICK,
   TOP_SELECTION_CHANGE,
   getRawEventName,
 } from './DOMTopLevelEventTypes';
@@ -75,14 +72,12 @@ import {COMMENT_NODE} from '../shared/HTMLNodeType';
 import {batchedEventUpdates} from './ReactDOMUpdateBatching';
 import getListener from './getListener';
 
-import {enableLegacyFBSupport} from 'shared/ReactFeatureFlags';
 import {
   invokeGuardedCallbackAndCatchFirstError,
   rethrowCaughtError,
 } from 'shared/ReactErrorUtils';
-import {eventNames} from 'cluster';
 
-const capturePhaseEvents = new Set([
+export const capturePhaseEvents: Set<DOMTopLevelEventType> = new Set([
   TOP_FOCUS,
   TOP_BLUR,
   TOP_SCROLL,
@@ -116,6 +111,7 @@ const capturePhaseEvents = new Set([
   TOP_TIME_UPDATE,
   TOP_VOLUME_CHANGE,
   TOP_WAITING,
+  TOP_SELECTION_CHANGE,
 ]);
 
 const isArray = Array.isArray;
@@ -217,23 +213,33 @@ export function listenToTopLevelEvent(
   topLevelType: DOMTopLevelEventType,
   targetContainer: EventTarget,
   eventSystemFlags: EventSystemFlags,
-  passive?: boolean,
-  priority?: EventPriority,
-  capture?: boolean,
+  passive: boolean | void,
+  priority: EventPriority | void,
+  capture: boolean | void,
 ): void {
   const isCapturePhase =
     capture === undefined ? capturePhaseEvents.has(topLevelType) : capture;
   const eventName = getRawEventName(topLevelType);
+  // TOP_SELECTION_CHANGE needs to be attached to the document
+  // otherwise it won't capture incoming events that are only
+  // triggered on the document directly.
+  if (topLevelType === TOP_SELECTION_CHANGE) {
+    targetContainer = (targetContainer: any).ownerDocument || targetContainer;
+  }
 
   if (
-    !hasRegisteredEventOnContainer(eventName, targetContainer, capture, passive)
+    !hasRegisteredEventOnContainer(
+      eventName,
+      targetContainer,
+      isCapturePhase,
+      passive,
+    )
   ) {
     addModernTrappedEventListener(
       targetContainer,
       topLevelType,
       eventSystemFlags,
       isCapturePhase,
-      false,
       passive,
       priority,
     );
@@ -254,6 +260,17 @@ export function listenToEvent(
       PLUGIN_EVENT_SYSTEM,
     );
   }
+}
+
+function isMatchingRootContainer(
+  grandContainer: Element,
+  targetContainer: EventTarget,
+): boolean {
+  return (
+    grandContainer === targetContainer ||
+    (grandContainer.nodeType === COMMENT_NODE &&
+      grandContainer.parentNode === targetContainer)
+  );
 }
 
 export function isManagedDOMElement(
@@ -279,12 +296,75 @@ export function dispatchEventForPluginEventSystem(
   targetInst: null | Fiber,
   targetContainer: EventTarget,
 ): void {
+  let ancestorInst = targetInst;
+  if (eventSystemFlags & IS_TARGET_PHASE_ONLY) {
+    // For TargetEvent nodes (i.e. document, window)
+    ancestorInst = null;
+  } else {
+    const targetContainerNode = ((targetContainer: any): Node);
+
+    if (targetInst !== null) {
+      // The below logic attempts to work out if we need to change
+      // the target fiber to a different ancestor. We had similar logic
+      // in the legacy event system, except the big difference between
+      // systems is that the modern event system now has an event listener
+      // attached to each React Root and React Portal Root. Together,
+      // the DOM nodes representing these roots are the "rootContainer".
+      // To figure out which ancestor instance we should use, we traverse
+      // up the fiber tree from the target instance and attempt to find
+      // root boundaries that match that of our current "rootContainer".
+      // If we find that "rootContainer", we find the parent fiber
+      // sub-tree for that root and make that our ancestor instance.
+      let node = targetInst;
+
+      while (true) {
+        if (node === null) {
+          return;
+        }
+        if (node.tag === HostRoot || node.tag === HostPortal) {
+          const container = node.stateNode.containerInfo;
+          if (isMatchingRootContainer(container, targetContainerNode)) {
+            break;
+          }
+          if (node.tag === HostPortal) {
+            // The target is a portal, but it's not the rootContainer we're looking for.
+            // Normally portals handle their own events all the way down to the root.
+            // So we should be able to stop now. However, we don't know if this portal
+            // was part of *our* root.
+            let grandNode = node.return;
+            while (grandNode !== null) {
+              if (grandNode.tag === HostRoot || grandNode.tag === HostPortal) {
+                const grandContainer = grandNode.stateNode.containerInfo;
+                if (
+                  isMatchingRootContainer(grandContainer, targetContainerNode)
+                ) {
+                  // This is the rootContainer we're looking for and we found it as
+                  // a parent of the Portal. That means we can ignore it because the
+                  // Portal will bubble through to us.
+                  return;
+                }
+              }
+              grandNode = grandNode.return;
+            }
+          }
+          const parentSubtreeInst = getClosestInstanceFromNode(container);
+          if (parentSubtreeInst === null) {
+            return;
+          }
+          node = ancestorInst = parentSubtreeInst;
+          continue;
+        }
+        node = node.return;
+      }
+    }
+  }
+
   batchedEventUpdates(() =>
     dispatchEventsForPlugins(
       topLevelType,
       eventSystemFlags,
       nativeEvent,
-      targetInst,
+      ancestorInst,
       targetContainer,
     ),
   );

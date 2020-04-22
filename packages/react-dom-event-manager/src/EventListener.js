@@ -7,6 +7,24 @@
  * @flow
  */
 
+export function addNativeBubbleEventListener(
+  target: EventTarget,
+  eventType: string,
+  listener: Function,
+): Function {
+  target.addEventListener(eventType, listener, false);
+  return listener;
+}
+
+export function addNativeCaptureEventListener(
+  target: EventTarget,
+  eventType: string,
+  listener: Function,
+): Function {
+  target.addEventListener(eventType, listener, true);
+  return listener;
+}
+
 export function addNativeCaptureEventListenerWithPassiveFlag(
   target: EventTarget,
   eventType: string,

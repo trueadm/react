@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import * as ReactDOMEventManger from 'react-dom-event-manager';
+
+const {hasRegisteredEventOnContainer} = ReactDOMEventManger;
+
 import {canUseDOM} from 'shared/ExecutionEnvironment';
 import SyntheticEvent from 'legacy-events/SyntheticEvent';
 import isTextInputElement from '../isTextInputElement';
@@ -25,8 +29,10 @@ import getActiveElement from '../../client/getActiveElement';
 import {getNodeFromInstance} from '../../client/ReactDOMComponentTree';
 import {hasSelectionCapabilities} from '../../client/ReactInputSelection';
 import {DOCUMENT_NODE} from '../../shared/HTMLNodeType';
-import {isListeningToEvent, isListeningToEvents} from '../DOMEventListenerMap';
-import {accumulateTwoPhaseListeners} from '../DOMModernPluginEventSystem';
+import {
+  accumulateTwoPhaseListeners,
+  capturePhaseEvents,
+} from '../DOMModernPluginEventSystem';
 
 const skipSelectionChangeEvent =
   canUseDOM && 'documentMode' in document && document.documentMode <= 11;
@@ -142,6 +148,21 @@ function constructSelectEvent(nativeEvent, nativeEventTarget) {
   }
 
   return null;
+}
+
+function isListeningToEvent(event, container) {
+  const isCapture = capturePhaseEvents.has(event);
+  return hasRegisteredEventOnContainer(event, container, isCapture, false);
+}
+
+function isListeningToEvents(events, container) {
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    if (!isListeningToEvent(event, container)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

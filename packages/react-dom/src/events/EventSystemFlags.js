@@ -17,4 +17,3 @@ export const IS_PASSIVE = 1 << 4;
 export const PASSIVE_NOT_SUPPORTED = 1 << 5;
 export const IS_REPLAYED = 1 << 6;
 export const IS_FIRST_ANCESTOR = 1 << 7;
-export const LEGACY_FB_SUPPORT = 1 << 8;

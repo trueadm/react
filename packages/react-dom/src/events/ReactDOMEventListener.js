@@ -37,7 +37,6 @@ import {
 import {HostRoot, SuspenseComponent} from 'react-reconciler/src/ReactWorkTags';
 import {
   type EventSystemFlags,
-  LEGACY_FB_SUPPORT,
   PLUGIN_EVENT_SYSTEM,
   RESPONDER_EVENT_SYSTEM,
   IS_PASSIVE,
@@ -194,7 +193,7 @@ export function addModernTrappedEventListener(
   eventSystemFlags: EventSystemFlags,
   capture: boolean,
   passive: boolean | void,
-  priority?: EventPriority,
+  priority: EventPriority | void,
 ): void {
   const eventPriority =
     priority === undefined
@@ -237,10 +236,7 @@ function dispatchDiscreteEvent(
   nativeEvent,
 ) {
   if (
-    !enableLegacyFBSupport ||
-    // If we have Legacy FB support, it means we've already
-    // flushed for this event and we don't need to do it again.
-    (eventSystemFlags & LEGACY_FB_SUPPORT) === 0
+    !enableLegacyFBSupport
   ) {
     flushDiscreteUpdatesIfNeeded(nativeEvent.timeStamp);
   }

@@ -9,12 +9,14 @@
 
 import {
   removeNativeEventListener,
+  addNativeCaptureEventListener,
+  addNativeBubbleEventListener,
   addNativeCaptureEventListenerWithPassiveFlag,
   addNativeBubbleEventListenerWithPassiveFlag,
 } from './EventListener';
 
-const registeredContainers = new WeakMap();
-const hasPassiveNativeWindowListener = new Set();
+const registeredContainerStore = new Map();
+const nativeGlobalStores = new Map();
 
 function getEventKey(eventName: string, capture: boolean) {
   return `${eventName}__${capture ? 'capture' : 'bubble'}`;
@@ -23,8 +25,9 @@ function getEventKey(eventName: string, capture: boolean) {
 function shouldUpgradeNativeEventListener(
   eventKey: string,
   newPassiveValue: void | boolean,
+  listenerStore: {active: Function | null, passive: Function | null},
 ): boolean {
-  const oldPassiveValue = hasPassiveNativeWindowListener.has(eventKey);
+  const oldPassiveValue = listenerStore.passive !== null;
   return oldPassiveValue === true && !newPassiveValue;
 }
 
@@ -35,49 +38,135 @@ function registerEventOnContainer(
   passive: boolean | void,
   listener: Function,
 ): void {
-  let eventStore = registeredContainers.get(container);
-  if (eventStore === undefined) {
-    eventStore = new Map();
-    registeredContainers.set(container, eventStore);
-  }
   const eventKey = getEventKey(eventName, capture);
-  let listeners = eventStore.get(eventKey);
+  let registeredContainers = registeredContainerStore.get(eventKey);
 
+  if (registeredContainers === undefined) {
+    registeredContainers = new WeakMap();
+    registeredContainerStore.set(eventKey, registeredContainers);
+  }
+
+  let listeners = registeredContainers.get(container);
   if (listeners === undefined) {
     listeners = new Set();
-    eventStore.set(eventKey, listeners);
+    registeredContainers.set(container, listeners);
   }
   listeners.add(listener);
-  if (shouldUpgradeNativeEventListener(eventKey, passive)) {
-    hasPassiveNativeWindowListener.delete(eventKey);
-    removeNativeEventListener(window, eventName, eventManagerListener, capture);
+
+  debugger;
+  const doc = container.ownerDocument;
+  let eventStore = nativeGlobalStores.get(doc);
+
+  if (eventStore === undefined) {
+    eventStore = new Map();
+    nativeGlobalStores.set(doc, eventStore);
+  }
+  let listenerStore = eventStore.get(eventKey);
+  if (listenerStore === undefined) {
+    listenerStore = {
+      active: null,
+      passive: null
+    };
   }
 
-  if (passive === undefined) {
-
+  // Add a native window listener if one does not exist
+  if (shouldUpgradeNativeEventListener(eventKey, passive, listenerStore)) {
+    const managedPassiveListener = listenerStore.passive;
+    listenerStore.passive = null;
+    removeNativeEventListener(
+      window,
+      eventName,
+      managedPassiveListener,
+      capture,
+    );
+  } else if (
+    listenerStore.active !== null ||
+    (listenerStore.passive !== null && passive === true)
+  ) {
+    // If we already have an event listener, don't continue
+    return;
+  }
+  const managedListener = eventManagerListener.bind(
+    null,
+    capture,
+    registeredContainers,
+  );
+  if (passive) {
+    listenerStore.passive = managedListener;
   } else {
-    if (passive) {
-      hasPassiveNativeWindowListener.add(eventKey);
+    listenerStore.active = managedListener;
+  }
+  if (passive === undefined) {
+    if (capture) {
+      addNativeCaptureEventListener(doc, eventName, managedListener);
+    } else {
+      addNativeBubbleEventListener(doc, eventName, managedListener);
     }
+  } else {
     if (capture) {
       addNativeCaptureEventListenerWithPassiveFlag(
-        window,
+        doc,
         eventName,
-        eventManagerListener,
+        managedListener,
         passive,
       );
     } else {
       addNativeBubbleEventListenerWithPassiveFlag(
-        window,
+        doc,
         eventName,
-        eventManagerListener,
+        managedListener,
         passive,
       );
     }
   }
 }
 
-function eventManagerListener() {}
+function processListenersForTarget(
+  target: EventTarget,
+  registeredContainers: WeakMap<EventTarget, Set<Function>>,
+  nativeEvent: Event,
+): void {
+  const listeners = registeredContainers.get(target);
+  if (listeners !== undefined) {
+    const listenersArr = Array.from(listeners);
+    for (let i = 0; i < listenersArr.length; i++) {
+      listenersArr[i](nativeEvent);
+    }
+  }
+}
+
+function buildPath(path: Array<Node>, nativeEventTarget: Node) {
+  let currentTarget = nativeEventTarget;
+  while (currentTarget != null) {
+    path.push(currentTarget);
+    currentTarget = currentTarget.parentNode;
+  }
+}
+
+function eventManagerListener(
+  capture: boolean,
+  registeredContainers: WeakMap<EventTarget, Set<Function>>,
+  nativeEvent: Event,
+): void {
+  const nativeEventTarget = ((nativeEvent.target: any): Node);
+
+  if (capture) {
+    // Capture phase
+    const path = [window];
+    buildPath(path, nativeEventTarget);
+    for (let i = path.length - 1; i >= 0; i--) {
+      processListenersForTarget(path[i], registeredContainers, nativeEvent);
+    }
+  } else {
+    // Bubble phase
+    const path = [];
+    buildPath(path, nativeEventTarget);
+    path.push(window);
+    for (let i = 0; i < path.length; i++) {
+      processListenersForTarget(path[i], registeredContainers, nativeEvent);
+    }
+  }
+}
 
 function hasRegisteredEventOnContainer(
   eventName: string,
@@ -85,13 +174,26 @@ function hasRegisteredEventOnContainer(
   capture: boolean,
   passive: boolean | void,
 ): boolean {
-  const eventStore = registeredContainers.get(container);
-  if (eventStore !== undefined) {
-    const eventKey = getEventKey(eventName, capture);
-    const listeners = eventStore.get(eventKey);
+  const eventKey = getEventKey(eventName, capture);
+  const registeredContainers = registeredContainerStore.get(eventKey);
+
+  if (registeredContainers !== undefined) {
+    const doc = container.ownerDocument;
+    const eventStore = nativeGlobalStores.get(doc);
+    if (eventStore === undefined) {
+      return false;
+    }
+    const listenerStore = eventStore.get(eventKey);
+    if (listenerStore === undefined) {
+      return false;
+    }
     return (
-      listeners !== undefined ||
-      shouldUpgradeNativeEventListener(eventKey, passive)
+      registeredContainers.has(container) &&
+      !shouldUpgradeNativeEventListener(
+        eventKey,
+        passive,
+        listenerStore,
+      )
     );
   }
   return false;
