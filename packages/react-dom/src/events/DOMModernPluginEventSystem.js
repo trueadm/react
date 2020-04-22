@@ -9,38 +9,30 @@
 
 import type {AnyNativeEvent} from 'legacy-events/PluginModuleType';
 import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
-import type {
-  ElementListenerMap,
-  ElementListenerMapEntry,
-} from '../events/DOMEventListenerMap';
 import type {EventSystemFlags} from './EventSystemFlags';
 import type {EventPriority, ReactScopeMethods} from 'shared/ReactTypes';
 import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
 import type {PluginModule} from 'legacy-events/PluginModuleType';
 import type {ReactSyntheticEvent} from 'legacy-events/ReactSyntheticEventType';
 
+import * as ReactDOMEventManger from 'react-dom-event-manager';
+
+const {hasRegisteredEventOnContainer} = ReactDOMEventManger;
+
 import {registrationNameDependencies} from 'legacy-events/EventPluginRegistry';
 import {plugins} from 'legacy-events/EventPluginRegistry';
 import {
   PLUGIN_EVENT_SYSTEM,
-  LEGACY_FB_SUPPORT,
-  IS_REPLAYED,
-  IS_TARGET_PHASE_ONLY,
-  USE_EVENT_SYSTEM,
 } from './EventSystemFlags';
 
 import {
-  HostRoot,
-  HostPortal,
   HostComponent,
 } from 'react-reconciler/src/ReactWorkTags';
 
 import {
-  addTrappedEventListener,
-  removeTrappedEventListener,
+  addModernTrappedEventListener,
 } from './ReactDOMEventListener';
 import getEventTarget from './getEventTarget';
-import {getListenerMapForElement} from './DOMEventListenerMap';
 import {
   TOP_FOCUS,
   TOP_LOAD,
@@ -76,6 +68,7 @@ import {
   TOP_PLAYING,
   TOP_CLICK,
   TOP_SELECTION_CHANGE,
+  getRawEventName,
 } from './DOMTopLevelEventTypes';
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 import {COMMENT_NODE} from '../shared/HTMLNodeType';
@@ -87,6 +80,7 @@ import {
   invokeGuardedCallbackAndCatchFirstError,
   rethrowCaughtError,
 } from 'shared/ReactErrorUtils';
+import {eventNames} from 'cluster';
 
 const capturePhaseEvents = new Set([
   TOP_FOCUS,
@@ -219,72 +213,22 @@ function dispatchEventsForPlugins(
   dispatchEventsInBatch(syntheticEvents);
 }
 
-function shouldUpgradeListener(
-  listenerEntry: void | ElementListenerMapEntry,
-  passive: void | boolean,
-): boolean {
-  if (listenerEntry === undefined) {
-    return false;
-  }
-  // Upgrade from passive to active.
-  if (passive !== true && listenerEntry.passive) {
-    return true;
-  }
-  // Upgrade from default-active (browser default) to active.
-  if (passive === false && listenerEntry.passive === undefined) {
-    return true;
-  }
-  // Otherwise, do not upgrade
-  return false;
-}
-
 export function listenToTopLevelEvent(
   topLevelType: DOMTopLevelEventType,
   targetContainer: EventTarget,
-  listenerMap: ElementListenerMap,
   eventSystemFlags: EventSystemFlags,
   passive?: boolean,
   priority?: EventPriority,
   capture?: boolean,
 ): void {
-  // If we explicitly define capture, then these are for EventTarget objects,
-  // rather than React managed DOM elements. So we need to ensure we separate
-  // capture and non-capture events. For React managed DOM nodes we only use
-  // one or the other, never both. Which one we use is determined by the the
-  // capturePhaseEvents Set (in this module) that defines if the event listener
-  // should use the capture phase – otherwise we always use the bubble phase.
-  // Finally, when we get to dispatching and accumulating event listeners, we
-  // check if the user wanted capture/bubble and emulate the behavior at that
-  // point (we call this accumulating two phase listeners).
-  const typeStr = ((topLevelType: any): string);
-  const listenerMapKey =
-    capture === undefined
-      ? topLevelType
-      : `${typeStr}_${capture ? 'capture' : 'bubble'}`;
+  const isCapturePhase =
+    capture === undefined ? capturePhaseEvents.has(topLevelType) : capture;
+  const eventName = getRawEventName(topLevelType);
 
-  // TOP_SELECTION_CHANGE needs to be attached to the document
-  // otherwise it won't capture incoming events that are only
-  // triggered on the document directly.
-  if (topLevelType === TOP_SELECTION_CHANGE) {
-    targetContainer = (targetContainer: any).ownerDocument || targetContainer;
-    listenerMap = getListenerMapForElement(targetContainer);
-  }
-  const listenerEntry = listenerMap.get(listenerMapKey);
-  const shouldUpgrade = shouldUpgradeListener(listenerEntry, passive);
-  if (listenerEntry === undefined || shouldUpgrade) {
-    const isCapturePhase =
-      capture === undefined ? capturePhaseEvents.has(topLevelType) : capture;
-    // If we should upgrade, then we need to remove the existing trapped
-    // event listener for the target container.
-    if (shouldUpgrade) {
-      removeTrappedEventListener(
-        targetContainer,
-        topLevelType,
-        isCapturePhase,
-        ((listenerEntry: any): ElementListenerMapEntry).listener,
-      );
-    }
-    const listener = addTrappedEventListener(
+  if (
+    !hasRegisteredEventOnContainer(eventName, targetContainer, capture, passive)
+  ) {
+    addModernTrappedEventListener(
       targetContainer,
       topLevelType,
       eventSystemFlags,
@@ -293,7 +237,6 @@ export function listenToTopLevelEvent(
       passive,
       priority,
     );
-    listenerMap.set(listenerMapKey, {passive, listener});
   }
 }
 
@@ -301,7 +244,6 @@ export function listenToEvent(
   registrationName: string,
   rootContainerElement: Element,
 ): void {
-  const listenerMap = getListenerMapForElement(rootContainerElement);
   const dependencies = registrationNameDependencies[registrationName];
 
   for (let i = 0; i < dependencies.length; i++) {
@@ -309,42 +251,9 @@ export function listenToEvent(
     listenToTopLevelEvent(
       dependency,
       rootContainerElement,
-      listenerMap,
       PLUGIN_EVENT_SYSTEM,
     );
   }
-}
-
-function willDeferLaterForLegacyFBSupport(
-  topLevelType: DOMTopLevelEventType,
-  targetContainer: EventTarget,
-): boolean {
-  if (topLevelType !== TOP_CLICK) {
-    return false;
-  }
-  // We defer all click events with legacy FB support mode on.
-  // This means we add a one time event listener to trigger
-  // after the FB delegated listeners fire.
-  const isDeferredListenerForLegacyFBSupport = true;
-  addTrappedEventListener(
-    targetContainer,
-    topLevelType,
-    PLUGIN_EVENT_SYSTEM | LEGACY_FB_SUPPORT,
-    false,
-    isDeferredListenerForLegacyFBSupport,
-  );
-  return true;
-}
-
-function isMatchingRootContainer(
-  grandContainer: Element,
-  targetContainer: EventTarget,
-): boolean {
-  return (
-    grandContainer === targetContainer ||
-    (grandContainer.nodeType === COMMENT_NODE &&
-      grandContainer.parentNode === targetContainer)
-  );
 }
 
 export function isManagedDOMElement(
@@ -370,93 +279,12 @@ export function dispatchEventForPluginEventSystem(
   targetInst: null | Fiber,
   targetContainer: EventTarget,
 ): void {
-  let ancestorInst = targetInst;
-  if (eventSystemFlags & IS_TARGET_PHASE_ONLY) {
-    // For TargetEvent nodes (i.e. document, window)
-    ancestorInst = null;
-  } else {
-    const targetContainerNode = ((targetContainer: any): Node);
-
-    // If we are using the legacy FB support flag, we
-    // defer the event to the null with a one
-    // time event listener so we can defer the event.
-    if (
-      enableLegacyFBSupport &&
-      // We do not want to defer if the event system has already been
-      // set to LEGACY_FB_SUPPORT. LEGACY_FB_SUPPORT only gets set when
-      // we call willDeferLaterForLegacyFBSupport, thus not bailing out
-      // will result in endless cycles like an infinite loop.
-      (eventSystemFlags & LEGACY_FB_SUPPORT) === 0 &&
-      // We also don't want to defer during event replaying.
-      (eventSystemFlags & IS_REPLAYED) === 0 &&
-      // We don't want to apply the legacy FB support for the useEvent API.
-      (eventSystemFlags & USE_EVENT_SYSTEM) === 0 &&
-      willDeferLaterForLegacyFBSupport(topLevelType, targetContainer)
-    ) {
-      return;
-    }
-    if (targetInst !== null) {
-      // The below logic attempts to work out if we need to change
-      // the target fiber to a different ancestor. We had similar logic
-      // in the legacy event system, except the big difference between
-      // systems is that the modern event system now has an event listener
-      // attached to each React Root and React Portal Root. Together,
-      // the DOM nodes representing these roots are the "rootContainer".
-      // To figure out which ancestor instance we should use, we traverse
-      // up the fiber tree from the target instance and attempt to find
-      // root boundaries that match that of our current "rootContainer".
-      // If we find that "rootContainer", we find the parent fiber
-      // sub-tree for that root and make that our ancestor instance.
-      let node = targetInst;
-
-      while (true) {
-        if (node === null) {
-          return;
-        }
-        if (node.tag === HostRoot || node.tag === HostPortal) {
-          const container = node.stateNode.containerInfo;
-          if (isMatchingRootContainer(container, targetContainerNode)) {
-            break;
-          }
-          if (node.tag === HostPortal) {
-            // The target is a portal, but it's not the rootContainer we're looking for.
-            // Normally portals handle their own events all the way down to the root.
-            // So we should be able to stop now. However, we don't know if this portal
-            // was part of *our* root.
-            let grandNode = node.return;
-            while (grandNode !== null) {
-              if (grandNode.tag === HostRoot || grandNode.tag === HostPortal) {
-                const grandContainer = grandNode.stateNode.containerInfo;
-                if (
-                  isMatchingRootContainer(grandContainer, targetContainerNode)
-                ) {
-                  // This is the rootContainer we're looking for and we found it as
-                  // a parent of the Portal. That means we can ignore it because the
-                  // Portal will bubble through to us.
-                  return;
-                }
-              }
-              grandNode = grandNode.return;
-            }
-          }
-          const parentSubtreeInst = getClosestInstanceFromNode(container);
-          if (parentSubtreeInst === null) {
-            return;
-          }
-          node = ancestorInst = parentSubtreeInst;
-          continue;
-        }
-        node = node.return;
-      }
-    }
-  }
-
   batchedEventUpdates(() =>
     dispatchEventsForPlugins(
       topLevelType,
       eventSystemFlags,
       nativeEvent,
-      ancestorInst,
+      targetInst,
       targetContainer,
     ),
   );

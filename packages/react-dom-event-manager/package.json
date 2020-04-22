@@ -1,0 +1,10 @@
+{
+  "name": "react-dom-event-manager",
+  "version": "0.1.0",
+  "private": true,
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/facebook/react.git",
+    "directory": "packages/react-dom-event-manager"
+  }
+}

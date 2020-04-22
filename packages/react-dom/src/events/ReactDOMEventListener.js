@@ -13,6 +13,10 @@ import type {FiberRoot} from 'react-reconciler/src/ReactInternalTypes';
 import type {Container, SuspenseInstance} from '../client/ReactDOMHostConfig';
 import type {DOMTopLevelEventType} from 'legacy-events/TopLevelEventTypes';
 
+import * as ReactDOMEventManger from 'react-dom-event-manager';
+
+const {registerEventOnContainer} = ReactDOMEventManger;
+
 // Intentionally not named imports because Rollup would use dynamic dispatch for
 // CommonJS interop named imports.
 import * as Scheduler from 'scheduler';
@@ -123,20 +127,79 @@ export function addResponderEventSystemEvent(
   }
 }
 
-export function addTrappedEventListener(
+export function addLegacyTrappedEventListener(
   targetContainer: EventTarget,
   topLevelType: DOMTopLevelEventType,
   eventSystemFlags: EventSystemFlags,
   capture: boolean,
-  isDeferredListenerForLegacyFBSupport?: boolean,
-  passive?: boolean,
   priority?: EventPriority,
 ): any => void {
   const eventPriority =
     priority === undefined
       ? getEventPriorityForPluginSystem(topLevelType)
       : priority;
-  let listener;
+  let listenerWrapper;
+  switch (eventPriority) {
+    case DiscreteEvent:
+      listenerWrapper = dispatchDiscreteEvent;
+      break;
+    case UserBlockingEvent:
+      listenerWrapper = dispatchUserBlockingUpdate;
+      break;
+    case ContinuousEvent:
+    default:
+      listenerWrapper = dispatchEvent;
+      break;
+  }
+
+  const listener = listenerWrapper.bind(
+    null,
+    topLevelType,
+    eventSystemFlags,
+    targetContainer,
+  );
+
+  let unsubscribeListener;
+  const rawEventName = getRawEventName(topLevelType);
+
+  if (capture) {
+    unsubscribeListener = addEventCaptureListener(
+      targetContainer,
+      rawEventName,
+      listener,
+    );
+  } else {
+    unsubscribeListener = addEventBubbleListener(
+      targetContainer,
+      rawEventName,
+      listener,
+    );
+  }
+  return unsubscribeListener;
+}
+
+export function removeResponderTrappedEventListener(
+  targetContainer: EventTarget,
+  topLevelType: DOMTopLevelEventType,
+  capture: boolean,
+  listener: any => void,
+): void {
+  const rawEventName = getRawEventName(topLevelType);
+  removeEventListener(targetContainer, rawEventName, listener, capture);
+}
+
+export function addModernTrappedEventListener(
+  targetContainer: EventTarget,
+  topLevelType: DOMTopLevelEventType,
+  eventSystemFlags: EventSystemFlags,
+  capture: boolean,
+  passive: boolean | void,
+  priority?: EventPriority,
+): void {
+  const eventPriority =
+    priority === undefined
+      ? getEventPriorityForPluginSystem(topLevelType)
+      : priority;
   let listenerWrapper;
   switch (eventPriority) {
     case DiscreteEvent:
@@ -156,71 +219,15 @@ export function addTrappedEventListener(
     passive = false;
   }
 
-  listener = listenerWrapper.bind(
+  const listener = listenerWrapper.bind(
     null,
     topLevelType,
     eventSystemFlags,
     targetContainer,
   );
 
-  targetContainer =
-    enableLegacyFBSupport && isDeferredListenerForLegacyFBSupport
-      ? (targetContainer: any).ownerDocument
-      : targetContainer;
-
   const rawEventName = getRawEventName(topLevelType);
-
-  let unsubscribeListener;
-  // When legacyFBSupport is enabled, it's for when we
-  // want to add a one time event listener to a container.
-  // This should only be used with enableLegacyFBSupport
-  // due to requirement to provide compatibility with
-  // internal FB www event tooling. This works by removing
-  // the event listener as soon as it is invoked. We could
-  // also attempt to use the {once: true} param on
-  // addEventListener, but that requires support and some
-  // browsers do not support this today, and given this is
-  // to support legacy code patterns, it's likely they'll
-  // need support for such browsers.
-  if (enableLegacyFBSupport && isDeferredListenerForLegacyFBSupport) {
-    const originalListener = listener;
-    listener = function(...p) {
-      try {
-        return originalListener.apply(this, p);
-      } finally {
-        removeEventListener(
-          targetContainer,
-          rawEventName,
-          unsubscribeListener,
-          capture,
-        );
-      }
-    };
-  }
-  if (capture) {
-    unsubscribeListener = addEventCaptureListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
-  } else {
-    unsubscribeListener = addEventBubbleListener(
-      targetContainer,
-      rawEventName,
-      listener,
-    );
-  }
-  return unsubscribeListener;
-}
-
-export function removeTrappedEventListener(
-  targetContainer: EventTarget,
-  topLevelType: DOMTopLevelEventType,
-  capture: boolean,
-  listener: any => void,
-): void {
-  const rawEventName = getRawEventName(topLevelType);
-  removeEventListener(targetContainer, rawEventName, listener, capture);
+  registerEventOnContainer(rawEventName, targetContainer, capture, passive, listener)
 }
 
 function dispatchDiscreteEvent(
