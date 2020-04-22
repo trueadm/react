@@ -217,12 +217,10 @@ export function isReplayableDiscreteEvent(
 function trapReplayableEventForContainer(
   topLevelType: DOMTopLevelEventType,
   container: Container,
-  listenerMap: ElementListenerMap,
 ) {
   listenToTopLevelEvent(
     topLevelType,
     ((container: any): Element),
-    listenerMap,
     PLUGIN_EVENT_SYSTEM,
   );
 }
@@ -259,29 +257,17 @@ export function eagerlyTrapReplayableEvents(
   document: Document,
 ) {
   const listenerMapForDoc = getListenerMapForElement(document);
-  let listenerMapForContainer;
-  if (enableModernEventSystem) {
-    listenerMapForContainer = getListenerMapForElement(container);
-  }
   // Discrete
   discreteReplayableEvents.forEach(topLevelType => {
     if (enableModernEventSystem) {
-      trapReplayableEventForContainer(
-        topLevelType,
-        container,
-        listenerMapForContainer,
-      );
+      trapReplayableEventForContainer(topLevelType, container);
     }
     trapReplayableEventForDocument(topLevelType, document, listenerMapForDoc);
   });
   // Continuous
   continuousReplayableEvents.forEach(topLevelType => {
     if (enableModernEventSystem) {
-      trapReplayableEventForContainer(
-        topLevelType,
-        container,
-        listenerMapForContainer,
-      );
+      trapReplayableEventForContainer(topLevelType, container);
     }
     trapReplayableEventForDocument(topLevelType, document, listenerMapForDoc);
   });

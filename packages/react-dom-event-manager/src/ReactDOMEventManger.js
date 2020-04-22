@@ -53,8 +53,7 @@ function registerEventOnContainer(
   }
   listeners.add(listener);
 
-  debugger;
-  const doc = container.ownerDocument;
+  const doc = (container: any).ownerDocument || container;
   let eventStore = nativeGlobalStores.get(doc);
 
   if (eventStore === undefined) {
@@ -65,8 +64,9 @@ function registerEventOnContainer(
   if (listenerStore === undefined) {
     listenerStore = {
       active: null,
-      passive: null
+      passive: null,
     };
+    eventStore.set(eventKey, listenerStore);
   }
 
   // Add a native window listener if one does not exist
@@ -178,7 +178,7 @@ function hasRegisteredEventOnContainer(
   const registeredContainers = registeredContainerStore.get(eventKey);
 
   if (registeredContainers !== undefined) {
-    const doc = container.ownerDocument;
+    const doc = (container: any).ownerDocument || container;
     const eventStore = nativeGlobalStores.get(doc);
     if (eventStore === undefined) {
       return false;
@@ -189,11 +189,7 @@ function hasRegisteredEventOnContainer(
     }
     return (
       registeredContainers.has(container) &&
-      !shouldUpgradeNativeEventListener(
-        eventKey,
-        passive,
-        listenerStore,
-      )
+      !shouldUpgradeNativeEventListener(eventKey, passive, listenerStore)
     );
   }
   return false;

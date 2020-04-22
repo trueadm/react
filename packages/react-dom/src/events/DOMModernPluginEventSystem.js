@@ -111,7 +111,6 @@ export const capturePhaseEvents: Set<DOMTopLevelEventType> = new Set([
   TOP_TIME_UPDATE,
   TOP_VOLUME_CHANGE,
   TOP_WAITING,
-  TOP_SELECTION_CHANGE,
 ]);
 
 const isArray = Array.isArray;

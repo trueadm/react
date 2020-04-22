@@ -44,7 +44,7 @@ import {
   getRawEventName,
   mediaEventTypes,
 } from './DOMTopLevelEventTypes';
-import {addTrappedEventListener} from './ReactDOMEventListener';
+import {addLegacyTrappedEventListener} from './ReactDOMEventListener';
 import {batchedEventUpdates} from './ReactDOMUpdateBatching';
 import getListener from './getListener';
 
@@ -374,7 +374,7 @@ export function legacyTrapBubbledEvent(
   element: Document | Element,
   listenerMap?: ElementListenerMap,
 ): void {
-  const listener = addTrappedEventListener(
+  const listener = addLegacyTrappedEventListener(
     element,
     topLevelType,
     PLUGIN_EVENT_SYSTEM,
@@ -390,7 +390,7 @@ export function legacyTrapCapturedEvent(
   element: Document | Element,
   listenerMap: ElementListenerMap,
 ): void {
-  const listener = addTrappedEventListener(
+  const listener = addLegacyTrappedEventListener(
     element,
     topLevelType,
     PLUGIN_EVENT_SYSTEM,

@@ -226,7 +226,13 @@ export function addModernTrappedEventListener(
   );
 
   const rawEventName = getRawEventName(topLevelType);
-  registerEventOnContainer(rawEventName, targetContainer, capture, passive, listener)
+  registerEventOnContainer(
+    rawEventName,
+    targetContainer,
+    capture,
+    passive,
+    listener,
+  );
 }
 
 function dispatchDiscreteEvent(
@@ -235,9 +241,7 @@ function dispatchDiscreteEvent(
   container,
   nativeEvent,
 ) {
-  if (
-    !enableLegacyFBSupport
-  ) {
+  if (!enableLegacyFBSupport) {
     flushDiscreteUpdatesIfNeeded(nativeEvent.timeStamp);
   }
   discreteUpdates(
