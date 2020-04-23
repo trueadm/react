@@ -74,7 +74,10 @@ import {
   TOP_SELECTION_CHANGE,
   getRawEventName,
 } from './DOMTopLevelEventTypes';
-import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
+import {
+  getClosestInstanceFromNode,
+  getInstanceFromNode,
+} from '../client/ReactDOMComponentTree';
 import {COMMENT_NODE} from '../shared/HTMLNodeType';
 import {batchedEventUpdates} from './ReactDOMUpdateBatching';
 import getListener from './getListener';
@@ -379,6 +382,16 @@ function isMatchingRootContainer(
   );
 }
 
+function isContainerParentOfTargetContainer(
+  container: Node,
+  targetContainer: Node,
+): boolean {
+  if (container.nodeType === COMMENT_NODE) {
+    container = (container: any).parentNode;
+  }
+  return container !== null && container.contains(targetContainer);
+}
+
 export function isManagedDOMElement(
   target: EventTarget | ReactScopeMethods,
 ): boolean {
@@ -450,6 +463,14 @@ export function dispatchEventForPluginEventSystem(
           if (isMatchingRootContainer(container, targetContainerNode)) {
             break;
           }
+          // If the current container is a parent of the target container, then
+          // there's no point in propagating up the tree further.
+          if (
+            isContainerParentOfTargetContainer(container, targetContainerNode)
+          ) {
+            return;
+          }
+
           if (node.tag === HostPortal) {
             // The target is a portal, but it's not the rootContainer we're looking for.
             // Normally portals handle their own events all the way down to the root.
@@ -471,9 +492,10 @@ export function dispatchEventForPluginEventSystem(
               grandNode = grandNode.return;
             }
           }
+
           const parentSubtreeInst = getClosestInstanceFromNode(container);
           if (parentSubtreeInst === null) {
-            return;
+            break;
           }
           node = ancestorInst = parentSubtreeInst;
           continue;
