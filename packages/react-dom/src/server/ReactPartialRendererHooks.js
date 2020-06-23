@@ -501,6 +501,22 @@ function useOpaqueIdentifier(): OpaqueIDType {
   );
 }
 
+function useMutationEffect(
+  create: () => mixed,
+  inputs: Array<mixed> | void | null,
+) {
+  if (__DEV__) {
+    currentHookNameInDev = 'useLayoutEffect';
+    console.error(
+      'useMutationEffect does nothing on the server, because its effect cannot ' +
+        "be encoded into the server renderer's output format. This will lead " +
+        'to a mismatch between the initial, non-hydrated UI and the intended ' +
+        'UI. To avoid this, useMutationEffect should only be used in ' +
+        'components that render exclusively on the client.',
+    );
+  }
+}
+
 function noop(): void {}
 
 export let currentPartialRenderer: PartialRenderer = (null: any);
@@ -529,4 +545,5 @@ export const Dispatcher: DispatcherType = {
   useOpaqueIdentifier,
   // Subscriptions are not setup in a server environment.
   useMutableSource,
+  useMutationEffect,
 };

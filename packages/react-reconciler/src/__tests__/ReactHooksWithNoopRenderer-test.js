@@ -32,6 +32,7 @@ let useDeferredValue;
 let forwardRef;
 let memo;
 let act;
+let useMutationEffect;
 
 describe('ReactHooksWithNoopRenderer', () => {
   beforeEach(() => {
@@ -57,6 +58,7 @@ describe('ReactHooksWithNoopRenderer', () => {
     useDeferredValue = React.unstable_useDeferredValue;
     Suspense = React.Suspense;
     act = ReactNoop.act;
+    useMutationEffect = React.useMutationEffect;
 
     TextResource = ReactCache.unstable_createResource(
       ([text, ms = 0]) => {
@@ -2414,6 +2416,207 @@ describe('ReactHooksWithNoopRenderer', () => {
         'Unmount normal [current: 1]',
         'Mount normal [current: 1]',
       ]);
+    });
+  });
+
+  describe('useMutationEffect', () => {
+    it('fires mutation effects before layout effects', () => {
+      let committedText = '(empty)';
+
+      function Counter(props) {
+        useMutationEffect(() => {
+          Scheduler.unstable_yieldValue(
+            `Mount mutation [current: ${committedText}]`,
+          );
+          committedText = props.count + '';
+          return () => {
+            Scheduler.unstable_yieldValue(
+              `Unmount mutation [current: ${committedText}]`,
+            );
+          };
+        });
+        useLayoutEffect(() => {
+          Scheduler.unstable_yieldValue(
+            `Mount layout [current: ${committedText}]`,
+          );
+          return () => {
+            Scheduler.unstable_yieldValue(
+              `Unmount layout [current: ${committedText}]`,
+            );
+          };
+        });
+        useEffect(() => {
+          Scheduler.unstable_yieldValue(
+            `Mount normal [current: ${committedText}]`,
+          );
+          return () => {
+            Scheduler.unstable_yieldValue(
+              `Unmount normal [current: ${committedText}]`,
+            );
+          };
+        });
+        return null;
+      }
+
+      act(() => {
+        ReactNoop.render(<Counter count={0} />);
+
+        expect(Scheduler).toFlushAndYieldThrough([
+          'Mount mutation [current: (empty)]',
+          'Mount layout [current: 0]',
+          'Mount normal [current: 0]',
+        ]);
+        expect(committedText).toEqual('0');
+      });
+
+      Scheduler.unstable_clearYields();
+
+      // Unmount everything
+      ReactNoop.render(null);
+      expect(Scheduler).toFlushAndYieldThrough([
+        'Unmount mutation [current: 0]',
+        'Unmount layout [current: 0]',
+      ]);
+    });
+
+    it('force flushes passive effects before firing new mutation effects', () => {
+      let committedText = '(empty)';
+
+      function Counter(props) {
+        useMutationEffect(() => {
+          Scheduler.unstable_yieldValue(
+            `Mount mutation [current: ${committedText}]`,
+          );
+          committedText = props.count + '';
+          return () => {
+            Scheduler.unstable_yieldValue(
+              `Unmount mutation [current: ${committedText}]`,
+            );
+          };
+        });
+        useEffect(() => {
+          Scheduler.unstable_yieldValue(
+            `Mount normal [current: ${committedText}]`,
+          );
+          return () => {
+            Scheduler.unstable_yieldValue(
+              `Unmount normal [current: ${committedText}]`,
+            );
+          };
+        });
+        return null;
+      }
+
+      act(() => {
+        ReactNoop.render(<Counter count={0} />);
+        expect(Scheduler).toFlushAndYieldThrough([
+          'Mount mutation [current: (empty)]',
+        ]);
+        expect(committedText).toEqual('0');
+      });
+
+      act(() => {
+        ReactNoop.render(<Counter count={1} />);
+      });
+
+      expect(Scheduler).toHaveYielded([
+        'Mount normal [current: 0]',
+        'Unmount mutation [current: 0]',
+        'Mount mutation [current: 0]',
+        'Unmount normal [current: 1]',
+        'Mount normal [current: 1]',
+      ]);
+      expect(committedText).toEqual('1');
+    });
+
+    it.only('fires all mutation effects before firing any layout effects', () => {
+      let committedA = '(empty)';
+      let committedB = '(empty)';
+
+      function CounterA(props) {
+        useMutationEffect(() => {
+          ReactNoop.yield(
+            `Mount A mutation [A: ${committedA}, B: ${committedB}]`,
+          );
+          committedA = props.count + '';
+          return () => {
+            ReactNoop.yield(
+              `Unmount A mutation [A: ${committedA}, B: ${committedB}]`,
+            );
+          };
+        });
+        useLayoutEffect(() => {
+          ReactNoop.yield(
+            `Mount layout A [A: ${committedA}, B: ${committedB}]`,
+          );
+          return () => {
+            ReactNoop.yield(
+              `Unmount layout A [A: ${committedA}, B: ${committedB}]`,
+            );
+          };
+        });
+        return null;
+      }
+
+      function CounterB(props) {
+        useMutationEffect(() => {
+          ReactNoop.yield(
+            `Mount B mutation [A: ${committedA}, B: ${committedB}]`,
+          );
+          committedB = props.count + '';
+          return () => {
+            ReactNoop.yield(
+              `Unmount B mutation [A: ${committedA}, B: ${committedB}]`,
+            );
+          };
+        });
+        useLayoutEffect(() => {
+          ReactNoop.yield(
+            `Mount layout B [A: ${committedA}, B: ${committedB}]`,
+          );
+          return () => {
+            ReactNoop.yield(
+              `Unmount layout B [A: ${committedA}, B: ${committedB}]`,
+            );
+          };
+        });
+        return null;
+      }
+
+      ReactNoop.render(
+        <React.Fragment>
+          <CounterA count={0} />
+          <CounterB count={0} />
+        </React.Fragment>,
+      );
+      expect(ReactNoop.flush()).toEqual([
+        // All mutation effects fire before all layout effects
+        'Mount A mutation [A: (empty), B: (empty)]',
+        'Mount B mutation [A: 0, B: (empty)]',
+        'Mount layout A [A: 0, B: 0]',
+        'Mount layout B [A: 0, B: 0]',
+      ]);
+      expect([committedA, committedB]).toEqual(['0', '0']);
+
+      ReactNoop.render(
+        <React.Fragment>
+          <CounterA count={1} />
+          <CounterB count={1} />
+        </React.Fragment>,
+      );
+      expect(ReactNoop.flush()).toEqual([
+        // Note: This shows that the clean-up function of a layout effect is
+        // fired in the same phase as the set-up function of a mutation.
+        'Unmount A mutation [A: 0, B: 0]',
+        'Unmount B mutation [A: 0, B: 0]',
+        'Mount A mutation [A: 0, B: 0]',
+        'Unmount layout A [A: 1, B: 0]',
+        'Mount B mutation [A: 1, B: 0]',
+        'Unmount layout B [A: 1, B: 1]',
+        'Mount layout A [A: 1, B: 1]',
+        'Mount layout B [A: 1, B: 1]',
+      ]);
+      expect([committedA, committedB]).toEqual(['1', '1']);
     });
   });
 

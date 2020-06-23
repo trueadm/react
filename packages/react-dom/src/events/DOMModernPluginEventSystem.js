@@ -152,7 +152,6 @@ export const capturePhaseEvents: Set<DOMTopLevelEventType> = new Set([
 ]);
 
 if (enableCreateEventHandleAPI) {
-  capturePhaseEvents.add(TOP_BEFORE_BLUR);
   capturePhaseEvents.add(TOP_AFTER_BLUR);
 }
 

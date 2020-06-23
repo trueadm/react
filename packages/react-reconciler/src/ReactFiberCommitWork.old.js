@@ -127,6 +127,7 @@ import {
   HasEffect as HookHasEffect,
   Layout as HookLayout,
   Passive as HookPassive,
+  AfterMutation as HookAfterMutation,
 } from './ReactHookEffectTags';
 import {didWarnAboutReassigningProps} from './ReactFiberBeginWork.old';
 import {
@@ -304,6 +305,44 @@ function commitBeforeMutationLifeCycles(
     case HostText:
     case HostPortal:
     case IncompleteClassComponent:
+      // Nothing to do for these component types
+      return;
+  }
+  invariant(
+    false,
+    'This unit of work tag should not have side-effects. This error is ' +
+      'likely caused by a bug in React. Please file an issue.',
+  );
+}
+
+function commitAfterMutationLifeCycles(
+  current: Fiber | null,
+  finishedWork: Fiber,
+): void {
+  switch (finishedWork.tag) {
+    case FunctionComponent:
+    case ForwardRef:
+    case SimpleMemoComponent:
+    case Block: {
+      commitHookEffectListMount(
+        HookAfterMutation | HookHasEffect,
+        finishedWork,
+      );
+      return;
+    }
+    case ClassComponent:
+    case HostRoot:
+    case HostComponent:
+    case HostText:
+    case HostPortal:
+    case IncompleteClassComponent:
+    case ScopeComponent:
+    case SuspenseComponent:
+    case OffscreenComponent:
+    case SuspenseListComponent:
+    case FundamentalComponent:
+    case LegacyHiddenComponent:
+    case Profiler:
       // Nothing to do for these component types
       return;
   }
@@ -1461,6 +1500,10 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         // This prevents sibling component effects from interfering with each other,
         // e.g. a destroy function in one component should never override a ref set
         // by a create function in another component during the same commit.
+        commitHookEffectListUnmount(
+          HookAfterMutation | HookHasEffect,
+          finishedWork,
+        );
         if (
           enableProfilerTimer &&
           enableProfilerCommitHooks &&
@@ -1524,6 +1567,10 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       // This prevents sibling component effects from interfering with each other,
       // e.g. a destroy function in one component should never override a ref set
       // by a create function in another component during the same commit.
+      commitHookEffectListUnmount(
+        HookAfterMutation | HookHasEffect,
+        finishedWork,
+      );
       if (
         enableProfilerTimer &&
         enableProfilerCommitHooks &&
@@ -1778,6 +1825,7 @@ function commitResetTextContent(current: Fiber) {
 
 export {
   commitBeforeMutationLifeCycles,
+  commitAfterMutationLifeCycles,
   commitResetTextContent,
   commitPlacement,
   commitDeletion,

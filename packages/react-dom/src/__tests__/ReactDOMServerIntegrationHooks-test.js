@@ -29,6 +29,7 @@ let useImperativeHandle;
 let useLayoutEffect;
 let useDebugValue;
 let useOpaqueIdentifier;
+let useMutationEffect;
 let forwardRef;
 let yieldedValues;
 let yieldValue;
@@ -54,6 +55,7 @@ function initModules() {
   useImperativeHandle = React.useImperativeHandle;
   useLayoutEffect = React.useLayoutEffect;
   useOpaqueIdentifier = React.unstable_useOpaqueIdentifier;
+  useMutationEffect = React.useMutationEffect;
   forwardRef = React.forwardRef;
 
   yieldedValues = [];
@@ -560,6 +562,22 @@ describe('ReactDOMServerHooks', () => {
         ['Count: 0', 'invoked on client'], // hydrated render
         // nothing yielded for bad markup
       ]);
+    });
+  });
+
+  describe('useMutationEffect', () => {
+    it('should warn when invoked during render', async () => {
+      function Counter() {
+        useMutationEffect(() => {
+          throw new Error('should not be invoked');
+        });
+
+        return <Text text="Count: 0" />;
+      }
+      const domNode = await serverRender(<Counter />, 1);
+      expect(clearYields()).toEqual(['Count: 0']);
+      expect(domNode.tagName).toEqual('SPAN');
+      expect(domNode.textContent).toEqual('Count: 0');
     });
   });
 

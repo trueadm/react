@@ -46,6 +46,7 @@ import {
   HasEffect as HookHasEffect,
   Layout as HookLayout,
   Passive as HookPassive,
+  AfterMutation as HookAfterMutation,
 } from './ReactHookEffectTags';
 import {
   getWorkInProgressRoot,
@@ -121,7 +122,8 @@ export type HookType =
   | 'useDeferredValue'
   | 'useTransition'
   | 'useMutableSource'
-  | 'useOpaqueIdentifier';
+  | 'useOpaqueIdentifier'
+  | 'useMutationEffect';
 
 let didWarnAboutMismatchedHooksForComponent;
 let didWarnAboutUseOpaqueIdentifier;
@@ -1298,6 +1300,20 @@ function updateLayoutEffect(
   return updateEffectImpl(UpdateEffect, HookLayout, create, deps);
 }
 
+function mountMutationEffect(
+  create: () => (() => void) | void,
+  deps: Array<mixed> | void | null,
+): void {
+  return mountEffectImpl(UpdateEffect, HookAfterMutation, create, deps);
+}
+
+function updateMutationEffect(
+  create: () => (() => void) | void,
+  deps: Array<mixed> | void | null,
+): void {
+  return updateEffectImpl(UpdateEffect, HookAfterMutation, create, deps);
+}
+
 function imperativeHandleEffect<T>(
   create: () => T,
   ref: {|current: T | null|} | ((inst: T | null) => mixed) | null | void,
@@ -1757,6 +1773,7 @@ export const ContextOnlyDispatcher: Dispatcher = {
   useTransition: throwInvalidHookError,
   useMutableSource: throwInvalidHookError,
   useOpaqueIdentifier: throwInvalidHookError,
+  useMutationEffect: throwInvalidHookError,
 
   unstable_isNewReconciler: enableNewReconciler,
 };
@@ -1779,6 +1796,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   useTransition: mountTransition,
   useMutableSource: mountMutableSource,
   useOpaqueIdentifier: mountOpaqueIdentifier,
+  useMutationEffect: mountMutationEffect,
 
   unstable_isNewReconciler: enableNewReconciler,
 };
@@ -1801,6 +1819,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useTransition: updateTransition,
   useMutableSource: updateMutableSource,
   useOpaqueIdentifier: updateOpaqueIdentifier,
+  useMutationEffect: updateMutationEffect,
 
   unstable_isNewReconciler: enableNewReconciler,
 };
@@ -1823,6 +1842,7 @@ const HooksDispatcherOnRerender: Dispatcher = {
   useTransition: rerenderTransition,
   useMutableSource: updateMutableSource,
   useOpaqueIdentifier: rerenderOpaqueIdentifier,
+  useMutationEffect: updateMutationEffect,
 
   unstable_isNewReconciler: enableNewReconciler,
 };
@@ -1987,6 +2007,15 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountOpaqueIdentifier();
     },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      mountHookTypesDev();
+      checkDepsAreArrayDev(deps);
+      return mountMutationEffect(create, deps);
+    },
 
     unstable_isNewReconciler: enableNewReconciler,
   };
@@ -2118,6 +2147,14 @@ if (__DEV__) {
       currentHookNameInDev = 'useOpaqueIdentifier';
       updateHookTypesDev();
       return mountOpaqueIdentifier();
+    },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      updateHookTypesDev();
+      return mountMutationEffect(create, deps);
     },
 
     unstable_isNewReconciler: enableNewReconciler,
@@ -2251,6 +2288,14 @@ if (__DEV__) {
       updateHookTypesDev();
       return updateOpaqueIdentifier();
     },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      updateHookTypesDev();
+      return updateMutationEffect(create, deps);
+    },
 
     unstable_isNewReconciler: enableNewReconciler,
   };
@@ -2383,6 +2428,14 @@ if (__DEV__) {
       currentHookNameInDev = 'useOpaqueIdentifier';
       updateHookTypesDev();
       return rerenderOpaqueIdentifier();
+    },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      updateHookTypesDev();
+      return updateMutationEffect(create, deps);
     },
 
     unstable_isNewReconciler: enableNewReconciler,
@@ -2532,6 +2585,15 @@ if (__DEV__) {
       mountHookTypesDev();
       return mountOpaqueIdentifier();
     },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      warnInvalidHookAccess();
+      mountHookTypesDev();
+      return mountMutationEffect(create, deps);
+    },
 
     unstable_isNewReconciler: enableNewReconciler,
   };
@@ -2679,6 +2741,15 @@ if (__DEV__) {
       warnInvalidHookAccess();
       updateHookTypesDev();
       return updateOpaqueIdentifier();
+    },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      warnInvalidHookAccess();
+      updateHookTypesDev();
+      return updateMutationEffect(create, deps);
     },
 
     unstable_isNewReconciler: enableNewReconciler,
@@ -2828,6 +2899,15 @@ if (__DEV__) {
       warnInvalidHookAccess();
       updateHookTypesDev();
       return rerenderOpaqueIdentifier();
+    },
+    useMutationEffect(
+      create: () => (() => void) | void,
+      deps: Array<mixed> | void | null,
+    ): void {
+      currentHookNameInDev = 'useMutationEffect';
+      warnInvalidHookAccess();
+      updateHookTypesDev();
+      return updateMutationEffect(create, deps);
     },
 
     unstable_isNewReconciler: enableNewReconciler,

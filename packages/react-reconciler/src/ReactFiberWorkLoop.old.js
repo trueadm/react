@@ -151,6 +151,7 @@ import {
 } from './ReactFiberThrow.old';
 import {
   commitBeforeMutationLifeCycles as commitBeforeMutationEffectOnFiber,
+  commitAfterMutationLifeCycles as commitAfterMutationEffectOnFiber,
   commitLifeCycles as commitLayoutEffectOnFiber,
   commitPlacement,
   commitWork,
@@ -1942,6 +1943,29 @@ function commitRootImpl(root, renderPriorityLevel) {
       }
     } while (nextEffect !== null);
 
+    // The next phase is the after mutation phase, where we attach refs to
+    // the host tree and trigger useMutationEffects.
+    nextEffect = firstEffect;
+    do {
+      if (__DEV__) {
+        invokeGuardedCallback(null, commitAfterMutationEffects, null);
+        if (hasCaughtError()) {
+          invariant(nextEffect !== null, 'Should be working on an effect.');
+          const error = clearCaughtError();
+          captureCommitPhaseError(nextEffect, error);
+          nextEffect = nextEffect.nextEffect;
+        }
+      } else {
+        try {
+          commitAfterMutationEffects();
+        } catch (error) {
+          invariant(nextEffect !== null, 'Should be working on an effect.');
+          captureCommitPhaseError(nextEffect, error);
+          nextEffect = nextEffect.nextEffect;
+        }
+      }
+    } while (nextEffect !== null);
+
     if (shouldFireAfterActiveInstanceBlur) {
       afterActiveInstanceBlur();
     }
@@ -2147,6 +2171,24 @@ function commitBeforeMutationEffects() {
   }
 }
 
+function commitAfterMutationEffects() {
+  while (nextEffect !== null) {
+    const effectTag = nextEffect.effectTag;
+
+    if (effectTag & (Update | Callback)) {
+      const current = nextEffect.alternate;
+      commitAfterMutationEffectOnFiber(current, nextEffect);
+    }
+
+    if (effectTag & Ref) {
+      commitAttachRef(nextEffect);
+    }
+
+    resetCurrentDebugFiberInDEV();
+    nextEffect = nextEffect.nextEffect;
+  }
+}
+
 function commitMutationEffects(root: FiberRoot, renderPriorityLevel) {
   // TODO: Should probably move the bulk of this function to commitWork.
   while (nextEffect !== null) {
@@ -2231,10 +2273,6 @@ function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
     if (effectTag & (Update | Callback)) {
       const current = nextEffect.alternate;
       commitLayoutEffectOnFiber(root, current, nextEffect, committedLanes);
-    }
-
-    if (effectTag & Ref) {
-      commitAttachRef(nextEffect);
     }
 
     resetCurrentDebugFiberInDEV();

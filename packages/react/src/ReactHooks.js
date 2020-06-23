@@ -196,3 +196,11 @@ export function useMutableSource<Source, Snapshot>(
   const dispatcher = resolveDispatcher();
   return dispatcher.useMutableSource(source, getSnapshot, subscribe);
 }
+
+export function useMutationEffect(
+  create: () => (() => void) | void,
+  deps: Array<mixed> | void | null,
+): void {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useMutationEffect(create, deps);
+}

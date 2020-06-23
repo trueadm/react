@@ -10,7 +10,7 @@
 import * as React from 'react';
 import useEvent from './useEvent';
 
-const {useEffect, useRef} = React;
+const {useEffect, useMutationEffect, useRef} = React;
 
 type UseFocusOptions = {|
   disabled?: boolean,
@@ -246,7 +246,7 @@ export function useFocus(
   const blurHandle = useEvent('blur', passiveObject);
   const focusVisibleHandles = useFocusVisibleInputHandles();
 
-  useEffect(() => {
+  useMutationEffect(() => {
     const focusTarget = focusTargetRef.current;
     const state = stateRef.current;
 
@@ -335,7 +335,7 @@ export function useFocusWithin(
   const beforeBlurHandle = useEvent('beforeblur', passiveObject);
   const focusVisibleHandles = useFocusVisibleInputHandles();
 
-  useEffect(() => {
+  useMutationEffect(() => {
     const focusWithinTarget = focusWithinTargetRef.current;
     const state = stateRef.current;
 

@@ -83,4 +83,5 @@ export {
   unstable_createFundamental,
   unstable_createScope,
   unstable_useOpaqueIdentifier,
+  useMutationEffect,
 } from './src/React';
