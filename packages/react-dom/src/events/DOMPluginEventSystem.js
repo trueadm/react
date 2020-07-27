@@ -718,7 +718,6 @@ export function accumulateSinglePhaseListeners(
   dispatchQueue: DispatchQueue,
   event: ReactSyntheticEvent,
   inCapturePhase: boolean,
-  accumulateTargetOnly: boolean,
 ): void {
   const bubbled = event._reactName;
   const captured = bubbled !== null ? bubbled + 'Capture' : null;
@@ -812,12 +811,6 @@ export function accumulateSinglePhaseListeners(
           }
         }
       }
-    }
-    // If we are only accumulating events for the target, then we don't
-    // continue to propagate through the React fiber tree to find other
-    // listeners.
-    if (accumulateTargetOnly) {
-      break;
     }
     instance = instance.return;
   }

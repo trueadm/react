@@ -168,8 +168,7 @@ function extractEvents(
     // TODO: We may also want to re-use the accumulateTargetOnly flag to
     // special case bubbling for onScroll/media events at a later point.
     // In which case we will want to make this flag boolean and ensure
-    // we change the targetInst to be of the container instance. Like:
-    const accumulateTargetOnly = false;
+    // we change the targetInst to be of the container instance.
 
     // We traverse only capture or bubble phase listeners
     accumulateSinglePhaseListeners(
@@ -177,7 +176,6 @@ function extractEvents(
       dispatchQueue,
       event,
       inCapturePhase,
-      accumulateTargetOnly,
     );
   }
   return event;
